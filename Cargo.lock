@@ -491,6 +491,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "mif_ssz"
+version = "0.1.0"
+
+[[package]]
+name = "mif_ssz_derive"
+version = "0.1.0"
+
+[[package]]
+name = "mif_ssz_types"
+version = "0.1.0"
+
+[[package]]
 name = "milagro_bls"
 version = "0.11.0"
 source = "git+https://github.com/sigp/milagro_bls?tag=v0.11.0#cd4606c16a716fec49023c4074fffe4a19d21f02"
