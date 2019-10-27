@@ -1,6 +1,3 @@
-/// [00riddle00] todo get path dynamically
-/// [00riddle00] see root_dir/utils/mif_ssz/ssz_specs.md for specs and reference rules (comments at the top of .md file)
-
 /// [00riddle00] Rust makes it a lot more obvious you are moving up in the chain.
 /// [00riddle00] As in python, it would be 'import ..color'
 use super::*;
