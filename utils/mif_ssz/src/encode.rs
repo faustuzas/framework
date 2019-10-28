@@ -1,3 +1,5 @@
+mod impls;
+
 use super::*;
 
 /// Trait for object serialization into SSZ format
