@@ -27,7 +27,6 @@ uint_n_encoding_impl!(u16, 16);
 uint_n_encoding_impl!(u32, 32);
 uint_n_encoding_impl!(u64, 64);
 
-
 impl Encode for bool {
     fn is_ssz_fixed_len() -> bool {
         true
@@ -84,6 +83,34 @@ impl <T: Encode> Encode for Vec<T> {
     }
 }
 
+/// The SSZ "union" type.
+impl<T: Encode> Encode for Option<T> {
+
+    fn is_ssz_fixed_len() -> bool {
+        false
+    }
+
+    fn ssz_append(&self, buf: &mut Vec<u8>) {
+        match self {
+            None => buf.append(&mut encode_union_index(0)),
+            Some(encodable) => {
+                buf.append(&mut encode_union_index(1));
+                encodable.ssz_append(buf);
+            }
+        }
+    }
+
+    fn ssz_bytes_len(&self) -> usize {
+        match self {
+            None => BYTES_PER_LENGTH_OFFSET,
+            Some(encodable) => BYTES_PER_LENGTH_OFFSET +
+                if <T as Encode>::is_ssz_fixed_len() {
+                    <T as Encode>::ssz_fixed_len()
+                } else { encodable.ssz_bytes_len() }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -129,7 +156,7 @@ mod tests {
     }
 
     #[test]
-    fn test_vec_of_u8() {
+    fn test_encode_vec_of_u8() {
         let vec: Vec<u8> = vec![];
         assert_eq!(vec.as_ssz_bytes(), vec![]);
 
@@ -141,7 +168,7 @@ mod tests {
     }
 
     #[test]
-    fn test_vec_of_vec_of_u8() {
+    fn test_encode_vec_of_vec_of_u8() {
         let vec: Vec<Vec<u8>> = vec![];
         assert_eq!(vec.as_ssz_bytes(), vec![]);
 
@@ -156,5 +183,11 @@ mod tests {
             vec.as_ssz_bytes(),
             vec![8, 0, 0, 0, 11, 0, 0, 0, 0, 1, 2, 11, 22, 33]
         );
+    }
+
+    #[test]
+    fn test_encode_union() {
+        assert_eq!(Some(123 as u8).as_ssz_bytes(), vec![1, 0, 0, 0, 123]);
+        assert_eq!((None as Option<u8>).as_ssz_bytes(), vec![0; 4]);
     }
 }

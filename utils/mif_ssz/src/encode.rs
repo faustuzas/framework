@@ -136,17 +136,4 @@ mod tests {
             vec![255; BYTES_PER_LENGTH_OFFSET]
         );
     }
-
-    #[test]
-    #[should_panic]
-    #[cfg(debug_assertions)]
-    fn test_encode_length_above_max_debug_panics() {
-        encode_length(MAX_LENGTH_VALUE + 1);
-    }
-
-    #[test]
-    #[cfg(not(debug_assertions))]
-    fn test_encode_length_above_max_not_debug_does_not_panic() {
-        assert_eq!(encode_length(MAX_LENGTH_VALUE + 1), vec![0; 4]);
-    }
 }
