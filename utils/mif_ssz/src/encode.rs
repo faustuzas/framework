@@ -81,6 +81,17 @@ impl<'a> SszEncoder<'a> {
             item.ssz_append(&mut self.variable_bytes);
         }
     }
+
+    /// Append the variable bytes to main buffer and return encoded data
+    ///
+    /// This method has to be called after all `append` operations.
+    ///
+    /// Encoder becomes unusable after this call.
+    pub fn finalize(&mut self) -> &mut Vec<u8> {
+        self.buf.append(&mut self.variable_bytes);
+
+        &mut self.buf
+    }
 }
 
 pub fn encode_length(len: usize) -> Vec<u8> {

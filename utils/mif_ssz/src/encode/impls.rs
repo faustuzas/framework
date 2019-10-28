@@ -47,6 +47,43 @@ impl Encode for bool {
     }
 }
 
+impl <T: Encode> Encode for Vec<T> {
+    fn is_ssz_fixed_len() -> bool {
+        false
+    }
+
+    fn ssz_append(&self, buf: &mut Vec<u8>) {
+        // vector is made of fixed-length elements
+        if T::is_ssz_fixed_len() {
+            buf.reserve(T::ssz_fixed_len() * self.len());
+
+            for el in self {
+                el.ssz_append(buf);
+            }
+
+            return;
+        }
+
+        let mut encoder = SszEncoder::list(buf, self.len() * BYTES_PER_LENGTH_OFFSET);
+        for el in self {
+            encoder.append(el);
+        }
+
+        encoder.finalize();
+    }
+
+    fn ssz_bytes_len(&self) -> usize {
+        if T::is_ssz_fixed_len() {
+            <T as Encode>::ssz_fixed_len() * self.len()
+        } else {
+            let offsets_length = BYTES_PER_LENGTH_OFFSET * self.len();
+            let data_length: usize = self.iter().map(|item| item.ssz_bytes_len()).sum();
+
+            offsets_length + data_length
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -58,15 +95,66 @@ mod tests {
     }
 
     #[test]
-    fn test_encode_uint_n() {
-        assert_eq!((0 as u8).as_ssz_bytes(), vec![0]);
-        assert_eq!((0 as u16).as_ssz_bytes(), vec![0; 2]);
-        assert_eq!((0 as u32).as_ssz_bytes(), vec![0; 4]);
-        assert_eq!((0 as u64).as_ssz_bytes(), vec![0; 8]);
+    fn test_encode_u8() {
+        assert_eq!(0_u8.as_ssz_bytes(), vec![0]);
+        assert_eq!(1_u8.as_ssz_bytes(), vec![1]);
+        assert_eq!(100_u8.as_ssz_bytes(), vec![100]);
+        assert_eq!(255_u8.as_ssz_bytes(), vec![255]);
+    }
 
-        assert_eq!((100 as u8).as_ssz_bytes(), vec![100]);
-        assert_eq!((100 as u16).as_ssz_bytes(), vec![100, 0]);
-        assert_eq!((100 as u32).as_ssz_bytes(), vec![100, 0, 0, 0]);
-        assert_eq!((100 as u64).as_ssz_bytes(), vec![100, 0, 0, 0, 0, 0, 0, 0]);
+    #[test]
+    fn test_encode_u16() {
+        assert_eq!(1_u16.as_ssz_bytes(), vec![1, 0]);
+        assert_eq!(100_u16.as_ssz_bytes(), vec![100, 0]);
+        assert_eq!((1_u16 << 8).as_ssz_bytes(), vec![0, 1]);
+        assert_eq!(65535_u16.as_ssz_bytes(), vec![255, 255]);
+    }
+
+    #[test]
+    fn test_encode_u32() {
+        assert_eq!(1_u32.as_ssz_bytes(), vec![1, 0, 0, 0]);
+        assert_eq!(100_u32.as_ssz_bytes(), vec![100, 0, 0, 0]);
+        assert_eq!((1_u32 << 16).as_ssz_bytes(), vec![0, 0, 1, 0]);
+        assert_eq!((1_u32 << 24).as_ssz_bytes(), vec![0, 0, 0, 1]);
+        assert_eq!((!0_u32).as_ssz_bytes(), vec![255, 255, 255, 255]);
+    }
+
+    #[test]
+    fn test_encode_u64() {
+        assert_eq!(1_u64.as_ssz_bytes(), vec![1, 0, 0, 0, 0, 0, 0, 0]);
+        assert_eq!(
+            (!0_u64).as_ssz_bytes(),
+            vec![255, 255, 255, 255, 255, 255, 255, 255]
+        );
+    }
+
+    #[test]
+    fn test_vec_of_u8() {
+        let vec: Vec<u8> = vec![];
+        assert_eq!(vec.as_ssz_bytes(), vec![]);
+
+        let vec: Vec<u8> = vec![1];
+        assert_eq!(vec.as_ssz_bytes(), vec![1]);
+
+        let vec: Vec<u8> = vec![0, 1, 2, 3];
+        assert_eq!(vec.as_ssz_bytes(), vec![0, 1, 2, 3]);
+    }
+
+    #[test]
+    fn test_vec_of_vec_of_u8() {
+        let vec: Vec<Vec<u8>> = vec![];
+        assert_eq!(vec.as_ssz_bytes(), vec![]);
+
+        let vec: Vec<Vec<u8>> = vec![vec![]];
+        assert_eq!(vec.as_ssz_bytes(), vec![4, 0, 0, 0]);
+
+        let vec: Vec<Vec<u8>> = vec![vec![], vec![]];
+        assert_eq!(vec.as_ssz_bytes(), vec![8, 0, 0, 0, 8, 0, 0, 0]);
+
+        let vec: Vec<Vec<u8>> = vec![vec![0, 1, 2], vec![11, 22, 33]];
+        assert_eq!(
+            vec.as_ssz_bytes(),
+            vec![8, 0, 0, 0, 11, 0, 0, 0, 0, 1, 2, 11, 22, 33]
+        );
     }
 }
