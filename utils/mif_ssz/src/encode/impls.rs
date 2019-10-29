@@ -63,7 +63,7 @@ impl <T: Encode> Encode for Vec<T> {
             return;
         }
 
-        let mut encoder = SszEncoder::list(buf, self.len() * BYTES_PER_LENGTH_OFFSET);
+        let mut encoder = SszEncoder::list(buf, self.len() * OFFSET_LENGTH);
         for el in self {
             encoder.append(el);
         }
@@ -75,7 +75,7 @@ impl <T: Encode> Encode for Vec<T> {
         if T::is_ssz_fixed_len() {
             <T as Encode>::ssz_fixed_len() * self.len()
         } else {
-            let offsets_length = BYTES_PER_LENGTH_OFFSET * self.len();
+            let offsets_length = OFFSET_LENGTH * self.len();
             let data_length: usize = self.iter().map(|item| item.ssz_bytes_len()).sum();
 
             offsets_length + data_length
@@ -102,8 +102,8 @@ impl<T: Encode> Encode for Option<T> {
 
     fn ssz_bytes_len(&self) -> usize {
         match self {
-            None => BYTES_PER_LENGTH_OFFSET,
-            Some(encodable) => BYTES_PER_LENGTH_OFFSET +
+            None => OFFSET_LENGTH,
+            Some(encodable) => OFFSET_LENGTH +
                 if <T as Encode>::is_ssz_fixed_len() {
                     <T as Encode>::ssz_fixed_len()
                 } else { encodable.ssz_bytes_len() }

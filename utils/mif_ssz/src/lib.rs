@@ -1,13 +1,13 @@
 mod encode;
 
 /// The number of bytes used to represent an offset.
-pub const BYTES_PER_LENGTH_OFFSET: usize = 4;
+pub const OFFSET_LENGTH: usize = 4;
 
-/// The maximum value that can be represented using `BYTES_PER_LENGTH_OFFSET`.
+/// The maximum value that can be represented using `OFFSET_LENGTH`.
 #[cfg(target_pointer_width = "32")]
-pub const MAX_LENGTH_VALUE: usize = (std::u32::MAX >> (8 * (4 - BYTES_PER_LENGTH_OFFSET))) as usize;
+pub const MAX_VALUE_LENGTH: usize = (std::u32::MAX >> (8 * (4 - OFFSET_LENGTH))) as usize;
 #[cfg(target_pointer_width = "64")]
-pub const MAX_LENGTH_VALUE: usize = (std::u64::MAX >> (8 * (8 - BYTES_PER_LENGTH_OFFSET))) as usize;
+pub const MAX_VALUE_LENGTH: usize = (std::u64::MAX >> (8 * (8 - OFFSET_LENGTH))) as usize;
 
 pub use encode::{Encode, SszEncoder};
 

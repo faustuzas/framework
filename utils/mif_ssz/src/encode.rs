@@ -21,7 +21,7 @@ pub trait Encode {
     /// By default it returns the size of the offset for variable-sized objects.
     /// Fixed-length objects have to return the value of their length.
     fn ssz_fixed_len() -> usize {
-        BYTES_PER_LENGTH_OFFSET
+        OFFSET_LENGTH
     }
 
     /// Returns the total size when `self` is serialized
@@ -96,9 +96,9 @@ impl<'a> SszEncoder<'a> {
 
 pub fn encode_length(len: usize) -> Vec<u8> {
     // if length is larger than max allow, raise debug assert
-    debug_assert!(len <= MAX_LENGTH_VALUE);
+    debug_assert!(len <= MAX_VALUE_LENGTH);
 
-    len.to_le_bytes()[0..BYTES_PER_LENGTH_OFFSET].to_vec()
+    len.to_le_bytes()[0..OFFSET_LENGTH].to_vec()
 }
 
 pub fn encode_union_index(index: usize) -> Vec<u8> {
@@ -118,8 +118,8 @@ mod tests {
         assert_eq!(encode_length(400), vec![144, 1, 0, 0]);
 
         assert_eq!(
-            encode_length(MAX_LENGTH_VALUE),
-            vec![255; BYTES_PER_LENGTH_OFFSET]
+            encode_length(MAX_VALUE_LENGTH),
+            vec![255; OFFSET_LENGTH]
         );
     }
 
@@ -132,8 +132,8 @@ mod tests {
         assert_eq!(encode_union_index(400), vec![144, 1, 0, 0]);
 
         assert_eq!(
-            encode_union_index(MAX_LENGTH_VALUE),
-            vec![255; BYTES_PER_LENGTH_OFFSET]
+            encode_union_index(MAX_VALUE_LENGTH),
+            vec![255; OFFSET_LENGTH]
         );
     }
 }
