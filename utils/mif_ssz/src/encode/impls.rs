@@ -83,7 +83,7 @@ impl <T: Encode> Encode for Vec<T> {
     }
 }
 
-/// The SSZ "union" type.
+/// The SSZ Union type.
 impl<T: Encode> Encode for Option<T> {
 
     fn is_ssz_fixed_len() -> bool {
