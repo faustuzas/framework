@@ -1,3 +1,5 @@
+mod impls;
+
 use super::*;
 
 /// Trait for object serialization into SSZ format
@@ -79,6 +81,17 @@ impl<'a> SszEncoder<'a> {
             item.ssz_append(&mut self.variable_bytes);
         }
     }
+
+    /// Append the variable bytes to main buffer and return encoded data
+    ///
+    /// This method has to be called after all `append` operations.
+    ///
+    /// Encoder becomes unusable after this call.
+    pub fn finalize(&mut self) -> &mut Vec<u8> {
+        self.buf.append(&mut self.variable_bytes);
+
+        &mut self.buf
+    }
 }
 
 pub fn encode_length(len: usize) -> Vec<u8> {
@@ -122,18 +135,5 @@ mod tests {
             encode_union_index(MAX_LENGTH_VALUE),
             vec![255; BYTES_PER_LENGTH_OFFSET]
         );
-    }
-
-    #[test]
-    #[should_panic]
-    #[cfg(debug_assertions)]
-    fn test_encode_length_above_max_debug_panics() {
-        encode_length(MAX_LENGTH_VALUE + 1);
-    }
-
-    #[test]
-    #[cfg(not(debug_assertions))]
-    fn test_encode_length_above_max_not_debug_does_not_panic() {
-        assert_eq!(encode_length(MAX_LENGTH_VALUE + 1), vec![0; 4]);
     }
 }
