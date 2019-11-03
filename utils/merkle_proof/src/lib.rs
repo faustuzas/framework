@@ -23,12 +23,7 @@ lazy_static! {
     };
 }
 
-/// Right-sparse Merkle tree.
-///
-/// Efficiently represents a Merkle tree of fixed depth where only the first N
-/// indices are populated by non-zero leaves (perfect for the deposit contract tree).
 #[derive(Debug)]
-// structure that  represents Merkle tree
 pub enum MerkleTree {
     Leaf(H256),
     Node(H256, Box<Self>, Box<Self>),
@@ -36,7 +31,6 @@ pub enum MerkleTree {
 }
 
 impl MerkleTree {
-    /// Create a new Merkle tree from a list of leaves and depth.
     pub fn create(leaves: &[H256], depth: usize) -> Self {
         use MerkleTree::*;
 
@@ -213,7 +207,6 @@ fn get_next_power_of_two(depth: usize) -> usize {
     2usize.pow(depth as u32)      
 }
 
-//TESTAI
 #[cfg(test)]
 mod tests {
     use super::*;
