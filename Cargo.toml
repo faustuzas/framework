@@ -8,6 +8,7 @@ members = [
     'utils/ssz_types',
     'utils/tree_hash',
     'utils/tree_hash_derive',
+    'utils/merkle_proof',
 ]
 
 [profile.release]
