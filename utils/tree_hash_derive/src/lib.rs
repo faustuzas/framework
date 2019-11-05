@@ -1,3 +1,5 @@
+#![allow(clippy::needless_borrow)]
+
 #![recursion_limit = "256"]
 extern crate proc_macro;
 
