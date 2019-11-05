@@ -508,6 +508,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "mif_ssz"
+version = "0.1.0"
+
+[[package]]
+name = "mif_ssz_derive"
+version = "0.1.0"
+
+[[package]]
+name = "mif_ssz_types"
+version = "0.1.0"
 name = "merkle_proof"
 version = "0.1.0"
 dependencies = [

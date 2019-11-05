@@ -8,6 +8,9 @@ members = [
     'utils/ssz_types',
     'utils/tree_hash',
     'utils/tree_hash_derive',
+    'utils/mif_ssz',
+    'utils/mif_ssz_derive',
+    'utils/mif_ssz_types'
     'utils/merkle_proof',
 ]
 
