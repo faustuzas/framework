@@ -11,6 +11,7 @@ members = [
     'utils/mif_ssz',
     'utils/mif_ssz_derive',
     'utils/mif_ssz_types'
+    'utils/merkle_proof',
 ]
 
 [profile.release]
