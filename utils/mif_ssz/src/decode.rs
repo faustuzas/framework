@@ -99,6 +99,36 @@ impl<'a> SszDecoderBuilder<'a> {
         Ok(())
     }
 
+    fn finalize(&mut self) -> Result<(), DecodeError> {
+        if !self.offsets.is_empty() {
+            if self.offsets[0].offset != self.items_index {
+                return Err(DecodeError::OutOfBoundsByte {
+                    i: self.offsets[0].offset,
+                });
+            }
+
+            for pair in self.offsets.windows(2) {
+                let a = pair[0];
+                let b = pair[1];
+
+                self.items[a.position] = &self.bytes[a.offset..b.offset];
+            }
+
+            if let Some(last) = self.offsets.last() {
+                self.items[last.position] = &self.bytes[last.offset..]
+            }
+        } else {
+            if self.items_index != self.bytes.len() {
+                return Err(DecodeError::InvalidByteLength {
+                    len: self.bytes.len(),
+                    expected: self.items_index,
+                });
+            }
+        }
+
+        Ok(())
+    }
+
     pub fn build(mut self) -> Result<SszDecoder<'a>, DecodeError> {
         self.finalize()?;
 

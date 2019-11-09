@@ -61,6 +61,25 @@ impl Decode for bool {
     }
 }
 
+impl <T: Decode> Decode for Vec<T> {
+    fn is_ssz_fixed_len() -> bool {
+        false
+    }
+
+    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
+        if bytes.is_empty() {
+            Ok(vec![])
+        } else if T::is_ssz_fixed_len() {
+            bytes
+                .chunks(T::ssz_fixed_len())
+                .map(|chunk| T::from_ssz_bytes(chunk))
+                .collect()
+        } else {
+            decode_list_of_variable_length_items(bytes)
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -93,6 +112,82 @@ mod tests {
     #[test]
     fn test_decode_u16() {
         assert_eq!(<u16>::from_ssz_bytes(&[0, 0]), Ok(0));
+        assert_eq!(<u16>::from_ssz_bytes(&[16, 0]), Ok(16));
+        assert_eq!(<u16>::from_ssz_bytes(&[0, 1]), Ok(256));
+        assert_eq!(<u16>::from_ssz_bytes(&[255, 255]), Ok(65535));
+
+        assert_eq!(
+            <u16>::from_ssz_bytes(&[255]),
+            Err(DecodeError::InvalidByteLength {
+                len: 1,
+                expected: 2
+            })
+        );
+
+        assert_eq!(
+            <u16>::from_ssz_bytes(&[]),
+            Err(DecodeError::InvalidByteLength {
+                len: 0,
+                expected: 2
+            })
+        );
+
+        assert_eq!(
+            <u16>::from_ssz_bytes(&[0, 1, 2]),
+            Err(DecodeError::InvalidByteLength {
+                len: 3,
+                expected: 2
+            })
+        );
+    }
+
+    #[test]
+    fn vec_of_u16() {
+        assert_eq!(<Vec<u16>>::from_ssz_bytes(&[0, 0, 0, 0]), Ok(vec![0, 0]));
+        assert_eq!(
+            <Vec<u16>>::from_ssz_bytes(&[0, 0, 1, 0, 2, 0, 3, 0]),
+            Ok(vec![0, 1, 2, 3])
+        );
+        assert_eq!(<u16>::from_ssz_bytes(&[16, 0]), Ok(16));
+        assert_eq!(<u16>::from_ssz_bytes(&[0, 1]), Ok(256));
+        assert_eq!(<u16>::from_ssz_bytes(&[255, 255]), Ok(65535));
+
+        assert_eq!(
+            <u16>::from_ssz_bytes(&[255]),
+            Err(DecodeError::InvalidByteLength {
+                len: 1,
+                expected: 2
+            })
+        );
+
+        assert_eq!(
+            <u16>::from_ssz_bytes(&[]),
+            Err(DecodeError::InvalidByteLength {
+                len: 0,
+                expected: 2
+            })
+        );
+
+        assert_eq!(
+            <u16>::from_ssz_bytes(&[0, 1, 2]),
+            Err(DecodeError::InvalidByteLength {
+                len: 3,
+                expected: 2
+            })
+        );
+    }
+
+    #[test]
+    fn vec_of_vec_of_u16() {
+        assert_eq!(
+            <Vec<Vec<u16>>>::from_ssz_bytes(&[4, 0, 0, 0]),
+            Ok(vec![vec![]])
+        );
+
+        assert_eq!(
+            <Vec<u16>>::from_ssz_bytes(&[0, 0, 1, 0, 2, 0, 3, 0]),
+            Ok(vec![0, 1, 2, 3])
+        );
         assert_eq!(<u16>::from_ssz_bytes(&[16, 0]), Ok(16));
         assert_eq!(<u16>::from_ssz_bytes(&[0, 1]), Ok(256));
         assert_eq!(<u16>::from_ssz_bytes(&[255, 255]), Ok(65535));
