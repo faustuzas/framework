@@ -80,7 +80,7 @@ impl <T: Decode> Decode for Vec<T> {
     }
 }
 
-/// The SSZ "union" type.
+/// The SSZ Union type.
 impl<T: Decode> Decode for Option<T> {
     fn is_ssz_fixed_len() -> bool {
         false
@@ -172,7 +172,7 @@ mod tests {
     }
 
     #[test]
-    fn vec_of_u16() {
+    fn test_decode_vec_of_u16() {
         assert_eq!(<Vec<u16>>::from_ssz_bytes(&[0, 0, 0, 0]), Ok(vec![0, 0]));
         assert_eq!(
             <Vec<u16>>::from_ssz_bytes(&[0, 0, 1, 0, 2, 0, 3, 0]),
@@ -208,7 +208,7 @@ mod tests {
     }
 
     #[test]
-    fn vec_of_vec_of_u16() {
+    fn test_decode_vec_of_vec_of_u16() {
         assert_eq!(
             <Vec<Vec<u16>>>::from_ssz_bytes(&[4, 0, 0, 0]),
             Ok(vec![vec![]])
