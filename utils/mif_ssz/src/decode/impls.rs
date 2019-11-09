@@ -1,5 +1,39 @@
 use super::*;
 
+macro_rules! uint_n_decoding_impl {
+    ($type: ident, $bit_size: expr) => {
+        impl Decode for $type {
+            fn is_ssz_fixed_len() -> bool {
+                true
+            }
+
+            fn ssz_fixed_len() -> usize {
+                $bit_size / 8
+            }
+
+            fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
+                let len = bytes.len();
+                let expected = <Self as Decode>::ssz_fixed_len();
+
+                if len != expected {
+                    Err(DecodeError::InvalidByteLength { len, expected })
+                } else {
+                    let mut array: [u8; $bit_size / 8] = std::default::Default::default();
+                    array.clone_from_slice(bytes);
+
+                    Ok(Self::from_le_bytes(array))
+                }
+            }
+        }
+    };
+}
+
+uint_n_decoding_impl!(u8, 8);
+uint_n_decoding_impl!(u16, 16);
+uint_n_decoding_impl!(u32, 32);
+uint_n_decoding_impl!(u64, 64);
+
+
 impl Decode for bool {
     fn is_ssz_fixed_len() -> bool {
         true
@@ -32,7 +66,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn invalid_bool() {
+    fn test_invalid_bool() {
         assert_eq!(
             bool::from_ssz_bytes(&[0; 2]),
             Err(DecodeError::InvalidByteLength {
@@ -54,5 +88,37 @@ mod tests {
         } else {
             panic!("Did not return error on invalid bool val")
         }
+    }
+
+    #[test]
+    fn test_decode_u16() {
+        assert_eq!(<u16>::from_ssz_bytes(&[0, 0]), Ok(0));
+        assert_eq!(<u16>::from_ssz_bytes(&[16, 0]), Ok(16));
+        assert_eq!(<u16>::from_ssz_bytes(&[0, 1]), Ok(256));
+        assert_eq!(<u16>::from_ssz_bytes(&[255, 255]), Ok(65535));
+
+        assert_eq!(
+            <u16>::from_ssz_bytes(&[255]),
+            Err(DecodeError::InvalidByteLength {
+                len: 1,
+                expected: 2
+            })
+        );
+
+        assert_eq!(
+            <u16>::from_ssz_bytes(&[]),
+            Err(DecodeError::InvalidByteLength {
+                len: 0,
+                expected: 2
+            })
+        );
+
+        assert_eq!(
+            <u16>::from_ssz_bytes(&[0, 1, 2]),
+            Err(DecodeError::InvalidByteLength {
+                len: 3,
+                expected: 2
+            })
+        );
     }
 }
