@@ -10,7 +10,7 @@ members = [
     'utils/tree_hash_derive',
     'utils/mif_ssz',
     'utils/mif_ssz_derive',
-    'utils/mif_ssz_types'
+    'utils/mif_ssz_types',
     'utils/merkle_proof',
 ]
 
