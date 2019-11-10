@@ -7,7 +7,7 @@ use core::marker::PhantomData;
 use serde::de::{Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
 use serde_hex::{encode as hex_encode, PrefixedHexVisitor};
-use ssz::{Decode, Encode};
+use mif_ssz::{Decode, Encode};
 use typenum::Unsigned;
 
 /// A marker trait applied to `Variable` and `Fixed` that defines the behaviour of a `Bitfield`.
@@ -59,7 +59,7 @@ pub type BitVector<N> = Bitfield<Fixed<N>>;
 /// - `BitVector<N>` is an alias for `Bitfield<Fixed<N>>`
 ///
 /// ```
-/// use ssz_types::{BitVector, BitList, typenum};
+/// use mif_ssz_types::{BitVector, BitList, typenum};
 ///
 /// // `BitList` has a type-level maximum length. The length of the list is specified at runtime
 /// // and it must be less than or equal to `N`. After instantiation, `BitList` cannot grow or
@@ -130,7 +130,7 @@ impl<N: Unsigned + Clone> Bitfield<Variable<N>> {
     ///
     /// ## Example
     /// ```
-    /// use ssz_types::{BitList, typenum};
+    /// use mif_ssz_types::{BitList, typenum};
     ///
     /// type BitList8 = BitList<typenum::U8>;
     ///
@@ -252,7 +252,7 @@ impl<N: Unsigned + Clone> Bitfield<Fixed<N>> {
     ///
     /// ## Example
     /// ```
-    /// use ssz_types::{BitVector, typenum};
+    /// use mif_ssz_types::{BitVector, typenum};
     ///
     /// type BitVector4 = BitVector<typenum::U4>;
     ///
@@ -495,9 +495,9 @@ impl<N: Unsigned + Clone> Decode for Bitfield<Variable<N>> {
         false
     }
 
-    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, ssz::DecodeError> {
+    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, mif_ssz::DecodeError> {
         Self::from_bytes(bytes.to_vec()).map_err(|e| {
-            ssz::DecodeError::BytesInvalid(format!("BitList failed to decode: {:?}", e))
+            mif_ssz::DecodeError::BytesInvalid(format!("BitList failed to decode: {:?}", e))
         })
     }
 }
@@ -529,9 +529,9 @@ impl<N: Unsigned + Clone> Decode for Bitfield<Fixed<N>> {
         bytes_for_bit_len(N::to_usize())
     }
 
-    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, ssz::DecodeError> {
+    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, mif_ssz::DecodeError> {
         Self::from_bytes(bytes.to_vec()).map_err(|e| {
-            ssz::DecodeError::BytesInvalid(format!("BitVector failed to decode: {:?}", e))
+            mif_ssz::DecodeError::BytesInvalid(format!("BitVector failed to decode: {:?}", e))
         })
     }
 }

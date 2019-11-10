@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
-use ssz_derive::{Decode, Encode};
-use ssz_types::{BitVector, FixedVector, VariableList};
+use mif_ssz_derive::{Decode, Encode};
+use mif_ssz_types::{BitVector, FixedVector, VariableList};
 use tree_hash_derive::TreeHash;
 
 use crate::{config::*, consts, primitives::*, types::*};

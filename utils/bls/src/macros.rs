@@ -1,6 +1,6 @@
 macro_rules! impl_ssz {
     ($type: ident, $byte_size: expr, $item_str: expr) => {
-        impl ssz::Encode for $type {
+        impl mif_ssz::Encode for $type {
             fn is_ssz_fixed_len() -> bool {
                 true
             }
@@ -18,7 +18,7 @@ macro_rules! impl_ssz {
             }
         }
 
-        impl ssz::Decode for $type {
+        impl mif_ssz::Decode for $type {
             fn is_ssz_fixed_len() -> bool {
                 true
             }
@@ -29,10 +29,10 @@ macro_rules! impl_ssz {
 
             fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
                 let len = bytes.len();
-                let expected = <Self as ssz::Decode>::ssz_fixed_len();
+                let expected = <Self as mif_ssz::Decode>::ssz_fixed_len();
 
                 if len != expected {
-                    Err(ssz::DecodeError::InvalidByteLength { len, expected })
+                    Err(mif_ssz::DecodeError::InvalidByteLength { len, expected })
                 } else {
                     $type::from_bytes(bytes)
                 }
@@ -57,8 +57,8 @@ macro_rules! impl_tree_hash {
             }
 
             fn tree_hash_root(&self) -> Vec<u8> {
-                let vector: ssz_types::FixedVector<u8, ssz_types::typenum::$byte_size> =
-                    ssz_types::FixedVector::from(self.as_ssz_bytes());
+                let vector: mif_ssz_types::FixedVector<u8, mif_ssz_types::typenum::$byte_size> =
+                    mif_ssz_types::FixedVector::from(self.as_ssz_bytes());
                 vector.tree_hash_root()
             }
         }
@@ -87,7 +87,7 @@ macro_rules! bytes_struct {
         stringify!($byte_size));
 
         impl $name {
-            pub fn from_bytes(bytes: &[u8]) -> Result<Self, ssz::DecodeError> {
+            pub fn from_bytes(bytes: &[u8]) -> Result<Self, mif_ssz::DecodeError> {
                 Ok(Self(Self::get_bytes(bytes)?))
             }
 
@@ -99,10 +99,10 @@ macro_rules! bytes_struct {
                 self.0.to_vec()
             }
 
-            fn get_bytes(bytes: &[u8]) -> Result<[u8; $byte_size], ssz::DecodeError> {
+            fn get_bytes(bytes: &[u8]) -> Result<[u8; $byte_size], mif_ssz::DecodeError> {
                 let mut result = [0; $byte_size];
                 if bytes.len() != $byte_size {
-                    Err(ssz::DecodeError::InvalidByteLength {
+                    Err(mif_ssz::DecodeError::InvalidByteLength {
                         len: bytes.len(),
                         expected: $byte_size,
                     })
@@ -128,7 +128,7 @@ macro_rules! bytes_struct {
         impl Eq for $name {}
 
         impl std::convert::TryInto<$type> for &$name {
-            type Error = ssz::DecodeError;
+            type Error = mif_ssz::DecodeError;
 
             fn try_into(self) -> Result<$type, Self::Error> {
                 <$type>::from_bytes(&self.0[..])
@@ -152,7 +152,7 @@ macro_rules! bytes_struct {
             where
                 S: serde::ser::Serializer,
             {
-                serializer.serialize_str(&hex::encode(ssz::ssz_encode(self)))
+                serializer.serialize_str(&hex::encode(mif_ssz::ssz_encode(self)))
             }
         }
 

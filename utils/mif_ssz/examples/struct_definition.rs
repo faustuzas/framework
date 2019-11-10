@@ -1,4 +1,4 @@
-use ssz::{Decode, DecodeError, Encode, SszDecoderBuilder, SszEncoder};
+use mif_ssz::{Decode, DecodeError, Encode, SszDecoderBuilder, SszEncoder};
 
 #[derive(Debug, PartialEq)]
 pub struct Foo {
@@ -14,7 +14,7 @@ impl Encode for Foo {
 
     fn ssz_bytes_len(&self) -> usize {
         <u16 as Encode>::ssz_fixed_len()
-            + ssz::BYTES_PER_LENGTH_OFFSET
+            + mif_ssz::BYTES_PER_LENGTH_OFFSET
             + <u16 as Encode>::ssz_fixed_len()
             + self.b.ssz_bytes_len()
     }

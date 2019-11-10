@@ -3,7 +3,7 @@ use milagro_bls::PublicKey as RawPublicKey;
 use serde::de::{Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
 use serde_hex::{encode as hex_encode, HexVisitor};
-use ssz::{Decode, DecodeError, Encode};
+use mif_ssz::{Decode, DecodeError, Encode};
 use std::default;
 use std::fmt;
 use std::hash::{Hash, Hasher};
@@ -138,7 +138,7 @@ impl Hash for PublicKey {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ssz::ssz_encode;
+    use mif_ssz::ssz_encode;
 
     #[test]
     pub fn test_ssz_round_trip() {

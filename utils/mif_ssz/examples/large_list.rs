@@ -2,7 +2,7 @@
 //!
 //! Useful for `cargo flamegraph`.
 
-use ssz::{Decode, Encode};
+use mif_ssz::{Decode, Encode};
 
 fn main() {
     let vec: Vec<u64> = vec![4242; 8196];

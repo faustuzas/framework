@@ -87,35 +87,35 @@ pub fn ssz_encode_derive(input: TokenStream) -> TokenStream {
     let field_types_f = field_types_a.clone();
 
     let output = quote! {
-        impl #impl_generics ssz::Encode for #name #ty_generics #where_clause {
+        impl #impl_generics mif_ssz::Encode for #name #ty_generics #where_clause {
             fn is_ssz_fixed_len() -> bool {
                 #(
-                    <#field_types_a as ssz::Encode>::is_ssz_fixed_len() &&
+                    <#field_types_a as mif_ssz::Encode>::is_ssz_fixed_len() &&
                 )*
                     true
             }
 
             fn ssz_fixed_len() -> usize {
-                if <Self as ssz::Encode>::is_ssz_fixed_len() {
+                if <Self as mif_ssz::Encode>::is_ssz_fixed_len() {
                     #(
-                        <#field_types_b as ssz::Encode>::ssz_fixed_len() +
+                        <#field_types_b as mif_ssz::Encode>::ssz_fixed_len() +
                     )*
                         0
                 } else {
-                    ssz::BYTES_PER_LENGTH_OFFSET
+                    mif_ssz::BYTES_PER_LENGTH_OFFSET
                 }
             }
 
             fn ssz_bytes_len(&self) -> usize {
-                if <Self as ssz::Encode>::is_ssz_fixed_len() {
-                    <Self as ssz::Encode>::ssz_fixed_len()
+                if <Self as mif_ssz::Encode>::is_ssz_fixed_len() {
+                    <Self as mif_ssz::Encode>::ssz_fixed_len()
                 } else {
                     let mut len = 0;
                     #(
-                        if <#field_types_d as ssz::Encode>::is_ssz_fixed_len() {
-                            len += <#field_types_e as ssz::Encode>::ssz_fixed_len();
+                        if <#field_types_d as mif_ssz::Encode>::is_ssz_fixed_len() {
+                            len += <#field_types_e as mif_ssz::Encode>::ssz_fixed_len();
                         } else {
-                            len += ssz::BYTES_PER_LENGTH_OFFSET;
+                            len += mif_ssz::BYTES_PER_LENGTH_OFFSET;
                             len += self.#field_idents_a.ssz_bytes_len();
                         }
                     )*
@@ -126,11 +126,11 @@ pub fn ssz_encode_derive(input: TokenStream) -> TokenStream {
 
             fn ssz_append(&self, buf: &mut Vec<u8>) {
                 let offset = #(
-                        <#field_types_f as ssz::Encode>::ssz_fixed_len() +
+                        <#field_types_f as mif_ssz::Encode>::ssz_fixed_len() +
                     )*
                         0;
 
-                let mut encoder = ssz::SszEncoder::container(buf, offset);
+                let mut encoder = mif_ssz::SszEncoder::container(buf, offset);
 
                 #(
                     encoder.append(&self.#field_idents);
@@ -200,11 +200,11 @@ pub fn ssz_decode_derive(input: TokenStream) -> TokenStream {
                     });
 
                     is_fixed_lens.push(quote! {
-                        <#ty as ssz::Decode>::is_ssz_fixed_len()
+                        <#ty as mif_ssz::Decode>::is_ssz_fixed_len()
                     });
 
                     fixed_lens.push(quote! {
-                        <#ty as ssz::Decode>::ssz_fixed_len()
+                        <#ty as mif_ssz::Decode>::ssz_fixed_len()
                     });
                 }
             }
@@ -213,7 +213,7 @@ pub fn ssz_decode_derive(input: TokenStream) -> TokenStream {
     }
 
     let output = quote! {
-        impl #impl_generics ssz::Decode for #name #ty_generics #where_clause {
+        impl #impl_generics mif_ssz::Decode for #name #ty_generics #where_clause {
             fn is_ssz_fixed_len() -> bool {
                 #(
                     #is_fixed_lens &&
@@ -222,18 +222,18 @@ pub fn ssz_decode_derive(input: TokenStream) -> TokenStream {
             }
 
             fn ssz_fixed_len() -> usize {
-                if <Self as ssz::Decode>::is_ssz_fixed_len() {
+                if <Self as mif_ssz::Decode>::is_ssz_fixed_len() {
                     #(
                         #fixed_lens +
                     )*
                         0
                 } else {
-                    ssz::BYTES_PER_LENGTH_OFFSET
+                    mif_ssz::BYTES_PER_LENGTH_OFFSET
                 }
             }
 
-            fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, ssz::DecodeError> {
-                let mut builder = ssz::SszDecoderBuilder::new(bytes);
+            fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, mif_ssz::DecodeError> {
+                let mut builder = mif_ssz::SszDecoderBuilder::new(bytes);
 
                 #(
                     #register_types

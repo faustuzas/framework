@@ -6,7 +6,7 @@ use milagro_bls::SecretKey as RawSecretKey;
 use serde::de::{Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
 use serde_hex::HexVisitor;
-use ssz::{ssz_encode, Decode, DecodeError, Encode};
+use mif_ssz::{ssz_encode, Decode, DecodeError, Encode};
 
 /// A single BLS signature.
 ///
@@ -75,7 +75,7 @@ impl<'de> Deserialize<'de> for SecretKey {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ssz::ssz_encode;
+    use mif_ssz::ssz_encode;
 
     #[test]
     pub fn test_ssz_round_trip() {

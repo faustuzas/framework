@@ -9,7 +9,7 @@
 #![allow(clippy::use_self)]
 
 extern crate milagro_bls;
-extern crate ssz;
+extern crate mif_ssz;
 
 #[macro_use]
 mod macros;
@@ -70,7 +70,7 @@ pub const BLS_SECRET_KEY_BYTE_SIZE: usize = 48;
 pub const BLS_PUBLIC_KEY_BYTE_SIZE: usize = 48;
 
 use eth2_hashing::hash;
-use ssz::ssz_encode;
+use mif_ssz::ssz_encode;
 
 /// Returns the withdrawal credentials for a given public key.
 pub fn get_withdrawal_credentials(pubkey: &PublicKey, prefix_byte: u8) -> Vec<u8> {

@@ -1,6 +1,6 @@
 use ethereum_types::H256;
-use ssz::{Decode, DecodeError, Encode};
-use ssz_derive::{Decode, Encode};
+use mif_ssz::{Decode, DecodeError, Encode};
+use mif_ssz_derive::{Decode, Encode};
 
 mod round_trip {
     use super::*;

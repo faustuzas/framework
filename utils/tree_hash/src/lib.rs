@@ -78,7 +78,7 @@ macro_rules! tree_hash_ssz_encoding_as_vector {
             }
 
             fn tree_hash_root(&self) -> Vec<u8> {
-                tree_hash::merkle_root(&ssz::ssz_encode(self))
+                tree_hash::merkle_root(&mif_ssz::ssz_encode(self))
             }
         }
     };
@@ -101,7 +101,7 @@ macro_rules! tree_hash_ssz_encoding_as_list {
             }
 
             fn tree_hash_root(&self) -> Vec<u8> {
-                ssz::ssz_encode(self).tree_hash_root()
+                mif_ssz::ssz_encode(self).tree_hash_root()
             }
         }
     };

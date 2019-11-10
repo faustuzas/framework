@@ -26,7 +26,7 @@ pub use typenum;
 /// ## Example
 ///
 /// ```
-/// use ssz_types::{FixedVector, typenum};
+/// use mif_ssz_types::{FixedVector, typenum};
 ///
 /// let base: Vec<u64> = vec![1, 2, 3, 4];
 ///
@@ -167,19 +167,19 @@ where
     }
 }
 
-impl<T, N: Unsigned> ssz::Encode for FixedVector<T, N>
+impl<T, N: Unsigned> mif_ssz::Encode for FixedVector<T, N>
 where
-    T: ssz::Encode,
+    T: mif_ssz::Encode,
 {
     fn is_ssz_fixed_len() -> bool {
         T::is_ssz_fixed_len()
     }
 
     fn ssz_fixed_len() -> usize {
-        if <Self as ssz::Encode>::is_ssz_fixed_len() {
+        if <Self as mif_ssz::Encode>::is_ssz_fixed_len() {
             T::ssz_fixed_len() * N::to_usize()
         } else {
-            ssz::BYTES_PER_LENGTH_OFFSET
+            mif_ssz::BYTES_PER_LENGTH_OFFSET
         }
     }
 
@@ -195,7 +195,7 @@ where
                 item.ssz_append(buf);
             }
         } else {
-            let mut encoder = ssz::SszEncoder::list(buf, self.len() * ssz::BYTES_PER_LENGTH_OFFSET);
+            let mut encoder = mif_ssz::SszEncoder::list(buf, self.len() * mif_ssz::BYTES_PER_LENGTH_OFFSET);
 
             for item in &self.vec {
                 encoder.append(item);
@@ -206,25 +206,25 @@ where
     }
 }
 
-impl<T, N: Unsigned> ssz::Decode for FixedVector<T, N>
+impl<T, N: Unsigned> mif_ssz::Decode for FixedVector<T, N>
 where
-    T: ssz::Decode + Default,
+    T: mif_ssz::Decode + Default,
 {
     fn is_ssz_fixed_len() -> bool {
         T::is_ssz_fixed_len()
     }
 
     fn ssz_fixed_len() -> usize {
-        if <Self as ssz::Decode>::is_ssz_fixed_len() {
+        if <Self as mif_ssz::Decode>::is_ssz_fixed_len() {
             T::ssz_fixed_len() * N::to_usize()
         } else {
-            ssz::BYTES_PER_LENGTH_OFFSET
+            mif_ssz::BYTES_PER_LENGTH_OFFSET
         }
     }
 
-    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, ssz::DecodeError> {
+    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, mif_ssz::DecodeError> {
         if bytes.is_empty() {
-            Err(ssz::DecodeError::InvalidByteLength {
+            Err(mif_ssz::DecodeError::InvalidByteLength {
                 len: 0,
                 expected: 1,
             })
@@ -237,7 +237,7 @@ where
                     if vec.len() == N::to_usize() {
                         Ok(vec.into())
                     } else {
-                        Err(ssz::DecodeError::BytesInvalid(format!(
+                        Err(mif_ssz::DecodeError::BytesInvalid(format!(
                             "wrong number of vec elements, got: {}, expected: {}",
                             vec.len(),
                             N::to_usize()
@@ -245,7 +245,7 @@ where
                     }
                 })
         } else {
-            ssz::decode_list_of_variable_length_items(bytes).and_then(|vec| Ok(vec.into()))
+            mif_ssz::decode_list_of_variable_length_items(bytes).and_then(|vec| Ok(vec.into()))
         }
     }
 }
@@ -253,7 +253,7 @@ where
 #[cfg(test)]
 mod test {
     use super::*;
-    use ssz::*;
+    use mif_ssz::*;
     use tree_hash::{merkle_root, TreeHash};
     use tree_hash_derive::TreeHash;
     use typenum::*;

@@ -2,8 +2,8 @@
 //!
 //! Useful for `cargo flamegraph`.
 
-use ssz::{Decode, Encode};
-use ssz_derive::{Decode, Encode};
+use mif_ssz::{Decode, Encode};
+use mif_ssz_derive::{Decode, Encode};
 
 #[derive(Clone, Copy, Encode, Decode)]
 pub struct FixedLen {

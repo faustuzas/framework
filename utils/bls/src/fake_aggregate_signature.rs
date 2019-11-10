@@ -6,7 +6,7 @@ use milagro_bls::G2Point;
 use serde::de::{Deserialize, Deserializer};
 use serde::ser::{Serialize, Serializer};
 use serde_hex::{encode as hex_encode, PrefixedHexVisitor};
-use ssz::{ssz_encode, Decode, DecodeError, Encode};
+use mif_ssz::{ssz_encode, Decode, DecodeError, Encode};
 
 /// A BLS aggregate signature.
 ///
@@ -120,7 +120,7 @@ impl<'de> Deserialize<'de> for FakeAggregateSignature {
 mod tests {
     use super::super::{Keypair, Signature};
     use super::*;
-    use ssz::ssz_encode;
+    use mif_ssz::ssz_encode;
 
     #[test]
     pub fn test_ssz_round_trip() {

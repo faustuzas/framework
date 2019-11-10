@@ -22,7 +22,7 @@ pub use typenum;
 /// ## Example
 ///
 /// ```
-/// use ssz_types::{VariableList, typenum};
+/// use mif_ssz_types::{VariableList, typenum};
 ///
 /// let base: Vec<u64> = vec![1, 2, 3, 4];
 ///
@@ -196,9 +196,9 @@ where
     }
 }
 
-impl<T, N: Unsigned> ssz::Encode for VariableList<T, N>
+impl<T, N: Unsigned> mif_ssz::Encode for VariableList<T, N>
 where
-    T: ssz::Encode,
+    T: mif_ssz::Encode,
 {
     fn is_ssz_fixed_len() -> bool {
         <Vec<T>>::is_ssz_fixed_len()
@@ -217,9 +217,9 @@ where
     }
 }
 
-impl<T, N: Unsigned> ssz::Decode for VariableList<T, N>
+impl<T, N: Unsigned> mif_ssz::Decode for VariableList<T, N>
 where
-    T: ssz::Decode,
+    T: mif_ssz::Decode,
 {
     fn is_ssz_fixed_len() -> bool {
         <Vec<T>>::is_ssz_fixed_len()
@@ -229,17 +229,17 @@ where
         <Vec<T>>::ssz_fixed_len()
     }
 
-    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, ssz::DecodeError> {
+    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, mif_ssz::DecodeError> {
         let vec = <Vec<T>>::from_ssz_bytes(bytes)?;
 
-        Self::new(vec).map_err(|e| ssz::DecodeError::BytesInvalid(format!("VariableList {:?}", e)))
+        Self::new(vec).map_err(|e| mif_ssz::DecodeError::BytesInvalid(format!("VariableList {:?}", e)))
     }
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use ssz::*;
+    use mif_ssz::*;
     use tree_hash::{merkle_root, TreeHash};
     use tree_hash_derive::TreeHash;
     use typenum::*;

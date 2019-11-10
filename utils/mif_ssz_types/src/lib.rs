@@ -14,7 +14,7 @@
 //!
 //! ## Example
 //! ```
-//! use ssz_types::*;
+//! use mif_ssz_types::*;
 //!
 //! pub struct Example {
 //!     bit_vector: BitVector<typenum::U8>,

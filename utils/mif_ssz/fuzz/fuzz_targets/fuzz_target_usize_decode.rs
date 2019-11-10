@@ -1,8 +1,8 @@
 #![no_main]
 #[macro_use] extern crate libfuzzer_sys;
-extern crate ssz;
+extern crate mif_ssz;
 
-use ssz::{DecodeError, decode};
+use mif_ssz::{DecodeError, decode};
 
 // Fuzz decode()
 fuzz_target!(|data: &[u8]| {

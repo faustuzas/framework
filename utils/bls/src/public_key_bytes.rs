@@ -1,4 +1,4 @@
-use ssz::{Decode, DecodeError, Encode};
+use mif_ssz::{Decode, DecodeError, Encode};
 
 use super::{PublicKey, BLS_PUBLIC_KEY_BYTE_SIZE};
 
@@ -14,7 +14,7 @@ bytes_struct!(
 mod tests {
     use std::convert::TryInto;
 
-    use ssz::ssz_encode;
+    use mif_ssz::ssz_encode;
 
     use super::super::Keypair;
     use super::*;

@@ -1,9 +1,9 @@
 #![no_main]
 #[macro_use] extern crate libfuzzer_sys;
 extern crate ethereum_types;
-extern crate ssz;
+extern crate mif_ssz;
 
-use ssz::SszStream;
+use mif_ssz::SszStream;
 
 // Fuzz ssz_encode()
 fuzz_target!(|data: &[u8]| {

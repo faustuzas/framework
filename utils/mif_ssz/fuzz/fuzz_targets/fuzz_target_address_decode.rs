@@ -1,10 +1,10 @@
 #![no_main]
 #[macro_use] extern crate libfuzzer_sys;
 extern crate ethereum_types;
-extern crate ssz;
+extern crate mif_ssz;
 
 use ethereum_types::Address;
-use ssz::{DecodeError, decode};
+use mif_ssz::{DecodeError, decode};
 
 // Fuzz ssz_decode()
 fuzz_target!(|data: &[u8]| {
