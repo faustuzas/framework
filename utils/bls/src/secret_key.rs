@@ -67,7 +67,7 @@ impl<'de> Deserialize<'de> for SecretKey {
     {
         let bytes = deserializer.deserialize_str(HexVisitor)?;
         let secret_key = SecretKey::from_ssz_bytes(&bytes[..])
-            .map_err(|e| serde::de::Error::custom(format!("invalid ssz ({:?})", e)))?;
+            .map_err(|e| serde::de::Error::custom(format!("invalid mif_ssz ({:?})", e)))?;
         Ok(secret_key)
     }
 }

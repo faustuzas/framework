@@ -384,8 +384,8 @@ impl<T: Decode> Decode for Vec<T> {
 
 /// Decodes `bytes` as if it were a list of variable-length items.
 ///
-/// The `ssz::SszDecoder` can also perform this functionality, however it it significantly faster
-/// as it is optimized to read same-typed items whilst `ssz::SszDecoder` supports reading items of
+/// The `mif_ssz::SszDecoder` can also perform this functionality, however it it significantly faster
+/// as it is optimized to read same-typed items whilst `mif_ssz::SszDecoder` supports reading items of
 /// differing types.
 pub fn decode_list_of_variable_length_items<T: Decode>(
     bytes: &[u8],

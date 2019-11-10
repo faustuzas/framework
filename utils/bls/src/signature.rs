@@ -128,7 +128,7 @@ impl<'de> Deserialize<'de> for Signature {
     {
         let bytes = deserializer.deserialize_str(HexVisitor)?;
         let signature = Self::from_ssz_bytes(&bytes[..])
-            .map_err(|e| serde::de::Error::custom(format!("invalid ssz ({:?})", e)))?;
+            .map_err(|e| serde::de::Error::custom(format!("invalid mif_ssz ({:?})", e)))?;
         Ok(signature)
     }
 }

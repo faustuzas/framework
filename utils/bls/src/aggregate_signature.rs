@@ -175,7 +175,7 @@ impl<'de> Deserialize<'de> for AggregateSignature {
     {
         let bytes = deserializer.deserialize_str(HexVisitor)?;
         let agg_sig = AggregateSignature::from_ssz_bytes(&bytes)
-            .map_err(|e| serde::de::Error::custom(format!("invalid ssz ({:?})", e)))?;
+            .map_err(|e| serde::de::Error::custom(format!("invalid mif_ssz ({:?})", e)))?;
 
         Ok(agg_sig)
     }

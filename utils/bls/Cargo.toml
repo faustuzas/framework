@@ -12,8 +12,8 @@ rand = "^0.5"
 serde = "1.0"
 serde_derive = "1.0"
 serde_hex = { path = "../serde_hex" }
-eth2_ssz = "0.1"
-eth2_ssz_types = { path = "../ssz_types" }
+mif_ssz = { path = "../mif_ssz" }
+mif_ssz_types = { path = "../mif_ssz_types" }
 tree_hash = "0.1"
 
 [features]

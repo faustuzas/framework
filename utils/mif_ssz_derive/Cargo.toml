@@ -1,0 +1,13 @@
+[package]
+name = "mif_ssz_derive"
+version = "0.1.0"
+authors = ["admin"]
+edition = "2018"
+description = "Procedural derive macros to accompany the mif_ssz crate."
+
+[lib]
+proc-macro = true
+
+[dependencies]
+syn = "0.15"
+quote = "0.6"

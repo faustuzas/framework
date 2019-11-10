@@ -170,8 +170,8 @@ impl<'a> SszDecoderBuilder<'a> {
 /// ## Example
 ///
 /// ```rust
-/// use ssz_derive::{Encode, Decode};
-/// use ssz::{Decode, Encode, SszDecoder, SszDecoderBuilder};
+/// use mif_ssz_derive::{Encode, Decode};
+/// use mif_ssz::{Decode, Encode, SszDecoder, SszDecoderBuilder};
 ///
 /// #[derive(PartialEq, Debug, Encode, Decode)]
 /// struct Foo {

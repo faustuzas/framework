@@ -8,8 +8,8 @@
 //! ## Example
 //!
 //! ```rust
-//! use ssz_derive::{Encode, Decode};
-//! use ssz::{Decode, Encode};
+//! use mif_ssz_derive::{Encode, Decode};
+//! use mif_ssz::{Decode, Encode};
 //!
 //! #[derive(PartialEq, Debug, Encode, Decode)]
 //! struct Foo {
@@ -62,7 +62,7 @@ pub const MAX_LENGTH_VALUE: usize = (std::u32::MAX >> (8 * (4 - BYTES_PER_LENGTH
 #[cfg(target_pointer_width = "64")]
 pub const MAX_LENGTH_VALUE: usize = (std::u64::MAX >> (8 * (8 - BYTES_PER_LENGTH_OFFSET))) as usize;
 
-/// Convenience function to SSZ encode an object supporting ssz::Encode.
+/// Convenience function to SSZ encode an object supporting mif_ssz::Encode.
 ///
 /// Equivalent to `val.as_ssz_bytes()`.
 pub fn ssz_encode<T>(val: &T) -> Vec<u8>

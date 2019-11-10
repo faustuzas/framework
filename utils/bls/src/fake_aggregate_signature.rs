@@ -111,7 +111,7 @@ impl<'de> Deserialize<'de> for FakeAggregateSignature {
     {
         let bytes = deserializer.deserialize_str(PrefixedHexVisitor)?;
         let obj = <_>::from_ssz_bytes(&bytes[..])
-            .map_err(|e| serde::de::Error::custom(format!("invalid ssz ({:?})", e)))?;
+            .map_err(|e| serde::de::Error::custom(format!("invalid mif_ssz ({:?})", e)))?;
         Ok(obj)
     }
 }

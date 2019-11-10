@@ -27,7 +27,7 @@ fn get_serializable_named_field_idents<'a>(
             } else {
                 Some(match &f.ident {
                     Some(ref ident) => ident,
-                    _ => panic!("ssz_derive only supports named struct fields."),
+                    _ => panic!("mif_ssz_derive only supports named struct fields."),
                 })
             }
         })
@@ -52,20 +52,20 @@ fn get_serializable_field_types<'a>(struct_data: &'a syn::DataStruct) -> Vec<&'a
 
 /// Returns true if some field has an attribute declaring it should not be serialized.
 ///
-/// The field attribute is: `#[ssz(skip_serializing)]`
+/// The field attribute is: `#[mif_ssz(skip_serializing)]`
 fn should_skip_serializing(field: &syn::Field) -> bool {
     field.attrs.iter().any(|attr| {
-        attr.path.is_ident("ssz") && attr.tts.to_string().replace(" ", "") == "(skip_serializing)"
+        attr.path.is_ident("mif_ssz") && attr.tts.to_string().replace(" ", "") == "(skip_serializing)"
     })
 }
 
-/// Implements `ssz::Encode` for some `struct`.
+/// Implements `mif_ssz::Encode` for some `struct`.
 ///
 /// Fields are encoded in the order they are defined.
 ///
 /// ## Field attributes
 ///
-/// - `#[ssz(skip_serializing)]`: the field will not be serialized.
+/// - `#[mif_ssz(skip_serializing)]`: the field will not be serialized.
 #[proc_macro_derive(Encode, attributes(ssz))]
 pub fn ssz_encode_derive(input: TokenStream) -> TokenStream {
     let item = parse_macro_input!(input as DeriveInput);
@@ -75,7 +75,7 @@ pub fn ssz_encode_derive(input: TokenStream) -> TokenStream {
 
     let struct_data = match &item.data {
         syn::Data::Struct(s) => s,
-        _ => panic!("ssz_derive only supports structs."),
+        _ => panic!("mif_ssz_derive only supports structs."),
     };
 
     let field_idents = get_serializable_named_field_idents(&struct_data);
@@ -145,20 +145,20 @@ pub fn ssz_encode_derive(input: TokenStream) -> TokenStream {
 
 /// Returns true if some field has an attribute declaring it should not be deserialized.
 ///
-/// The field attribute is: `#[ssz(skip_deserializing)]`
+/// The field attribute is: `#[mif_ssz(skip_deserializing)]`
 fn should_skip_deserializing(field: &syn::Field) -> bool {
     field.attrs.iter().any(|attr| {
-        attr.path.is_ident("ssz") && attr.tts.to_string().replace(" ", "") == "(skip_deserializing)"
+        attr.path.is_ident("mif_ssz") && attr.tts.to_string().replace(" ", "") == "(skip_deserializing)"
     })
 }
 
-/// Implements `ssz::Decode` for some `struct`.
+/// Implements `mif_ssz::Decode` for some `struct`.
 ///
 /// Fields are decoded in the order they are defined.
 ///
 /// ## Field attributes
 ///
-/// - `#[ssz(skip_deserializing)]`: during de-serialization the field will be instantiated from a
+/// - `#[mif_ssz(skip_deserializing)]`: during de-serialization the field will be instantiated from a
 /// `Default` implementation. The decoder will assume that the field was not serialized at all
 /// (e.g., if it has been serialized, an error will be raised instead of `Default` overriding it).
 #[proc_macro_derive(Decode)]
@@ -170,7 +170,7 @@ pub fn ssz_decode_derive(input: TokenStream) -> TokenStream {
 
     let struct_data = match &item.data {
         syn::Data::Struct(s) => s,
-        _ => panic!("ssz_derive only supports structs."),
+        _ => panic!("mif_ssz_derive only supports structs."),
     };
 
     let mut register_types = vec![];
@@ -208,7 +208,7 @@ pub fn ssz_decode_derive(input: TokenStream) -> TokenStream {
                     });
                 }
             }
-            _ => panic!("ssz_derive only supports named struct fields."),
+            _ => panic!("mif_ssz_derive only supports named struct fields."),
         };
     }
 

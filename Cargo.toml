@@ -4,9 +4,9 @@ members = [
     'utils/bls',
     'utils/eth2_hashing',
     'utils/serde_hex',
-    'utils/ssz',
-    'utils/ssz_derive',
-    'utils/ssz_types',
+    'utils/mif_ssz',
+    'utils/mif_ssz_derive',
+    'utils/mif_ssz_types',
     'utils/tree_hash',
     'utils/tree_hash_derive',
 ]
@@ -18,6 +18,3 @@ overflow-checks = true
 [patch.crates-io]
 tree_hash = { path = "utils/tree_hash" }
 tree_hash_derive = { path = "utils/tree_hash_derive" }
-eth2_ssz = { path = "utils/ssz" }
-eth2_ssz_derive = { path = "utils/ssz_derive" }
-eth2_ssz_types = { path = "utils/ssz_types" }

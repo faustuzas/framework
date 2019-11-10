@@ -164,7 +164,7 @@ macro_rules! bytes_struct {
             {
                 let bytes = deserializer.deserialize_str(serde_hex::HexVisitor)?;
                 let signature = Self::from_ssz_bytes(&bytes[..])
-                    .map_err(|e| serde::de::Error::custom(format!("invalid ssz ({:?})", e)))?;
+                    .map_err(|e| serde::de::Error::custom(format!("invalid mif_ssz ({:?})", e)))?;
                 Ok(signature)
             }
         }

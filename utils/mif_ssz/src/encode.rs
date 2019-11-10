@@ -55,8 +55,8 @@ pub trait Encode {
 /// Use `SszEncoder` to produce identical output to `foo.as_ssz_bytes()`:
 ///
 /// ```rust
-/// use ssz_derive::{Encode, Decode};
-/// use ssz::{Decode, Encode, SszEncoder};
+/// use mif_ssz_derive::{Encode, Decode};
+/// use mif_ssz::{Decode, Encode, SszEncoder};
 ///
 /// #[derive(PartialEq, Debug, Encode, Decode)]
 /// struct Foo {

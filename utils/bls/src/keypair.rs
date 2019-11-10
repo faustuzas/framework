@@ -34,7 +34,7 @@ impl Hash for Keypair {
     /// This method uses the uncompressed bytes, which are much faster to obtain than the
     /// compressed bytes required for consensus serialization.
     ///
-    /// Use `ssz::Encode` to obtain the bytes required for consensus hashing.
+    /// Use `mif_ssz::Encode` to obtain the bytes required for consensus hashing.
     fn hash<H: Hasher>(&self, state: &mut H) {
         self.pk.as_uncompressed_bytes().hash(state)
     }

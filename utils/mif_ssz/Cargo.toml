@@ -1,0 +1,11 @@
+[package]
+name = "mif_ssz"
+version = "0.1.0"
+authors = ["admin"]
+edition = "2018"
+
+[dependencies]
+ethereum-types = "0.6"
+
+[dev-dependencies]
+mif_ssz_derive = { path = "../mif_ssz_derive" }
