@@ -51,7 +51,10 @@ pub trait Decode: Sized {
 }
 
 #[derive(Copy, Clone, Debug)]
-pub struct Offset {}
+pub struct Offset {
+    offset: usize,
+    pos: usize,
+}
 
 /// Builds an `SszDecoder`.
 ///
@@ -80,7 +83,42 @@ impl<'a> SszDecoderBuilder<'a> {
 
     /// Declares that some type `T` is the next item in `bytes`.
     pub fn register_type<T: Decode>(&mut self) -> Result<(), DecodeError> {
-        panic!("fn is not yet implemented!");
+        if T::is_ssz_fixed_len() {
+            let begin = self.items_index;
+            self.items_index += T::ssz_fixed_len();
+
+            let part = self.bytes.get(begin..self.items_index).ok_or_else(|| {
+                DecodeError::InvalidByteLength {
+                    expected: self.items_index,
+                    len: self.bytes.len(),
+                }
+            })?;
+
+            self.items.push(part);
+        } else {
+            let offset = read_offset(&self.bytes[self.items_index..])?;
+
+            let prev_offset = self.offsets.last().and_then(|o| Some(o.offset))
+                .unwrap_or_else(|| BYTES_PER_LENGTH_OFFSET);
+
+            if (offset < prev_offset) || (offset > self.bytes.len()) {
+                return Err(DecodeError::OutOfBoundsByte { i: offset });
+            }
+
+            new_offset = Offset {
+                offset,
+                pos: self.items.len(),
+            };
+
+            self.offsets.push(new_offset);
+
+            // Push an empty slice into items; it will be replaced later.
+            self.items.push(&[]);
+
+            self.items_index += BYTES_PER_LENGTH_OFFSET;
+        }
+
+        Ok(())
     }
 
     /// Finalizes the builder, returning a `SszDecoder` that may be used to instantiate objects.
@@ -152,7 +190,7 @@ pub fn read_union_index(bytes: &[u8]) -> Result<usize, DecodeError> {
 /// Reads a `BYTES_PER_LENGTH_OFFSET`-byte length from `bytes`, where `bytes.len() >=
 /// BYTES_PER_LENGTH_OFFSET`.
 fn read_offset(byte_stream: &[u8]) -> Result<usize, DecodeError> {
-    let expect =  BYTES_PER_LENGTH_OFFSET;
+    let expect = BYTES_PER_LENGTH_OFFSET;
     decode_offset(byte_stream.get(0..BYTES_PER_LENGTH_OFFSET).ok_or_else(|| {
         DecodeError::InvalidLengthPrefix {
             expected: expect,
