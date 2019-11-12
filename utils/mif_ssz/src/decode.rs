@@ -1,4 +1,6 @@
 use super::*;
+use std::default::Default;
+
 
 pub mod impls;
 
@@ -49,7 +51,7 @@ pub trait Decode: Sized {
 }
 
 #[derive(Copy, Clone, Debug)]
-pub struct Offset { }
+pub struct Offset {}
 
 /// Builds an `SszDecoder`.
 ///
@@ -147,5 +149,18 @@ pub fn read_union_index(bytes: &[u8]) -> Result<usize, DecodeError> {
     panic!("fn is not yet implemented!");
 }
 
+/// Decode bytes as a little-endian usize, returning an `Err` if `bytes.len() !=
+/// BYTES_PER_LENGTH_OFFSET`.
+fn decode_offset(byte_stream: &[u8]) -> Result<usize, DecodeError> {
+    let expect = BYTES_PER_LENGTH_OFFSET;
+    let lg = byte_stream.len();
 
+    if expect != lg {
+        return Err(DecodeError::InvalidLengthPrefix { len: lg, expected: expect });
+    }
 
+    let mut array: [u8; BYTES_PER_LENGTH_OFFSET] = Default::default();
+    array.clone_from_slice(byte_stream);
+
+    Ok(u32::from_le_bytes(array) as usize)
+}
