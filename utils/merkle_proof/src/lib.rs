@@ -7,21 +7,21 @@ use ethereum_types::H256;
 const MAX_TREE_DEPTH: usize = 32;
 const EMPTY_SLICE: &[H256] = &[];
 
-lazy_static! {
-    static ref ZERO_HASHES: Vec<H256> = {
-        let mut hashes = vec![H256::from([0; 32]); MAX_TREE_DEPTH + 1];
+// lazy_static! {
+//     static ref ZERO_HASHES: Vec<H256> = {
+//         let mut hashes = vec![H256::from([0; 32]); MAX_TREE_DEPTH + 1];
 
-        for i in 0..MAX_TREE_DEPTH {
-            hashes[i + 1] = hash_and_concat(hashes[i], hashes[i]);
-        }
+//         for i in 0..MAX_TREE_DEPTH {
+//             hashes[i + 1] = hash_and_concat(hashes[i], hashes[i]);
+//         }
 
-        hashes
-    };
+//         hashes
+//     };
 
-    static ref ZERO_NODES: Vec<MerkleTree> = {
-        (0..=MAX_TREE_DEPTH).map(MerkleTree::Zero).collect()
-    };
-}
+//     static ref ZERO_NODES: Vec<MerkleTree> = {
+//         (0..=MAX_TREE_DEPTH).map(MerkleTree::Zero).collect()
+//     };
+// }
 
 #[derive(Debug)]
 pub enum MerkleTree {
@@ -142,9 +142,7 @@ fn concat(mut vec1: Vec<u8>, mut vec2: Vec<u8>) -> Vec<u8> {
     return vec1;
 }
 
-fn get_generalized_index_bit(index: usize, i: usize) -> bool {
-    ((index >> i) & 0x01) == 1
-}
+
 
 
 fn hash_and_concat(h1: H256, h2: H256) -> H256 {
@@ -157,7 +155,48 @@ fn hash_and_concat(h1: H256, h2: H256) -> H256 {
 fn get_next_power_of_two(depth: usize) -> usize {
     2usize.pow(depth as u32)      
 }
+///---------
+fn get_previous_power_of_two(x: usize) -> usize {
+    if x <= 2 {
+        return x;
+    } else {
+        return 2 * get_previous_power_of_two(x/2);
+    }
+}
 
+fn maybe_get_next_power_of_two(depth: usize) -> usize {
+    if x <= 2 {
+        return x;
+    } else {
+        return 2 * maybe_get_next_power_of_two((x+1)/2);
+    }    
+}
+
+fn concat_generalized_indices(indices: &[usize]) -> usize {
+    let usize o = 1;
+    for index in indices.iter():
+        o = o * get_previous_power_of_two(index) + (index - get_previous_power_of_two(index));
+    return o;
+}
+
+fn get_generalized_index_length(index: usize) -> usize {
+   return log2(index);
+}
+
+fn get_generalized_index_bit(index: usize, position: usize) -> bool {
+    // ((index >> position) & 0x01) == 1 lighthouse 
+    ((index >> position) & 0x01) > 0 //dokumentacija
+}
+
+fn generalized_index_sibling(index: usize) -> usize {
+    return index^1;
+}
+
+
+fn generalized_index_sibling(index: usize, right_side: bool) -> usize {
+    let is_right = if right_side {1} else {0};
+    return index*2 + is_right;
+}
 //paklausti ar reik:
 // kokiu funkciju man reik?-nera dokumentacijoj;
 // verify_merkle_multiproof? yra dokumentacijoj
