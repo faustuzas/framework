@@ -111,11 +111,29 @@ impl Decode for NonZeroUsize {
 /// The SSZ union type.
 impl<T: Decode> Decode for Option<T> {
     fn is_ssz_fixed_len() -> bool {
-        panic!("not yet implemented!");
+        false
     }
 
-    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
-        panic!("not yet implemented!");
+    fn from_ssz_bytes(byte_stream: &[u8]) -> Result<Self, DecodeError> {
+        let lg = byte_stream.len();
+        if BYTES_PER_LENGTH_OFFSET > lg {
+            return Err(DecodeError::InvalidByteLength {
+                expected: BYTES_PER_LENGTH_OFFSET,
+                len: lg,
+            });
+        }
+
+        let (index_bytes, value_bytes) = byte_stream.split_at(BYTES_PER_LENGTH_OFFSET);
+
+        let index = read_union_index(index_bytes)?;
+        match index {
+            0 => Ok(None),
+            1 => Ok(Some(T::from_ssz_bytes(value_bytes)?)),
+            _ => Err(DecodeError::BytesInvalid(format!(
+                "{} is not a valid union index for Option<T>",
+                index
+            ))),
+        }
     }
 }
 
