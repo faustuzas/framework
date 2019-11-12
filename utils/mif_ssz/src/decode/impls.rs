@@ -137,47 +137,70 @@ impl<T: Decode> Decode for Option<T> {
     }
 }
 
+
 impl Decode for H256 {
     fn is_ssz_fixed_len() -> bool {
-        panic!("not yet implemented!");
+        true
     }
 
     fn ssz_fixed_len() -> usize {
-        panic!("not yet implemented!");
+        32
     }
 
-    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
-        panic!("not yet implemented!");
+    fn from_ssz_bytes(byte_stream: &[u8]) -> Result<Self, DecodeError> {
+        let expect = <Self as Decode>::ssz_fixed_len();
+        let lg = byte_stream.len();
+
+        if expect != lg {
+            Err(DecodeError::InvalidByteLength { expected: expect, len: lg })
+        } else {
+            Ok(H256::from_slice(byte_stream))
+        }
     }
 }
 
 impl Decode for U256 {
     fn is_ssz_fixed_len() -> bool {
-        panic!("not yet implemented!");
+        true
     }
 
     fn ssz_fixed_len() -> usize {
-        panic!("not yet implemented!");
+        32
     }
 
-    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
-        panic!("not yet implemented!");
+    fn from_ssz_bytes(byte_stream: &[u8]) -> Result<Self, DecodeError> {
+        let expect = <Self as Decode>::ssz_fixed_len();
+        let lg = byte_stream.len();
+
+        if expect != lg {
+            Err(DecodeError::InvalidByteLength { expected: expect, len: lg })
+        } else {
+            Ok(U256::from_little_endian(byte_stream))
+        }
     }
 }
 
 impl Decode for U128 {
     fn is_ssz_fixed_len() -> bool {
-        panic!("not yet implemented!");
+        true
     }
 
     fn ssz_fixed_len() -> usize {
-        panic!("not yet implemented!");
+        16
     }
 
-    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
-        panic!("not yet implemented!");
+    fn from_ssz_bytes(byte_stream: &[u8]) -> Result<Self, DecodeError> {
+        let expect = <Self as Decode>::ssz_fixed_len();
+        let lg = byte_stream.len();
+
+        if expect != lg {
+            Err(DecodeError::InvalidByteLength { expected: expect, len: lg })
+        } else {
+            Ok(U128::from_little_endian(byte_stream))
+        }
     }
 }
+
 
 macro_rules! impl_decodable_for_u8_array {
     ($len: expr) => {
