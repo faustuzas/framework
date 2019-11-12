@@ -146,7 +146,7 @@ impl<'a> SszDecoder<'a> {
 /// Reads a `BYTES_PER_LENGTH_OFFSET`-byte union index from `bytes`, where `bytes.len() >=
 /// BYTES_PER_LENGTH_OFFSET`.
 pub fn read_union_index(bytes: &[u8]) -> Result<usize, DecodeError> {
-    panic!("fn is not yet implemented!");
+    read_offset(bytes)
 }
 
 /// Reads a `BYTES_PER_LENGTH_OFFSET`-byte length from `bytes`, where `bytes.len() >=
