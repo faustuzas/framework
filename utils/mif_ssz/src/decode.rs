@@ -105,12 +105,10 @@ impl<'a> SszDecoderBuilder<'a> {
                 return Err(DecodeError::OutOfBoundsByte { i: offset });
             }
 
-            new_offset = Offset {
+            self.offsets.push( Offset {
                 offset,
                 pos: self.items.len(),
-            };
-
-            self.offsets.push(new_offset);
+            });
 
             // Push an empty slice into items; it will be replaced later.
             self.items.push(&[]);
