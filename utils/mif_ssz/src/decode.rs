@@ -105,7 +105,7 @@ impl<'a> SszDecoderBuilder<'a> {
                 return Err(DecodeError::OutOfBoundsByte { i: offset });
             }
 
-            self.offsets.push( Offset {
+            self.offsets.push(Offset {
                 offset,
                 pos: self.items.len(),
             });
@@ -158,7 +158,7 @@ impl<'a> SszDecoderBuilder<'a> {
     /// Finalizes the builder, returning a `SszDecoder` that may be used to instantiate objects.
     pub fn build(mut self) -> Result<SszDecoder<'a>, DecodeError> {
         self.finalize()?;
-        panic!("fn is not yet implemented!");
+        Ok(SszDecoder { items: self.items })
     }
 }
 
@@ -212,7 +212,7 @@ impl<'a> SszDecoder<'a> {
     ///
     /// Panics when attempting to decode more items than actually exist.
     pub fn decode_next<T: Decode>(&mut self) -> Result<T, DecodeError> {
-        panic!("fn is not yet implemented!");
+        T::from_ssz_bytes(self.items.remove(0))
     }
 }
 
