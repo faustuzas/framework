@@ -59,15 +59,28 @@ macro_rules! impl_decode_for_tuples {
 
 impl Decode for bool {
     fn is_ssz_fixed_len() -> bool {
-        panic!("not yet implemented!");
+        true
     }
 
     fn ssz_fixed_len() -> usize {
-        panic!("not yet implemented!");
+        1
     }
 
-    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
-        panic!("not yet implemented!");
+    fn from_ssz_bytes(byte_stream: &[u8]) -> Result<Self, DecodeError> {
+        let expect = <Self as Decode>::ssz_fixed_len();
+        let lg = byte_stream.len();
+
+        if expect != lg {
+            return Err(DecodeError::InvalidByteLength { len: lg, expected: expect })
+        }
+
+        match byte_stream[0] {
+            0b0000_0001 => Ok(true),
+            0b0000_0000 => Ok(false),
+            _ => Err(DecodeError::BytesInvalid(
+                format!("Out-of-range for boolean: {}", byte_stream[0]).to_string(),
+            )),
+        }
     }
 }
 
