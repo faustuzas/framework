@@ -119,8 +119,45 @@ impl<'a> SszDecoderBuilder<'a> {
         Ok(())
     }
 
+    fn finalize(&mut self) -> Result<(), DecodeError> {
+        if !self.offsets.is_empty() {
+            // Check to ensure the first offset points to the byte immediately following the
+            // fixed-length bytes.
+            if self.offsets[0].offset != self.items_index {
+                return Err(DecodeError::OutOfBoundsByte {
+                    i: self.offsets[0].offset,
+                });
+            }
+
+            // Iterate through each pair of offsets, grabbing the slice between each of the offsets.
+            for pair in self.offsets.windows(2) {
+                let a = pair[0];
+                let b = pair[1];
+
+                self.items[a.pos] = &self.bytes[a.offset..b.offset];
+            }
+
+            // Handle the last offset, pushing a slice from it's start through to the end of
+            // `self.bytes`.
+            if let Some(last) = self.offsets.last() {
+                self.items[last.pos] = &self.bytes[last.offset..]
+            }
+        } else {
+            // If the container is fixed-length, ensure there are no excess bytes.
+            if self.items_index != self.bytes.len() {
+                return Err(DecodeError::InvalidByteLength {
+                    len: self.bytes.len(),
+                    expected: self.items_index,
+                });
+            }
+        }
+
+        Ok(())
+    }
+
     /// Finalizes the builder, returning a `SszDecoder` that may be used to instantiate objects.
     pub fn build(mut self) -> Result<SszDecoder<'a>, DecodeError> {
+        self.finalize()?;
         panic!("fn is not yet implemented!");
     }
 }
