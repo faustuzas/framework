@@ -71,7 +71,7 @@ impl Decode for bool {
         let lg = byte_stream.len();
 
         if expect != lg {
-            return Err(DecodeError::InvalidByteLength { len: lg, expected: expect })
+            return Err(DecodeError::InvalidByteLength { len: lg, expected: expect });
         }
 
         match byte_stream[0] {
@@ -86,15 +86,25 @@ impl Decode for bool {
 
 impl Decode for NonZeroUsize {
     fn is_ssz_fixed_len() -> bool {
-        panic!("not yet implemented!");
+        <usize as Decode>::is_ssz_fixed_len()
     }
 
     fn ssz_fixed_len() -> usize {
-        panic!("not yet implemented!");
+        <usize as Decode>::ssz_fixed_len()
     }
 
-    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
-        panic!("not yet implemented!");
+    fn from_ssz_bytes(byte_stream: &[u8]) -> Result<Self, DecodeError> {
+        let x = usize::from_ssz_bytes(byte_stream)?;
+
+        if x == 0 {
+            Err(DecodeError::BytesInvalid(
+                "NonZeroUsize cannot be zero.".to_string(),
+            ))
+        } else {
+            // `unwrap` is safe here as `NonZeroUsize::new()` succeeds if `x > 0` and this path
+            // never executes when `x == 0`.
+            Ok(NonZeroUsize::new(x).unwrap())
+        }
     }
 }
 
