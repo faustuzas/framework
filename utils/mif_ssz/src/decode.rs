@@ -149,6 +149,18 @@ pub fn read_union_index(bytes: &[u8]) -> Result<usize, DecodeError> {
     panic!("fn is not yet implemented!");
 }
 
+/// Reads a `BYTES_PER_LENGTH_OFFSET`-byte length from `bytes`, where `bytes.len() >=
+/// BYTES_PER_LENGTH_OFFSET`.
+fn read_offset(byte_stream: &[u8]) -> Result<usize, DecodeError> {
+    let expect =  BYTES_PER_LENGTH_OFFSET;
+    decode_offset(byte_stream.get(0..BYTES_PER_LENGTH_OFFSET).ok_or_else(|| {
+        DecodeError::InvalidLengthPrefix {
+            expected: expect,
+            len: byte_stream.len(),
+        }
+    })?)
+}
+
 /// Decode bytes as a little-endian usize, returning an `Err` if `bytes.len() !=
 /// BYTES_PER_LENGTH_OFFSET`.
 fn decode_offset(byte_stream: &[u8]) -> Result<usize, DecodeError> {
