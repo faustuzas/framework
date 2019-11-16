@@ -1,4 +1,4 @@
-mod impls;
+pub mod impls;
 
 use super::*;
 
@@ -32,7 +32,6 @@ pub trait Decode: Sized {
     /// Deserializes the object
     fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError>;
 }
-
 
 #[derive(Copy, Clone, Debug)]
 pub struct Offset {
