@@ -1,29 +1,46 @@
 #[macro_use]
 extern crate lazy_static;
-
+macro_rules! log_of {
+    ($val:expr, $base:expr, $type:ty) => {
+         ($val as f32).log($base) as $type
+    }
+}
+use std::collections::HashMap;
+use math::round;
 use eth2_hashing::hash;
 use ethereum_types::H256;
 // pub struct H256(pub [u8; 32]);
 const MAX_TREE_DEPTH: usize = 32;
 const EMPTY_SLICE: &[H256] = &[];
+const fn num_bits<T>() -> usize { std::mem::size_of::<T>() * 8 }
 
-// lazy_static! {
-//     static ref ZERO_HASHES: Vec<H256> = {
-//         let mut hashes = vec![H256::from([0; 32]); MAX_TREE_DEPTH + 1];
+lazy_static! {
+    static ref ZERO_HASHES: Vec<H256> = {
+        let mut hashes = vec![H256::from([0; 32]); MAX_TREE_DEPTH + 1];
 
-//         for i in 0..MAX_TREE_DEPTH {
-//             hashes[i + 1] = hash_and_concat(hashes[i], hashes[i]);
-//         }
+        for i in 0..MAX_TREE_DEPTH {
+            hashes[i + 1] = hash_and_concat(hashes[i], hashes[i]);
+        }
 
-//         hashes
-//     };
+        hashes
+    };
 
-//     static ref ZERO_NODES: Vec<MerkleTree> = {
-//         (0..=MAX_TREE_DEPTH).map(MerkleTree::Zero).collect()
-//     };
+    static ref ZERO_NODES: Vec<MerkleTree> = {
+        (0..=MAX_TREE_DEPTH).map(MerkleTree::Zero).collect()
+    };
+}
+
+// pub fn zero_hash(depth: usize) -> Vec<H256>{
+//     let mut hashes = vec![H256::from([0; 32]); MAX_TREE_DEPTH + 1];
+
+//     for i in 0..MAX_TREE_DEPTH {
+//         hashes[i + 1] = hash_and_concat(hashes[i], hashes[i]);
+//     }
+
+//     hashes
 // }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum MerkleTree {
     Leaf(H256),
     Node(H256, Box<Self>, Box<Self>),
@@ -73,7 +90,7 @@ impl MerkleTree {
         }
     }
 
-    pub fn make_proof(&self, index: usize, depth: usize) -> (H256, Vec<H256>) { // no tests made 
+    pub fn make_proof(&self, index: usize, depth: usize) -> (H256, Vec<H256>) { 
         let mut proof = vec![];
         let mut current_node = self;
         let mut current_depth = depth;
@@ -118,7 +135,7 @@ fn calculate_merkle_root(
       depth: usize,
        index: usize,) -> H256 { 
 
-    assert_eq!(proof.len(), depth, "proof length should equal depth");
+    assert_eq!(proof.len(), get_generalized_index_length(index), "proof length should equal depth");
 
     let mut root = leaf.as_bytes().to_vec();
 
@@ -164,7 +181,7 @@ fn get_previous_power_of_two(x: usize) -> usize {
     }
 }
 
-fn maybe_get_next_power_of_two(depth: usize) -> usize {
+fn maybe_get_next_power_of_two(x: usize) -> usize {
     if x <= 2 {
         return x;
     } else {
@@ -173,15 +190,23 @@ fn maybe_get_next_power_of_two(depth: usize) -> usize {
 }
 
 fn concat_generalized_indices(indices: &[usize]) -> usize {
-    let usize o = 1;
-    for index in indices.iter():
-        o = o * get_previous_power_of_two(index) + (index - get_previous_power_of_two(index));
+    let o = 1usize;
+    for index in indices.iter() {
+        o = o * get_previous_power_of_two(*index) + (index - get_previous_power_of_two(*index));
+    }
     return o;
 }
 
 fn get_generalized_index_length(index: usize) -> usize {
-   return log2(index);
+   return log_of!(index, 2., usize);
 }
+
+
+
+// fn log_2(x: i32) -> u32 {
+//     assert!(x > 0);
+//     num_bits::<i32>() as u32 - x.leading_zeros() - 1
+// }
 
 fn get_generalized_index_bit(index: usize, position: usize) -> bool {
     // ((index >> position) & 0x01) == 1 lighthouse 
@@ -193,10 +218,168 @@ fn generalized_index_sibling(index: usize) -> usize {
 }
 
 
-fn generalized_index_sibling(index: usize, right_side: bool) -> usize {
+fn generalized_index_child(index: usize, right_side: bool) -> usize {
     let is_right = if right_side {1} else {0};
     return index*2 + is_right;
 }
+
+fn generalized_index_parent(index: usize) -> usize {
+    return round::floor(index / 2, 0);
+}
+    // return GeneralizedIndex(index // 2)
+//----------------------------------------
+fn get_branch_indices(tree_index: usize) -> Vec<usize> {
+    // """
+    // Get the generalized indices of the sister chunks along the path from the chunk with the
+    // given tree index to the root.
+    // """
+    
+    let mut o = vec![generalized_index_sibling(tree_index)];
+    
+    while o.last() > Some(&1usize) {
+        let temporary_index = o.last().cloned().unwrap();
+        let mut temporary = vec![generalized_index_sibling(generalized_index_parent(temporary_index))];
+            o.append(&mut temporary);
+    }
+    return o;
+}
+
+fn get_path_indices(tree_index: usize) -> Vec<usize> {
+    //    """
+    // Get the generalized indices of the chunks along the path from the chunk with the
+    // given tree index to the root.
+    // """
+    // o = [tree_index]
+    
+    let mut o = vec![tree_index];
+    while o.last() > Some(&1usize) {
+        let temporary_index = o.last().cloned().unwrap();
+        o.append(&mut vec![generalized_index_parent(temporary_index)]);
+    }
+    return o; 
+}
+
+fn get_helper_indices(indices: &[usize]) -> Vec<usize> {
+    
+    // """
+    // Get the generalized indices of all "extra" chunks in the tree needed to prove the chunks with the given
+    // generalized indices. Note that the decreasing order is chosen deliberately to ensure equivalence to the
+    // order of hashes in a regular single-item Merkle proof in the single-item case.
+    // """
+
+    let mut all_helper_indices: Vec<usize> = vec![];
+    let mut all_path_indices: Vec<usize> = vec![];
+    for index in indices.iter() {
+        all_helper_indices.append(&mut get_branch_indices(*index).clone());
+        all_path_indices.append(&mut get_path_indices(*index).clone());      
+    }
+
+    //let mut answer: Vec<usize> = vec![1];
+
+   // answer = all_helper_indices.append(&mut all_path_indices);
+    
+    let answer: Vec<usize> = all_helper_indices.iter().zip(&all_path_indices).filter(|&(a, b)| a != b).collect();
+   
+    return  answer;
+}   
+//----------------------------------------
+fn m_verify_merkle_proof(leaf: H256, proof: &[H256], index: usize, root: H256) -> bool {
+    return m_calculate_merkle_root(leaf, proof, index) == root
+}
+
+
+fn m_calculate_merkle_root(leaf: H256, proof: &[H256], index: usize) -> H256 {
+    assert_eq!( proof.len(), get_generalized_index_length(index), "OH SHIET");
+    let mut root = leaf.as_bytes().to_vec();
+
+    for (i, leaf) in proof.iter().enumerate() {
+        if get_generalized_index_bit(index, i) {    
+            let input = concat(leaf.as_bytes().to_vec(), root);
+            root = hash(&input);
+        } else {
+            let mut input = root;
+            input.extend_from_slice(leaf.as_bytes());
+            root = hash(&input);
+        }
+    }
+    return H256::from_slice(&root);
+}
+
+//----------------------------------------
+
+fn m_verify_merkle_multiproof(leaves: &[H256],  proof: &[H256], indices: &[usize], root: H256) -> bool {
+    return calculate_multi_merkle_root(leaves, proof, indices) == root
+}
+
+
+fn calculate_multi_merkle_root(leaves: &[H256], proof: &[H256], indices: &[usize]) -> H256 {
+    let mut book_reviews = HashMap::new();
+    let mut book_reviews = HashMap::new();
+
+    // assert len(leaves) == len(indices)
+    let helper_indices = get_helper_indices(indices);
+    // assert len(proof) == len(helper_indices)
+    let mut book_reviews = HashMap::new();
+
+    objects = {
+    **{index: node for index, node in zip(indices, leaves)},
+    **{index: node for index, node in zip(helper_indices, proof)}
+    }
+    keys = sorted(objects.keys(), reverse=True)
+    pos = 0
+    while pos < len(keys) {
+        k = keys[pos]
+        if k in objects and k ^ 1 in objects and k // 2 not in objects:
+        objects[GeneralizedIndex(k // 2)] = hash(
+        objects[GeneralizedIndex((k | 1) ^ 1)] +
+        objects[GeneralizedIndex(k | 1)]
+        )
+        keys.append(GeneralizedIndex(k // 2))
+        pos += 1
+    }
+    // R5da554c325ff5
+    return objects[GeneralizedIndex(1)]    
+}
+
+//-----------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //paklausti ar reik:
 // kokiu funkciju man reik?-nera dokumentacijoj;
 // verify_merkle_multiproof? yra dokumentacijoj
