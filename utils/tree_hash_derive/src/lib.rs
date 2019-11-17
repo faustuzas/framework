@@ -1,6 +1,8 @@
 #![allow(clippy::needless_borrow)]
 
 #![recursion_limit = "256"]
+#![allow(clippy::needless_borrow)]
+
 extern crate proc_macro;
 
 use proc_macro::TokenStream;
