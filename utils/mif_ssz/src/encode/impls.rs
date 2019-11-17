@@ -173,7 +173,7 @@ macro_rules! le_integer_encoding_impl {
 
             fn ssz_append(&self, buf: &mut Vec<u8>) {
                 let current_size = buf.len();
-                let additional_size = Self::ssz_fixed_len();
+                let additional_size = <Self as Encode>::ssz_fixed_len();
 
                 buf.resize(current_size + additional_size, 0);
                 self.to_little_endian(&mut buf[current_size..]);

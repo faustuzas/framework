@@ -1,14 +1,17 @@
 use super::*;
+use std::mem;
+use core::num::NonZeroUsize;
+use ethereum_types::{H256, U128, U256};
 
 macro_rules! uint_n_decoding_impl {
-    ($type: ident, $bit_size: expr) => {
+    ($type: ident, $size: expr) => {
         impl Decode for $type {
             fn is_ssz_fixed_len() -> bool {
                 true
             }
 
             fn ssz_fixed_len() -> usize {
-                $bit_size / 8
+                $size / 8
             }
 
             fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
@@ -16,13 +19,13 @@ macro_rules! uint_n_decoding_impl {
                 let expected = <Self as Decode>::ssz_fixed_len();
 
                 if len != expected {
-                    Err(DecodeError::InvalidByteLength { len, expected })
-                } else {
-                    let mut array: [u8; $bit_size / 8] = std::default::Default::default();
-                    array.clone_from_slice(bytes);
-
-                    Ok(Self::from_le_bytes(array))
+                    return Err(DecodeError::InvalidByteLength { len, expected })
                 }
+
+                let mut array: [u8; $size / 8] = std::default::Default::default();
+                array.clone_from_slice(bytes);
+
+                Ok(Self::from_le_bytes(array))
             }
         }
     };
@@ -33,6 +36,11 @@ uint_n_decoding_impl!(u16, 16);
 uint_n_decoding_impl!(u32, 32);
 uint_n_decoding_impl!(u64, 64);
 
+#[cfg(target_pointer_width = "32")]
+uint_n_decoding_impl!(usize, 32);
+
+#[cfg(target_pointer_width = "64")]
+uint_n_decoding_impl!(usize, 64);
 
 impl Decode for bool {
     fn is_ssz_fixed_len() -> bool {
@@ -108,6 +116,107 @@ impl<T: Decode> Decode for Option<T> {
             )))
         }
     }
+}
+
+impl Decode for NonZeroUsize {
+    fn is_ssz_fixed_len() -> bool {
+        <usize as Encode>::is_ssz_fixed_len()
+    }
+
+    fn ssz_fixed_len() -> usize {
+        mem::size_of::<usize>()
+    }
+
+    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
+        let len = bytes.len();
+        let expected = <Self as Decode>::ssz_fixed_len();
+
+        if len != expected {
+            return Err(DecodeError::InvalidByteLength { len, expected });
+        }
+
+        match NonZeroUsize::new(<usize as Decode>::from_ssz_bytes(bytes)?) {
+            Some(val) => Ok(val),
+            None => Err(DecodeError::BytesInvalid("NonZeroUsize cannot be zero".to_string()))
+        }
+    }
+}
+
+/// Raw binary data of fixed length (32 bytes)
+impl Decode for H256 {
+    fn is_ssz_fixed_len() -> bool {
+        true
+    }
+
+    fn ssz_fixed_len() -> usize {
+        32
+    }
+
+    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
+        let len = bytes.len();
+        let expected = <Self as Decode>::ssz_fixed_len();
+
+        if len != expected {
+            return Err(DecodeError::InvalidByteLength { len, expected });
+        }
+
+        Ok(H256::from_slice(bytes))
+    }
+}
+
+macro_rules! le_integer_decoding_impl {
+    ($type: ident, $size: expr) => {
+        impl Decode for $type {
+            fn is_ssz_fixed_len() -> bool {
+                true
+            }
+
+            fn ssz_fixed_len() -> usize {
+                $size / 8
+            }
+
+            fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
+                let len = bytes.len();
+                let expected = <Self as Decode>::ssz_fixed_len();
+
+                if len != expected {
+                    return Err(DecodeError::InvalidByteLength { len, expected });
+                }
+
+                Ok($type::from_little_endian(bytes))
+            }
+        }
+    };
+}
+
+le_integer_decoding_impl!(U128, 128);
+le_integer_decoding_impl!(U256, 256);
+
+pub fn decode_list_of_variable_length_items<T: Decode>(
+    bytes: &[u8],
+) -> Result<Vec<T>, DecodeError> {
+    let mut first_value_byte = next_offset(bytes)?;
+
+    let items_count = first_value_byte / BYTES_PER_LENGTH_OFFSET;
+    let mut items = Vec::with_capacity(items_count);
+
+    for i in 1..=items_count {
+        let items_bytes = (if i == items_count {
+            // read to the end
+            bytes.get(first_value_byte..)
+        } else {
+            let next_first_value_byte = next_offset(&bytes[(i * BYTES_PER_LENGTH_OFFSET)..])?;
+
+            let bytes = bytes.get(first_value_byte..next_first_value_byte);
+            first_value_byte = next_first_value_byte;
+
+            bytes
+        }).ok_or_else(|| DecodeError::OutOfBoundsByte { i: first_value_byte })?;
+
+        items.push(T::from_ssz_bytes(items_bytes)?);
+    }
+
+    Ok(items)
 }
 
 #[cfg(test)]
