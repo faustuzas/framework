@@ -5,10 +5,16 @@ macro_rules! log_of {
          ($val as f32).log($base) as $type
     }
 }
+use std::collections::BTreeMap;
 use std::collections::HashMap;
 use math::round;
 use eth2_hashing::hash;
 use ethereum_types::H256;
+use std::collections::HashSet;
+use std::iter::FromIterator;
+use itertools::Itertools;
+use itertools::EitherOrBoth::{Both, Left, Right};
+
 // pub struct H256(pub [u8; 32]);
 const MAX_TREE_DEPTH: usize = 32;
 const EMPTY_SLICE: &[H256] = &[];
@@ -296,15 +302,30 @@ fn get_helper_indices(indices: &[usize]) -> Vec<usize> {
         all_helper_indices.append(&mut get_branch_indices(*index).clone());
         all_path_indices.append(&mut get_path_indices(*index).clone());      
     }
+    let pre_answer: HashSet<usize> = HashSet::new();
+    let pre_answer_2: HashSet<usize> = HashSet::new();
 
-    //let mut answer: Vec<usize> = vec![1];
+    pre_answer = hashset(all_helper_indices);
+    pre_answer_2 = hashset(all_path_indices);
 
-   // answer = all_helper_indices.append(&mut all_path_indices);
-    
-    let answer: Vec<usize> = all_helper_indices.iter().zip(&all_path_indices).filter(|&(a, b)| a != b).collect();
-   
-    return  answer;
+    let hash_answer: HashSet<usize> = pre_answer.difference(&pre_answer_2).cloned().collect();
+    let mut vector_answer: Vec<usize> = Vec::with_capacity(hash_answer.len());
+
+    for i in hash_answer.drain() {
+        vector_answer.push(i);
+    }
+
+    vector_answer.sort();
+    return reverse_vector(vector_answer);
 }   
+
+fn reverse_vector(data: Vec<usize> ) -> Vec<usize> {
+    return data.iter().rev().cloned().collect();
+}
+
+fn hashset(data: Vec<usize> ) -> HashSet<usize> {
+    HashSet::from_iter(data.iter().cloned())
+}
 //----------------------------------------
 fn m_verify_merkle_proof(leaf: H256, proof: &[H256], index: usize, root: H256) -> bool {
     return m_calculate_merkle_root(leaf, proof, index) == root
@@ -336,36 +357,52 @@ fn m_verify_merkle_multiproof(leaves: &[H256],  proof: &[H256], indices: &[usize
 
 //dabar darau
 fn calculate_multi_merkle_root(leaves: &[H256], proof: &[H256], indices: &[usize]) -> H256 {
-    let mut book_reviews = HashMap::new();
-    let mut book_reviews = HashMap::new();
+    let mut btree_first = BTreeMap::new();
+    let mut btree_second = BTreeMap::new();
 
-    // assert len(leaves) == len(indices)
     let helper_indices = get_helper_indices(indices);
-    // assert len(proof) == len(helper_indices)
-    let mut book_reviews = HashMap::new();
+    let mut btree_final = HashMap::new();
+    
+    
+    for (index, leave) in indices.iter().zip(leaves.iter()) {
+        btree_first.insert(index, leave);
+    }
+    for (helper_step, proof_step) in helper_indices.iter().zip(proof.iter()) {
+        btree_second.insert(helper_step, proof_step);
+    }
 
-    objects = {
-    **{index: node for index, node in zip(indices, leaves)},
-    **{index: node for index, node in zip(helper_indices, proof)}
+    btree_first.append(&mut btree_second);
+
+    let mut keys: Vec<usize> = vec![];
+
+    for(key, value) in btree_first {
+        keys.push(key.clone());
     }
-    keys = sorted(objects.keys(), reverse=True)
-    pos = 0
-    while pos < len(keys) {
-        k = keys[pos]
-        if k in objects and k ^ 1 in objects and k // 2 not in objects:
-        objects[GeneralizedIndex(k // 2)] = hash(
-        objects[GeneralizedIndex((k | 1) ^ 1)] +
-        objects[GeneralizedIndex(k | 1)]
-        )
-        keys.append(GeneralizedIndex(k // 2))
-        pos += 1
+
+    keys.sort();
+    keys = reverse_vector(keys);
+    let mut position = 1usize;
+
+    
+    while position < keys.len() {
+        let mut k = keys.get(position).unwrap();
+        
+        if btree_first.contains_key(k) && btree_first.contains_key(&(k^1)) && !btree_first.contains_key(round::floor(k / 2, 0)) {
+            let mut index_first: usize = (round::floor(k / 2, 0) | 1) ^ 1;
+            let mut index_second: usize = round::floor(k / 2, 0) | 1;
+         
+            btree_first.insert(round::floor(k / 2, 0),
+            &hash_and_concat(
+                btree_first.get(index_first),
+                btree_first.get(index_second))
+            );
+        }
+        position += 1
     }
-    return objects[GeneralizedIndex(1)]    
+
+    return btree_first.get(1usize);    
 }
-
 //-----------------------------------------
-
-
 
 
 
