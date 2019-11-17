@@ -1,4 +1,7 @@
 use super::*;
+use std::mem;
+use core::num::NonZeroUsize;
+use ethereum_types::{H256, U128, U256};
 
 macro_rules! uint_n_encoding_impl {
     ($type: ident, $size: expr) => {
@@ -26,6 +29,12 @@ uint_n_encoding_impl!(u8, 8);
 uint_n_encoding_impl!(u16, 16);
 uint_n_encoding_impl!(u32, 32);
 uint_n_encoding_impl!(u64, 64);
+
+#[cfg(target_pointer_width = "32")]
+uint_n_encoding_impl!(usize, 32);
+
+#[cfg(target_pointer_width = "64")]
+uint_n_encoding_impl!(usize, 64);
 
 impl Encode for bool {
     fn is_ssz_fixed_len() -> bool {
@@ -63,7 +72,7 @@ impl <T: Encode> Encode for Vec<T> {
             return;
         }
 
-        let mut encoder = SszEncoder::list(buf, self.len() * OFFSET_LENGTH);
+        let mut encoder = SszEncoder::list(buf, self.len() * BYTES_PER_LENGTH_OFFSET);
         for el in self {
             encoder.append(el);
         }
@@ -75,7 +84,7 @@ impl <T: Encode> Encode for Vec<T> {
         if T::is_ssz_fixed_len() {
             <T as Encode>::ssz_fixed_len() * self.len()
         } else {
-            let offsets_length = OFFSET_LENGTH * self.len();
+            let offsets_length = BYTES_PER_LENGTH_OFFSET * self.len();
             let data_length: usize = self.iter().map(|item| item.ssz_bytes_len()).sum();
 
             offsets_length + data_length
@@ -85,7 +94,6 @@ impl <T: Encode> Encode for Vec<T> {
 
 /// The SSZ Union type.
 impl<T: Encode> Encode for Option<T> {
-
     fn is_ssz_fixed_len() -> bool {
         false
     }
@@ -102,14 +110,80 @@ impl<T: Encode> Encode for Option<T> {
 
     fn ssz_bytes_len(&self) -> usize {
         match self {
-            None => OFFSET_LENGTH,
-            Some(encodable) => OFFSET_LENGTH +
+            None => BYTES_PER_LENGTH_OFFSET,
+            Some(encodable) => BYTES_PER_LENGTH_OFFSET +
                 if <T as Encode>::is_ssz_fixed_len() {
                     <T as Encode>::ssz_fixed_len()
                 } else { encodable.ssz_bytes_len() }
         }
     }
 }
+
+impl Encode for NonZeroUsize {
+    fn is_ssz_fixed_len() -> bool {
+        <usize as Encode>::is_ssz_fixed_len()
+    }
+
+    fn ssz_append(&self, buf: &mut Vec<u8>) {
+        self.get().ssz_append(buf)
+    }
+
+    fn ssz_fixed_len() -> usize {
+        mem::size_of::<usize>()
+    }
+
+    fn ssz_bytes_len(&self) -> usize {
+        <usize as Encode>::ssz_fixed_len()
+    }
+}
+
+/// Raw binary data of fixed length (32 bytes)
+impl Encode for H256 {
+    fn is_ssz_fixed_len() -> bool {
+        true
+    }
+
+    fn ssz_append(&self, buf: &mut Vec<u8>) {
+        buf.extend_from_slice(self.as_bytes())
+    }
+
+    fn ssz_fixed_len() -> usize {
+        32
+    }
+
+    fn ssz_bytes_len(&self) -> usize {
+        32
+    }
+}
+
+macro_rules! le_integer_encoding_impl {
+    ($type: ident, $size: expr) => {
+        impl Encode for $type {
+            fn is_ssz_fixed_len() -> bool {
+                true
+            }
+
+            fn ssz_fixed_len() -> usize {
+                $size / 8
+            }
+
+            fn ssz_bytes_len(&self) -> usize {
+                $size / 8
+            }
+
+            fn ssz_append(&self, buf: &mut Vec<u8>) {
+                let current_size = buf.len();
+                let additional_size = Self::ssz_fixed_len();
+
+                buf.resize(current_size + additional_size, 0);
+                self.to_little_endian(&mut buf[current_size..]);
+            }
+        }
+    };
+}
+
+le_integer_encoding_impl!(U128, 128);
+le_integer_encoding_impl!(U256, 256);
 
 #[cfg(test)]
 mod tests {
@@ -189,5 +263,26 @@ mod tests {
     fn test_encode_union() {
         assert_eq!(Some(123 as u8).as_ssz_bytes(), vec![1, 0, 0, 0, 123]);
         assert_eq!((None as Option<u8>).as_ssz_bytes(), vec![0; 4]);
+    }
+
+    #[test]
+    fn test_encode_u128() {
+        assert_eq!(U128::from_dec_str("0").unwrap().as_ssz_bytes(), vec![0; 16]);
+
+        let bytes = vec![64, 226, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        assert_eq!(U128::from_dec_str("123456").unwrap().as_ssz_bytes(), bytes)
+    }
+
+    #[test]
+    fn test_encode_h256() {
+        assert_eq!(H256::zero().as_ssz_bytes(), vec![0; 32]);
+        assert_eq!(H256::from_slice(&[1; 32]).as_ssz_bytes(), vec![1; 32]);
+
+        let bytes = vec![
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0,
+        ];
+
+        assert_eq!(H256::from_slice(&bytes).as_ssz_bytes(), bytes);
     }
 }
