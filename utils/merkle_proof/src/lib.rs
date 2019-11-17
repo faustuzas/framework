@@ -30,16 +30,6 @@ lazy_static! {
     };
 }
 
-// pub fn zero_hash(depth: usize) -> Vec<H256>{
-//     let mut hashes = vec![H256::from([0; 32]); MAX_TREE_DEPTH + 1];
-
-//     for i in 0..MAX_TREE_DEPTH {
-//         hashes[i + 1] = hash_and_concat(hashes[i], hashes[i]);
-//     }
-
-//     hashes
-// }
-
 #[derive(Debug, Clone)]
 pub enum MerkleTree {
     Leaf(H256),
@@ -159,9 +149,6 @@ fn concat(mut vec1: Vec<u8>, mut vec2: Vec<u8>) -> Vec<u8> {
     return vec1;
 }
 
-
-
-
 fn hash_and_concat(h1: H256, h2: H256) -> H256 {
     H256::from_slice(&hash(&concat(
         h1.as_bytes().to_vec(),
@@ -172,6 +159,42 @@ fn hash_and_concat(h1: H256, h2: H256) -> H256 {
 fn get_next_power_of_two(depth: usize) -> usize {
     2usize.pow(depth as u32)      
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//Dokumentacija
+
+
 ///---------
 fn get_previous_power_of_two(x: usize) -> usize {
     if x <= 2 {
@@ -311,7 +334,7 @@ fn m_verify_merkle_multiproof(leaves: &[H256],  proof: &[H256], indices: &[usize
     return calculate_multi_merkle_root(leaves, proof, indices) == root
 }
 
-
+//dabar darau
 fn calculate_multi_merkle_root(leaves: &[H256], proof: &[H256], indices: &[usize]) -> H256 {
     let mut book_reviews = HashMap::new();
     let mut book_reviews = HashMap::new();
@@ -337,7 +360,6 @@ fn calculate_multi_merkle_root(leaves: &[H256], proof: &[H256], indices: &[usize
         keys.append(GeneralizedIndex(k // 2))
         pos += 1
     }
-    // R5da554c325ff5
     return objects[GeneralizedIndex(1)]    
 }
 
