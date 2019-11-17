@@ -1,10 +1,4 @@
-#[macro_use]
-extern crate lazy_static;
-macro_rules! log_of {
-    ($val:expr, $base:expr, $type:ty) => {
-         ($val as f32).log($base) as $type
-    }
-}
+
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 use math::round;
@@ -12,12 +6,19 @@ use eth2_hashing::hash;
 use ethereum_types::H256;
 use std::collections::HashSet;
 use std::iter::FromIterator;
-use itertools::Itertools;
-use itertools::EitherOrBoth::{Both, Left, Right};
 
 // pub struct H256(pub [u8; 32]);
 const MAX_TREE_DEPTH: usize = 32;
 const EMPTY_SLICE: &[H256] = &[];
+
+#[macro_use]
+extern crate lazy_static;
+macro_rules! log_of {
+    ($val:expr, $base:expr, $type:ty) => {
+         ($val as f32).log($base) as $type
+    }
+}
+
 const fn num_bits<T>() -> usize { std::mem::size_of::<T>() * 8 }
 
 lazy_static! {
@@ -393,16 +394,31 @@ fn calculate_multi_merkle_root(leaves: &[H256], proof: &[H256], indices: &[usize
          
             btree_first.insert(round::floor(k / 2, 0),
             &hash_and_concat(
-                btree_first.get(index_first),
-                btree_first.get(index_second))
+                **btree_first.get(&index_first).unwrap(),
+                **btree_first.get(&index_second).unwrap())
             );
         }
         position += 1
     }
 
-    return btree_first.get(1usize);    
+    return **btree_first.get(&1usize).unwrap();    
 }
 //-----------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
