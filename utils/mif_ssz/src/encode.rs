@@ -1,6 +1,6 @@
-mod impls;
-
 use super::*;
+
+mod impls;
 
 /// Trait for object serialization into SSZ format
 pub trait Encode {
@@ -21,7 +21,7 @@ pub trait Encode {
     /// By default it returns the size of the offset for variable-sized objects.
     /// Fixed-length objects have to return the value of their length.
     fn ssz_fixed_len() -> usize {
-        OFFSET_LENGTH
+        BYTES_PER_LENGTH_OFFSET
     }
 
     /// Returns the total size when `self` is serialized
@@ -95,10 +95,10 @@ impl<'a> SszEncoder<'a> {
 }
 
 pub fn encode_length(len: usize) -> Vec<u8> {
-    // if length is larger than max allow, raise debug assert
+    // if length is larger than max allowed, raise debug assert
     debug_assert!(len <= MAX_VALUE_LENGTH);
 
-    len.to_le_bytes()[0..OFFSET_LENGTH].to_vec()
+    len.to_le_bytes()[0..BYTES_PER_LENGTH_OFFSET].to_vec()
 }
 
 pub fn encode_union_index(index: usize) -> Vec<u8> {
@@ -119,7 +119,7 @@ mod tests {
 
         assert_eq!(
             encode_length(MAX_VALUE_LENGTH),
-            vec![255; OFFSET_LENGTH]
+            vec![255; BYTES_PER_LENGTH_OFFSET]
         );
     }
 
@@ -133,7 +133,7 @@ mod tests {
 
         assert_eq!(
             encode_union_index(MAX_VALUE_LENGTH),
-            vec![255; OFFSET_LENGTH]
+            vec![255; BYTES_PER_LENGTH_OFFSET]
         );
     }
 }
