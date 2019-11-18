@@ -6,6 +6,12 @@ use eth2_hashing::hash;
 use ethereum_types::H256;
 use std::collections::HashSet;
 use std::iter::FromIterator;
+// mod ssz_types;
+// pub mod ssz_types::VariableList;
+use ssz_types::VariableList;
+use ssz_types::FixedVector;
+use ssz_types::tree_hash;
+use ssz_types::bitfield;
 
 // pub struct H256(pub [u8; 32]);
 const MAX_TREE_DEPTH: usize = 32;
@@ -405,6 +411,30 @@ fn calculate_multi_merkle_root(leaves: &[H256], proof: &[H256], indices: &[usize
 }
 //-----------------------------------------
 
+#[derive(Debug, Clone)]
+pub enum SSZType {
+    Bitfield,
+    FixedVector,
+    TreeHash,
+    VariableList,
+}
+
+fn item_length(typ: SSZType) -> usize {
+    //     """
+    // Return the number of bytes in a basic type, or 32 (a full hash) for compound types.
+    // """
+    match typ {
+        SSZType::Bitfield => typ.into_bytes(),
+        SSZType::FixedVector => typ.into_bytes(),
+        SSZType::TreeHash => expr,
+        SSZType::VariableList => typ.len(),        
+        None => 32usize,
+    }
+    if issubclass(typ, BasicValue):
+        return typ.byte_len
+    else:
+        return 32
+}
 
 
 
