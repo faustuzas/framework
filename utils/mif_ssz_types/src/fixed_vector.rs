@@ -6,16 +6,15 @@ use std::slice::SliceIndex;
 use typenum::Unsigned;
 
 pub use typenum;
-use ssz::DecodeError;
 
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 #[serde(transparent)]
-pub struct FixedVector<T, C> {
+pub struct FixedVector<T, N> {
     vec: Vec<T>,
-    _meta: PhantomData<C>,
+    _meta: PhantomData<N>,
 }
 
-impl<T, C: Unsigned> FixedVector<T, C> {
+impl<T, N: Unsigned> FixedVector<T, N> {
 
     pub fn new(vec: Vec<T>) -> Result<Self, Error> {
         if vec.len() == Self::capacity() {
@@ -41,10 +40,10 @@ impl<T, C: Unsigned> FixedVector<T, C> {
 
     pub fn is_empty(&self) -> bool { self.len() == 0 }
 
-    pub fn capacity() -> usize { C::to_usize() }
+    pub fn capacity() -> usize { N::to_usize() }
 }
 
-impl<T: Default, C: Unsigned> From<Vec<T>> for FixedVector<T, C> {
+impl<T: Default, N: Unsigned> From<Vec<T>> for FixedVector<T, N> {
     fn from(mut vec: Vec<T>) -> Self {
         vec.resize_with(Self::capacity(), Default::default);
 
@@ -55,13 +54,13 @@ impl<T: Default, C: Unsigned> From<Vec<T>> for FixedVector<T, C> {
     }
 }
 
-impl<T, C: Unsigned> Into<Vec<T>> for FixedVector<T, C> {
+impl<T, N: Unsigned> Into<Vec<T>> for FixedVector<T, N> {
     fn into(self) -> Vec<T> {
         self.vec
     }
 }
 
-impl<T, C: Unsigned> Default for FixedVector<T, C> {
+impl<T, N: Unsigned> Default for FixedVector<T, N> {
     fn default() -> Self {
         Self {
             vec: Vec::default(),
@@ -70,7 +69,7 @@ impl<T, C: Unsigned> Default for FixedVector<T, C> {
     }
 }
 
-impl<T, C: Unsigned, I: SliceIndex<[T]>> Index<I> for FixedVector<T, C> {
+impl<T, N: Unsigned, I: SliceIndex<[T]>> Index<I> for FixedVector<T, N> {
     type Output = I::Output;
 
     fn index(&self, index: I) -> &Self::Output {
@@ -78,14 +77,14 @@ impl<T, C: Unsigned, I: SliceIndex<[T]>> Index<I> for FixedVector<T, C> {
     }
 }
 
-impl<T, C: Unsigned, I: SliceIndex<[T]>> IndexMut<I> for FixedVector<T, C> {
+impl<T, N: Unsigned, I: SliceIndex<[T]>> IndexMut<I> for FixedVector<T, N> {
 
     fn index_mut(&mut self, index: I) -> &mut Self::Output {
         IndexMut::index_mut(&mut self.vec, index)
     }
 }
 
-impl<T, C: Unsigned> Deref for FixedVector<T, C> {
+impl<T, N: Unsigned> Deref for FixedVector<T, N> {
     type Target = [T];
 
     fn deref(&self) -> &[T] {
@@ -93,7 +92,7 @@ impl<T, C: Unsigned> Deref for FixedVector<T, C> {
     }
 }
 
-impl<T: ssz::Encode, C: Unsigned> ssz::Encode for FixedVector<T, C> {
+impl<T: ssz::Encode, N: Unsigned> ssz::Encode for FixedVector<T, N> {
     fn is_ssz_fixed_len() -> bool {
         T::is_ssz_fixed_len()
     }
@@ -118,7 +117,7 @@ impl<T: ssz::Encode, C: Unsigned> ssz::Encode for FixedVector<T, C> {
 
     fn ssz_fixed_len() -> usize {
         if Self::is_ssz_fixed_len() {
-            C::to_usize() * T::ssz_fixed_len()
+            N::to_usize() * T::ssz_fixed_len()
         } else {
             ssz::BYTES_PER_LENGTH_OFFSET
         }
@@ -129,20 +128,20 @@ impl<T: ssz::Encode, C: Unsigned> ssz::Encode for FixedVector<T, C> {
     }
 }
 
-impl<T: ssz::Decode + Default, C: Unsigned> ssz::Decode for FixedVector<T, C> {
+impl<T: ssz::Decode + Default, N: Unsigned> ssz::Decode for FixedVector<T, N> {
     fn is_ssz_fixed_len() -> bool {
         T::is_ssz_fixed_len()
     }
 
     fn ssz_fixed_len() -> usize {
        if Self::is_ssz_fixed_len() {
-           C::to_usize() * T::ssz_fixed_len()
+           N::to_usize() * T::ssz_fixed_len()
        } else {
             ssz::BYTES_PER_LENGTH_OFFSET
        }
     }
 
-    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
+    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, ssz::DecodeError> {
         if bytes.is_empty() {
             Err(ssz::DecodeError::InvalidByteLength {
                 len: 0, expected: 1
@@ -155,12 +154,12 @@ impl<T: ssz::Decode + Default, C: Unsigned> ssz::Decode for FixedVector<T, C> {
 
             match items_result {
                 Ok(items) => {
-                    if items.len() == C::to_usize() {
+                    if items.len() == N::to_usize() {
                         Ok(items.into())
                     } else {
                         Err(ssz::DecodeError::BytesInvalid(format!(
                             "Wrong number of items parsed. Got: {}, expected: {}",
-                            items.len(), C::to_usize()
+                            items.len(), N::to_usize()
                         )))
                     }
                 },

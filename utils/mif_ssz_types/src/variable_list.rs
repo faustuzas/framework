@@ -12,7 +12,7 @@ pub struct VariableList<T, C> {
     _meta: PhantomData<C>,
 }
 
-impl<T, C: Unsigned> VariableList<T, C> {
+impl<T, N: Unsigned> VariableList<T, N> {
     pub fn new(vec: Vec<T>) -> Result<Self, Error> {
         if vec.len() <= Self::max_len() {
             Ok(Self {
@@ -43,7 +43,7 @@ impl<T, C: Unsigned> VariableList<T, C> {
     }
 
     pub fn max_len() -> usize {
-        C::to_usize()
+        N::to_usize()
     }
 
     pub fn push(&mut self, value: T) -> Result<(), Error> {
@@ -59,10 +59,10 @@ impl<T, C: Unsigned> VariableList<T, C> {
     }
 }
 
-impl <T, C:Unsigned> From<Vec<T>> for VariableList<T, C> {
+impl <T, N:Unsigned> From<Vec<T>> for VariableList<T, N> {
     fn from(mut vec: Vec<T>) -> Self {
         // shrink vector to required size
-        vec.truncate(C::to_usize());
+        vec.truncate(N::to_usize());
 
         Self {
             vec,
@@ -71,13 +71,13 @@ impl <T, C:Unsigned> From<Vec<T>> for VariableList<T, C> {
     }
 }
 
-impl<T, C: Unsigned> Into<Vec<T>> for VariableList<T, C> {
+impl<T, N: Unsigned> Into<Vec<T>> for VariableList<T, N> {
     fn into(self) -> Vec<T> {
         self.vec
     }
 }
 
-impl<T, C: Unsigned> Default for VariableList<T, C> {
+impl<T, N: Unsigned> Default for VariableList<T, N> {
     fn default() -> Self {
         Self {
             vec: Vec::default(),
@@ -86,7 +86,7 @@ impl<T, C: Unsigned> Default for VariableList<T, C> {
     }
 }
 
-impl<T, C: Unsigned, I: SliceIndex<[T]>> Index<I> for VariableList<T, C> {
+impl<T, N: Unsigned, I: SliceIndex<[T]>> Index<I> for VariableList<T, N> {
     type Output = I::Output;
 
     fn index(&self, index: I) -> &Self::Output {
@@ -94,13 +94,13 @@ impl<T, C: Unsigned, I: SliceIndex<[T]>> Index<I> for VariableList<T, C> {
     }
 }
 
-impl<T, C: Unsigned, I: SliceIndex<[T]>> IndexMut<I> for VariableList<T, C> {
+impl<T, N: Unsigned, I: SliceIndex<[T]>> IndexMut<I> for VariableList<T, N> {
     fn index_mut(&mut self, index: I) -> &mut Self::Output {
         IndexMut::index_mut(&mut self.vec, index)
     }
 }
 
-impl<T, C: Unsigned> Deref for VariableList<T, C> {
+impl<T, N: Unsigned> Deref for VariableList<T, N> {
     type Target = [T];
 
     fn deref(&self) -> &[T] {
@@ -108,13 +108,13 @@ impl<T, C: Unsigned> Deref for VariableList<T, C> {
     }
 }
 
-impl<T, C: Unsigned> DerefMut for VariableList<T, C> {
+impl<T, N: Unsigned> DerefMut for VariableList<T, N> {
     fn deref_mut(&mut self) -> &mut [T] {
         &mut self.vec[..]
     }
 }
 
-impl<'a, T, C: Unsigned> IntoIterator for &'a VariableList<T, C> {
+impl<'a, T, N: Unsigned> IntoIterator for &'a VariableList<T, N> {
     type Item = &'a T;
     type IntoIter = std::slice::Iter<'a, T>;
 
@@ -123,7 +123,7 @@ impl<'a, T, C: Unsigned> IntoIterator for &'a VariableList<T, C> {
     }
 }
 
-impl<T: ssz::Encode, C: Unsigned> ssz::Encode for VariableList<T, C> {
+impl<T: ssz::Encode, N: Unsigned> ssz::Encode for VariableList<T, N> {
     fn is_ssz_fixed_len() -> bool {
         <Vec<T>>::is_ssz_fixed_len()
     }
@@ -141,7 +141,7 @@ impl<T: ssz::Encode, C: Unsigned> ssz::Encode for VariableList<T, C> {
     }
 }
 
-impl<T: ssz::Decode, C: Unsigned> ssz::Decode for VariableList<T, C> {
+impl<T: ssz::Decode, N: Unsigned> ssz::Decode for VariableList<T, N> {
     fn is_ssz_fixed_len() -> bool {
         <Vec<T>>::is_ssz_fixed_len()
     }

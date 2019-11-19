@@ -1,5 +1,6 @@
 mod variable_list;
 mod fixed_vector;
+mod bitfield;
 
 /// Returned when an item encounters an error.
 #[derive(PartialEq, Debug)]
@@ -16,5 +17,5 @@ pub enum Error {
     InvalidByteCount {
         given: usize,
         expected: usize,
-    },
+    }
 }
