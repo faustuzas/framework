@@ -12,6 +12,9 @@ lazy_static = "1.3.0"
 eth2_ssz_types = { path = "../ssz_types" }
 eth2_ssz = { path = "../ssz" }
 
+[lib]
+name = "math"
+
 # [dev-dependencies]
 # quickcheck = "0.8"
 # quickcheck_macros = "0.8"

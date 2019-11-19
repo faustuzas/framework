@@ -1,156 +1,150 @@
-
-use std::collections::BTreeMap;
 use std::collections::HashMap;
-use math::round;
 use eth2_hashing::hash;
 use ethereum_types::H256;
 use std::collections::HashSet;
 use std::iter::FromIterator;
-// use ssz_types::{VariableList, FixedVector, Bitfield, BitVector, BitList};
 
 // pub struct H256(pub [u8; 32]);
-const MAX_TREE_DEPTH: usize = 32;
-const EMPTY_SLICE: &[H256] = &[];
+// const MAX_TREE_DEPTH: usize = 32;
+// const EMPTY_SLICE: &[H256] = &[];
 
 #[macro_use]
-extern crate lazy_static;
+// extern crate lazy_static;
 macro_rules! log_of {
     ($val:expr, $base:expr, $type:ty) => {
          ($val as f32).log($base) as $type
     }
 }
 
-const fn num_bits<T>() -> usize { std::mem::size_of::<T>() * 8 }
+// lazy_static! {
+//     static ref ZERO_HASHES: Vec<H256> = {
+//         let mut hashes = vec![H256::from([0; 32]); MAX_TREE_DEPTH + 1];
 
-lazy_static! {
-    static ref ZERO_HASHES: Vec<H256> = {
-        let mut hashes = vec![H256::from([0; 32]); MAX_TREE_DEPTH + 1];
+//         for i in 0..MAX_TREE_DEPTH {
+//             hashes[i + 1] = hash_and_concat(hashes[i], hashes[i]);
+//         }
 
-        for i in 0..MAX_TREE_DEPTH {
-            hashes[i + 1] = hash_and_concat(hashes[i], hashes[i]);
-        }
+//         hashes
+//     };
 
-        hashes
-    };
+//     static ref ZERO_NODES: Vec<MerkleTree> = {
+//         (0..=MAX_TREE_DEPTH).map(MerkleTree::Zero).collect()
+//     };
+// }
 
-    static ref ZERO_NODES: Vec<MerkleTree> = {
-        (0..=MAX_TREE_DEPTH).map(MerkleTree::Zero).collect()
-    };
-}
+// #[derive(Debug, Clone)]
+// pub enum MerkleTree {
+//     Leaf(H256),
+//     Node(H256, Box<Self>, Box<Self>),
+//     Zero(usize),
+// }
 
-#[derive(Debug, Clone)]
-pub enum MerkleTree {
-    Leaf(H256),
-    Node(H256, Box<Self>, Box<Self>),
-    Zero(usize),
-}
+// impl MerkleTree {
+//     pub fn create(leaves: &[H256], depth: usize) -> Self {
+//         use MerkleTree::*;
+//         if leaves.is_empty() {
+//              return Zero(depth); 
+//         }
 
-impl MerkleTree {
-    pub fn create(leaves: &[H256], depth: usize) -> Self {
-        use MerkleTree::*;
-        if leaves.is_empty() {
-             return Zero(depth); 
-        }
+//         if depth == 0 {
+//                 assert_eq!(leaves.len(), 1);
+//                 Leaf(leaves[0])
+//         } else {
+//                 let capacity = get_next_power_of_two(depth-1);
+//                 let (l_leaves, r_leaves) = if leaves.len() <= capacity { (leaves, EMPTY_SLICE) } else { leaves.split_at(capacity)};
+//                 let l_subtree = MerkleTree::create(l_leaves, depth - 1);
+//                 let r_subtree = MerkleTree::create(r_leaves, depth - 1);
+//                 let hash = hash_and_concat(l_subtree.hash(), r_subtree.hash());
+//                 Node(hash, Box::new(l_subtree), Box::new(r_subtree))
+//         }
+//     }
 
-        if depth == 0 {
-                assert_eq!(leaves.len(), 1);
-                Leaf(leaves[0])
-        } else {
-                let capacity = get_next_power_of_two(depth-1);
-                let (l_leaves, r_leaves) = if leaves.len() <= capacity { (leaves, EMPTY_SLICE) } else { leaves.split_at(capacity)};
-                let l_subtree = MerkleTree::create(l_leaves, depth - 1);
-                let r_subtree = MerkleTree::create(r_leaves, depth - 1);
-                let hash = hash_and_concat(l_subtree.hash(), r_subtree.hash());
-                Node(hash, Box::new(l_subtree), Box::new(r_subtree))
-        }
-    }
+//     pub fn hash(&self) -> H256 { 
+//         match *self {
+//             MerkleTree::Leaf(h) => h,
+//             MerkleTree::Node(h, _, _) => h,
+//             MerkleTree::Zero(depth) => ZERO_HASHES[depth],
+//         }
+//     }
 
-    pub fn hash(&self) -> H256 { 
-        match *self {
-            MerkleTree::Leaf(h) => h,
-            MerkleTree::Node(h, _, _) => h,
-            MerkleTree::Zero(depth) => ZERO_HASHES[depth],
-        }
-    }
+//     pub fn left_and_right_branches(&self) -> Option<(&Self, &Self)> {
+//         match *self {
+//             MerkleTree::Leaf(_) | MerkleTree::Zero(0) => None,
+//             MerkleTree::Node(_, ref l, ref r) => Some((l, r)),
+//             MerkleTree::Zero(depth) => Some((&ZERO_NODES[depth - 1], &ZERO_NODES[depth - 1])),
+//         }
+//     }
 
-    pub fn left_and_right_branches(&self) -> Option<(&Self, &Self)> {
-        match *self {
-            MerkleTree::Leaf(_) | MerkleTree::Zero(0) => None,
-            MerkleTree::Node(_, ref l, ref r) => Some((l, r)),
-            MerkleTree::Zero(depth) => Some((&ZERO_NODES[depth - 1], &ZERO_NODES[depth - 1])),
-        }
-    }
+//     pub fn is_leaf(&self) -> bool {
+//         match self {
+//             MerkleTree::Leaf(_) => true,
+//             _ => false,
+//         }
+//     }
 
-    pub fn is_leaf(&self) -> bool {
-        match self {
-            MerkleTree::Leaf(_) => true,
-            _ => false,
-        }
-    }
+//     pub fn make_proof(&self, index: usize, depth: usize) -> (H256, Vec<H256>) { 
+//         let mut proof = vec![];
+//         let mut current_node = self;
+//         let mut current_depth = depth;
+//         while current_depth > 0 {
+//             let (left, right) = current_node.left_and_right_branches().unwrap();
+//             if get_generalized_index_bit(index, current_depth-1) {
+//                 proof.push(left.hash());
+//                 current_node = right;
+//             } else {
+//                 proof.push(right.hash());
+//                 current_node = left;
+//             }
+//             current_depth -= 1;
+//         }
 
-    pub fn make_proof(&self, index: usize, depth: usize) -> (H256, Vec<H256>) { 
-        let mut proof = vec![];
-        let mut current_node = self;
-        let mut current_depth = depth;
-        while current_depth > 0 {
-            let (left, right) = current_node.left_and_right_branches().unwrap();
-            if get_generalized_index_bit(index, current_depth-1) {
-                proof.push(left.hash());
-                current_node = right;
-            } else {
-                proof.push(right.hash());
-                current_node = left;
-            }
-            current_depth -= 1;
-        }
+//         debug_assert_eq!(proof.len(), depth);
+//         debug_assert!(current_node.is_leaf());
 
-        debug_assert_eq!(proof.len(), depth);
-        debug_assert!(current_node.is_leaf());
+//         proof.reverse();
 
-        proof.reverse();
+//         (current_node.hash(), proof)
+//     }
+// }
 
-        (current_node.hash(), proof)
-    }
-}
+// pub fn verify_merkle_proof( 
+//     leaf: H256,
+//     proof: &[H256],
+//     depth: usize,
+//     index: usize,
+//     root: H256,) -> bool {
 
-pub fn verify_merkle_proof( 
-    leaf: H256,
-    proof: &[H256],
-    depth: usize,
-    index: usize,
-    root: H256,) -> bool {
+//     if proof.len() == depth {
+//         calculate_merkle_root(leaf, proof, depth, index) == root
+//     } else {
+//         false
+//     }
+// }
 
-    if proof.len() == depth {
-        calculate_merkle_root(leaf, proof, depth, index) == root
-    } else {
-        false
-    }
-}
+// fn calculate_merkle_root(
+//     leaf: H256,
+//      proof: &[H256],
+//       depth: usize,
+//        index: usize,) -> H256 { 
 
-fn calculate_merkle_root(
-    leaf: H256,
-     proof: &[H256],
-      depth: usize,
-       index: usize,) -> H256 { 
+//     assert_eq!(proof.len(), get_generalized_index_length(index), "proof length should equal depth");
 
-    assert_eq!(proof.len(), get_generalized_index_length(index), "proof length should equal depth");
+//     let mut root = leaf.as_bytes().to_vec();
 
-    let mut root = leaf.as_bytes().to_vec();
+//     for (i, leaf) in proof.iter().enumerate().take(depth) {
+//         // if ((index >> i) & 0x01) == 1 {
+//         if get_generalized_index_bit(index, i) {    
+//             let input = concat(leaf.as_bytes().to_vec(), root);
+//             root = hash(&input);
+//         } else {
+//             let mut input = root;
+//             input.extend_from_slice(leaf.as_bytes());
+//             root = hash(&input);
+//         }
+//     }
 
-    for (i, leaf) in proof.iter().enumerate().take(depth) {
-        // if ((index >> i) & 0x01) == 1 {
-        if get_generalized_index_bit(index, i) {    
-            let input = concat(leaf.as_bytes().to_vec(), root);
-            root = hash(&input);
-        } else {
-            let mut input = root;
-            input.extend_from_slice(leaf.as_bytes());
-            root = hash(&input);
-        }
-    }
-
-    H256::from_slice(&root)
-}
+//     H256::from_slice(&root)
+// }
 
 fn concat(mut vec1: Vec<u8>, mut vec2: Vec<u8>) -> Vec<u8> {
     vec1.append(&mut vec2);
@@ -197,12 +191,6 @@ fn get_next_power_of_two(depth: usize) -> usize {
 
 
 
-
-
-
-//Dokumentacija
-
-
 ///---------
 fn get_previous_power_of_two(x: usize) -> usize {
     if x <= 2 {
@@ -221,7 +209,7 @@ fn maybe_get_next_power_of_two(x: usize) -> usize {
 }
 
 fn concat_generalized_indices(indices: &[usize]) -> usize {
-    let o = 1usize;
+    let mut o = 1usize;
     for index in indices.iter() {
         o = o * get_previous_power_of_two(*index) + (index - get_previous_power_of_two(*index));
     }
@@ -231,13 +219,6 @@ fn concat_generalized_indices(indices: &[usize]) -> usize {
 fn get_generalized_index_length(index: usize) -> usize {
    return log_of!(index, 2., usize);
 }
-
-
-
-// fn log_2(x: i32) -> u32 {
-//     assert!(x > 0);
-//     num_bits::<i32>() as u32 - x.leading_zeros() - 1
-// }
 
 fn get_generalized_index_bit(index: usize, position: usize) -> bool {
     // ((index >> position) & 0x01) == 1 lighthouse 
@@ -255,16 +236,12 @@ fn generalized_index_child(index: usize, right_side: bool) -> usize {
 }
 
 fn generalized_index_parent(index: usize) -> usize {
-    return round::floor(index / 2, 0);
+    return index / 2;
 }
-    // return GeneralizedIndex(index // 2)
-//----------------------------------------
+
+//--------------------------------------------------------
 fn get_branch_indices(tree_index: usize) -> Vec<usize> {
-    // """
-    // Get the generalized indices of the sister chunks along the path from the chunk with the
-    // given tree index to the root.
-    // """
-    
+
     let mut o = vec![generalized_index_sibling(tree_index)];
     
     while o.last() > Some(&1usize) {
@@ -276,11 +253,6 @@ fn get_branch_indices(tree_index: usize) -> Vec<usize> {
 }
 
 fn get_path_indices(tree_index: usize) -> Vec<usize> {
-    //    """
-    // Get the generalized indices of the chunks along the path from the chunk with the
-    // given tree index to the root.
-    // """
-    // o = [tree_index]
     
     let mut o = vec![tree_index];
     while o.last() > Some(&1usize) {
@@ -291,12 +263,6 @@ fn get_path_indices(tree_index: usize) -> Vec<usize> {
 }
 
 fn get_helper_indices(indices: &[usize]) -> Vec<usize> {
-    
-    // """
-    // Get the generalized indices of all "extra" chunks in the tree needed to prove the chunks with the given
-    // generalized indices. Note that the decreasing order is chosen deliberately to ensure equivalence to the
-    // order of hashes in a regular single-item Merkle proof in the single-item case.
-    // """
 
     let mut all_helper_indices: Vec<usize> = vec![];
     let mut all_path_indices: Vec<usize> = vec![];
@@ -304,13 +270,11 @@ fn get_helper_indices(indices: &[usize]) -> Vec<usize> {
         all_helper_indices.append(&mut get_branch_indices(*index).clone());
         all_path_indices.append(&mut get_path_indices(*index).clone());      
     }
-    let pre_answer: HashSet<usize> = HashSet::new();
-    let pre_answer_2: HashSet<usize> = HashSet::new();
 
-    pre_answer = hashset(all_helper_indices);
-    pre_answer_2 = hashset(all_path_indices);
+    let pre_answer = hashset(all_helper_indices);
+    let pre_answer_2 = hashset(all_path_indices);
 
-    let hash_answer: HashSet<usize> = pre_answer.difference(&pre_answer_2).cloned().collect();
+    let mut hash_answer: HashSet<usize> = pre_answer.difference(&pre_answer_2).cloned().collect();
     let mut vector_answer: Vec<usize> = Vec::with_capacity(hash_answer.len());
 
     for i in hash_answer.drain() {
@@ -328,6 +292,7 @@ fn reverse_vector(data: Vec<usize> ) -> Vec<usize> {
 fn hashset(data: Vec<usize> ) -> HashSet<usize> {
     HashSet::from_iter(data.iter().cloned())
 }
+
 //----------------------------------------
 fn m_verify_merkle_proof(leaf: H256, proof: &[H256], index: usize, root: H256) -> bool {
     return m_calculate_merkle_root(leaf, proof, index) == root
@@ -359,25 +324,23 @@ fn m_verify_merkle_multiproof(leaves: &[H256],  proof: &[H256], indices: &[usize
 
 //dabar darau
 fn calculate_multi_merkle_root(leaves: &[H256], proof: &[H256], indices: &[usize]) -> H256 {
-    let mut btree_first = BTreeMap::new();
-    let mut btree_second = BTreeMap::new();
+    let mut btree_first = HashMap::new();
+    let mut btree_second = HashMap::new();
 
     let helper_indices = get_helper_indices(indices);
-    let mut btree_final = HashMap::new();
-    
     
     for (index, leave) in indices.iter().zip(leaves.iter()) {
-        btree_first.insert(index, leave);
+        btree_first.insert(*index, *leave);
     }
     for (helper_step, proof_step) in helper_indices.iter().zip(proof.iter()) {
-        btree_second.insert(helper_step, proof_step);
+        btree_second.insert(*helper_step, *proof_step);
     }
 
-    btree_first.append(&mut btree_second);
+    btree_first.extend(btree_second);
 
     let mut keys: Vec<usize> = vec![];
 
-    for(key, value) in btree_first {
+    for(key, _value) in btree_first.iter_mut() {
         keys.push(key.clone());
     }
 
@@ -387,22 +350,21 @@ fn calculate_multi_merkle_root(leaves: &[H256], proof: &[H256], indices: &[usize
 
     
     while position < keys.len() {
-        let mut k = keys.get(position).unwrap();
+        let k = keys.get(position).unwrap();
         
-        if btree_first.contains_key(k) && btree_first.contains_key(&(k^1)) && !btree_first.contains_key(round::floor(k / 2, 0)) {
-            let mut index_first: usize = (round::floor(k / 2, 0) | 1) ^ 1;
-            let mut index_second: usize = round::floor(k / 2, 0) | 1;
-         
-            btree_first.insert(round::floor(k / 2, 0),
-            &hash_and_concat(
-                **btree_first.get(&index_first).unwrap(),
-                **btree_first.get(&index_second).unwrap())
+        if btree_first.contains_key(k) && btree_first.contains_key(&(k^1)) && !btree_first.contains_key(&(k / 2)) {
+            let index_first: usize = (k / 2 | 1) ^ 1;
+            let index_second: usize = k / 2 | 1;
+            btree_first.insert(k / 2,
+            hash_and_concat(
+                *btree_first.get(&index_first).unwrap(),
+                *btree_first.get(&index_second).unwrap())
             );
         }
         position += 1
     }
 
-    return **btree_first.get(&1usize).unwrap();    
+    return *btree_first.get(&1usize).unwrap();    
 }
 //-----------------------------------------
 
