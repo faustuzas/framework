@@ -1,7 +1,9 @@
 use crate::Error;
-use serde::export::PhantomData;
+use core::marker::PhantomData;
 use typenum::Unsigned;
 use ssz::{Encode, Decode, DecodeError};
+use serde::{Serialize, Serializer, Deserialize, Deserializer};
+use serde_hex::{encode as serde_hex_encode, PrefixedHexVisitor};
 
 /// A marker struct used to declare SSZ `Variable` behaviour on a `Bitfield`.
 #[derive(Clone, PartialEq, Debug)]
@@ -15,14 +17,14 @@ pub struct Fixed<N> {
     _meta: PhantomData<N>,
 }
 
-/// A marker trait hat defines the behaviour of a `Bitfield`.
+/// A marker trait that defines the behaviour of a `Bitfield`.
 pub trait BitfieldBehaviour: Clone {}
 
 impl<N: Unsigned + Clone> BitfieldBehaviour for Variable<N> {}
 impl<N: Unsigned + Clone> BitfieldBehaviour for Fixed<N> {}
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct Bitfield<C: BitfieldBehaviour> {
+pub struct Bitfield<C> {
     bytes: Vec<u8>,
     len: usize,
     _meta: PhantomData<C>
@@ -132,7 +134,7 @@ impl<N: Unsigned + Clone> Bitfield<Variable<N>> {
 impl<N: Unsigned + Clone> Bitfield<Fixed<N>> {
     pub fn new() -> Self {
         Self {
-            bytes: vec![0; required_bytes(Self::capacity())],
+            bytes: vec![0; bytes_required(Self::capacity())],
             len: Self::capacity(),
             _meta: PhantomData
         }
@@ -157,12 +159,6 @@ impl<N: Unsigned + Clone> Default for Bitfield<Fixed<N>> {
     fn default() -> Self {
         Self::new()
     }
-}
-
-/// An iterator over the bits in a `Bitfield`.
-pub struct BitIter<'a, T> {
-    bitfield: &'a Bitfield<T>,
-    i: usize,
 }
 
 impl<T: BitfieldBehaviour> Bitfield<T> {
@@ -313,14 +309,20 @@ impl<T: BitfieldBehaviour> Bitfield<T> {
     }
 }
 
+/// An iterator over the bits in a `Bitfield`.
+pub struct BitIter<'a, T> {
+    bitfield: &'a Bitfield<T>,
+    i: usize,
+}
+
 impl<'a, T: BitfieldBehaviour> Iterator for BitIter<'a, T> {
     type Item = bool;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let item = self.bitfield.get(self.i).ok()?;
+        let bit_value = self.bitfield.get(self.i).ok()?;
         self.i += 1;
 
-        Some(item)
+        Some(bit_value)
     }
 }
 
@@ -334,7 +336,7 @@ impl<N: Unsigned + Clone> Encode for Bitfield<Variable<N>> {
     }
 
     fn ssz_bytes_len(&self) -> usize {
-        bytes_required(bits_len + 1)
+        bytes_required(self.len() + 1)
     }
 }
 
@@ -359,7 +361,7 @@ impl<N: Unsigned + Clone> Encode for Bitfield<Fixed<N>> {
     }
 
     fn ssz_fixed_len() -> usize {
-        bytes_for_bit_len(N::to_usize())
+        bytes_required(N::to_usize())
     }
 
     fn ssz_bytes_len(&self) -> usize {
@@ -381,6 +383,27 @@ impl<N: Unsigned + Clone> Decode for Bitfield<Fixed<N>> {
             DecodeError::BytesInvalid(format!("Error occurred while decoding BitVector: {:?}", e)))
     }
 }
+
+macro_rules! serde_bitfield_impls {
+    ($type: ident) => {
+        impl <N: Unsigned + Clone> Serialize for Bitfield<$type<N>> {
+            fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+                serializer.serialize_str(&serde_hex_encode(self.as_ssz_bytes()))
+            }
+        }
+
+        impl <'a, N: Unsigned + Clone> Deserialize<'a> for Bitfield<$type<N>> {
+            fn deserialize<D: Deserializer<'a>>(deserializer: D) -> Result<Self, D::Error>{
+                let deserialized_bytes = deserializer.deserialize_str(PrefixedHexVisitor)?;
+                Self::from_ssz_bytes(&deserialized_bytes)
+                    .map_err(|e| serde::de::Error::custom(format!("Unable to deserialize Bitfield: {:?}", e)))
+            }
+        }
+    };
+}
+
+serde_bitfield_impls!(Variable);
+serde_bitfield_impls!(Fixed);
 
 /// Example:
 /// ```
