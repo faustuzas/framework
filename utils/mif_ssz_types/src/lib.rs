@@ -2,6 +2,14 @@ mod variable_list;
 mod fixed_vector;
 mod bitfield;
 
+use bitfield::{Bitfield, Variable, Fixed};
+
+/// Exported types
+pub type BitList<N> = Bitfield<Variable<N>>;
+pub type BitVector<N> = Bitfield<Fixed<N>>;
+pub use variable_list::VariableList;
+pub use fixed_vector::FixedVector;
+
 /// Returned when an item encounters an error.
 #[derive(PartialEq, Debug)]
 pub enum Error {
