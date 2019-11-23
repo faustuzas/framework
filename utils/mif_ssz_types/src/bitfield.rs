@@ -1,16 +1,17 @@
 use crate::Error;
 use serde::export::PhantomData;
 use typenum::Unsigned;
+use ssz::{Encode, Decode, DecodeError};
 
 /// A marker struct used to declare SSZ `Variable` behaviour on a `Bitfield`.
 #[derive(Clone, PartialEq, Debug)]
-pub struct Variable<N: Unsigned> {
+pub struct Variable<N> {
     _meta: PhantomData<N>,
 }
 
 /// A marker struct used to declare SSZ `Fixed` behaviour on a `Bitfield`.
 #[derive(Clone, PartialEq, Debug)]
-pub struct Fixed<N: Unsigned> {
+pub struct Fixed<N> {
     _meta: PhantomData<N>,
 }
 
@@ -20,6 +21,7 @@ pub trait BitfieldBehaviour: Clone {}
 impl<N: Unsigned + Clone> BitfieldBehaviour for Variable<N> {}
 impl<N: Unsigned + Clone> BitfieldBehaviour for Fixed<N> {}
 
+#[derive(Clone, PartialEq, Debug)]
 pub struct Bitfield<C: BitfieldBehaviour> {
     bytes: Vec<u8>,
     len: usize,
@@ -128,20 +130,40 @@ impl<N: Unsigned + Clone> Bitfield<Variable<N>> {
 }
 
 impl<N: Unsigned + Clone> Bitfield<Fixed<N>> {
-//    pub fn new() -> Self {
-//        Self {
-//            bytes: vec![0; required_bytes(Self::capacity())],
-//            len: Self::capacity(),
-//            _meta: PhantomData
-//        }
-//    }
+    pub fn new() -> Self {
+        Self {
+            bytes: vec![0; required_bytes(Self::capacity())],
+            len: Self::capacity(),
+            _meta: PhantomData
+        }
+    }
+
+    pub fn capacity() -> usize {
+        N::to_usize()
+    }
+
+    /// Bitlist with fixed length do not need to set length bit so
+    /// we can just return raw bytes
+    pub fn into_bytes(self) -> Vec<u8> {
+        self.into_raw_bytes()
+    }
+
+    pub fn from_bytes(bytes: Vec<u8>) -> Result<Self, Error> {
+        Self::from_raw_bytes(bytes, Self::capacity())
+    }
 }
 
-///// An iterator over the bits in a `Bitfield`.
-//pub struct BitIter<'a, T> {
-//    bitfield: &'a Bitfield<T>,
-//    i: usize,
-//}
+impl<N: Unsigned + Clone> Default for Bitfield<Fixed<N>> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// An iterator over the bits in a `Bitfield`.
+pub struct BitIter<'a, T> {
+    bitfield: &'a Bitfield<T>,
+    i: usize,
+}
 
 impl<T: BitfieldBehaviour> Bitfield<T> {
 
@@ -237,12 +259,12 @@ impl<T: BitfieldBehaviour> Bitfield<T> {
             .map(|(i, byte)| i * 8 + 7 - byte.leading_zeros() as usize)
     }
 
-//    pub fn iter(&self) -> BitIter<'_, T> {
-//        BitIter {
-//            bitfield: self,
-//            i: 0
-//        }
-//    }
+    pub fn iter(&self) -> BitIter<'_, T> {
+        BitIter {
+            bitfield: self,
+            i: 0
+        }
+    }
 
     pub fn is_zero(&self) -> bool {
         self.bytes.iter().all(|b| *b == 0)
@@ -255,10 +277,9 @@ impl<T: BitfieldBehaviour> Bitfield<T> {
             .sum()
     }
 
-    // TODO: FIX THIS
     pub fn difference(&self, other: &Self) -> Self {
         let mut result = self.clone();
-//        result.difference_inplace(other);
+        result.difference_inplace(other);
         result
     }
 
@@ -289,6 +310,75 @@ impl<T: BitfieldBehaviour> Bitfield<T> {
                 len: bits_len
             })
         }
+    }
+}
+
+impl<'a, T: BitfieldBehaviour> Iterator for BitIter<'a, T> {
+    type Item = bool;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let item = self.bitfield.get(self.i).ok()?;
+        self.i += 1;
+
+        Some(item)
+    }
+}
+
+impl<N: Unsigned + Clone> Encode for Bitfield<Variable<N>> {
+    fn is_ssz_fixed_len() -> bool {
+        false
+    }
+
+    fn ssz_append(&self, buf: &mut Vec<u8>) {
+        buf.append(&mut self.clone().into_bytes())
+    }
+
+    fn ssz_bytes_len(&self) -> usize {
+        bytes_required(bits_len + 1)
+    }
+}
+
+impl<N: Unsigned + Clone> Decode for Bitfield<Variable<N>> {
+    fn is_ssz_fixed_len() -> bool {
+        false
+    }
+
+    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
+        Self::from_bytes(bytes.to_vec()).map_err(|e|
+            DecodeError::BytesInvalid(format!("Error occurred while decoding BitList: {:?}", e)))
+    }
+}
+
+impl<N: Unsigned + Clone> Encode for Bitfield<Fixed<N>> {
+    fn is_ssz_fixed_len() -> bool {
+        true
+    }
+
+    fn ssz_append(&self, buf: &mut Vec<u8>) {
+        buf.append(&mut self.clone().into_bytes())
+    }
+
+    fn ssz_fixed_len() -> usize {
+        bytes_for_bit_len(N::to_usize())
+    }
+
+    fn ssz_bytes_len(&self) -> usize {
+        <Self as Encode>::ssz_fixed_len()
+    }
+}
+
+impl<N: Unsigned + Clone> Decode for Bitfield<Fixed<N>> {
+    fn is_ssz_fixed_len() -> bool {
+        true
+    }
+
+    fn ssz_fixed_len() -> usize {
+        bytes_required(N::to_usize())
+    }
+
+    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
+        Self::from_bytes(bytes.to_vec()).map_err(|e|
+            DecodeError::BytesInvalid(format!("Error occurred while decoding BitVector: {:?}", e)))
     }
 }
 
