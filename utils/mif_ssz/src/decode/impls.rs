@@ -58,7 +58,12 @@ impl Decode for bool {
         if len != expected {
             Err(DecodeError::InvalidByteLength { len, expected })
         } else {
-            Ok(bytes[0] > 0)
+            match bytes[0] {
+                0 => Ok(false),
+                1 => Ok(true),
+                _ => Err(DecodeError::BytesInvalid(format!("Invalid value for boolean: {}", bytes[0])))
+            }
+
         }
     }
 }
@@ -246,6 +251,10 @@ mod tests {
             len: 0,
             expected: 1
         }));
+
+        assert_eq!(bool::from_ssz_bytes(&[2]), Err(DecodeError::BytesInvalid(
+            "Invalid value for boolean: 2".to_string()))
+        )
     }
 
     #[test]
