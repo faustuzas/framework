@@ -123,11 +123,11 @@ fn hashset(data: Vec<usize> ) -> HashSet<usize> {
     HashSet::from_iter(data.iter().cloned())
 }
 
-fn m_verify_merkle_proof(leaf: H256, proof: &[H256], index: usize, root: H256) -> bool {
-    return m_calculate_merkle_root(leaf, proof, index) == root
+fn verify_merkle_proof(leaf: H256, proof: &[H256], index: usize, root: H256) -> bool {
+    return calculate_merkle_root(leaf, proof, index) == root
 }
 
-fn m_calculate_merkle_root(leaf: H256, proof: &[H256], index: usize) -> H256 {
+fn calculate_merkle_root(leaf: H256, proof: &[H256], index: usize) -> H256 {
     assert_eq!( proof.len(), get_generalized_index_length(index), "Length of proof should equal generalized index depth");
     let mut root = leaf.as_bytes().to_vec();
 
