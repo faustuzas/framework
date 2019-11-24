@@ -18,6 +18,8 @@ pub const MAX_VALUE_LENGTH: usize = (std::u32::MAX >> (8 * (4 - BYTES_PER_LENGTH
 pub use decode::{Decode, DecodeError, SszDecoder, SszDecoderBuilder};
 pub use encode::{Encode, SszEncoder};
 
+pub use decode::impls::decode_list_of_variable_length_items;
+
 pub fn ssz_encode<T: Encode>(val: &T) -> Vec<u8> {
     val.as_ssz_bytes()
 }

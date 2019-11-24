@@ -59,12 +59,11 @@ impl Decode for bool {
             Err(DecodeError::InvalidByteLength { len, expected })
         } else {
             match bytes[0] {
-                0b0000_0000 => Ok(false),
-                0b0000_0001 => Ok(true),
-                _ => Err(DecodeError::BytesInvalid(
-                    format!("Out-of-range for boolean: {}", bytes[0]).to_string(),
-                )),
+                0 => Ok(false),
+                1 => Ok(true),
+                _ => Err(DecodeError::BytesInvalid(format!("Invalid value for boolean: {}", bytes[0])))
             }
+
         }
     }
 }
@@ -95,9 +94,11 @@ impl<T: Decode> Decode for Option<T> {
     }
 
     fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
-        if bytes.len() < BYTES_PER_LENGTH_OFFSET {
+        let len = bytes.len();
+
+        if len < BYTES_PER_LENGTH_OFFSET {
             return Err(DecodeError::InvalidByteLength {
-                len: bytes.len(),
+                len,
                 expected: BYTES_PER_LENGTH_OFFSET,
             });
         }
@@ -195,23 +196,33 @@ le_integer_decoding_impl!(U256, 256);
 pub fn decode_list_of_variable_length_items<T: Decode>(
     bytes: &[u8],
 ) -> Result<Vec<T>, DecodeError> {
-    let mut first_value_byte = next_offset(bytes)?;
+    let mut value_offset = next_offset(bytes)?;
 
-    let items_count = first_value_byte / BYTES_PER_LENGTH_OFFSET;
+    // offset cannot point to the beginning of the bytes
+    if value_offset < BYTES_PER_LENGTH_OFFSET {
+        return Err(DecodeError::OutOfBoundsByte {
+            i: value_offset,
+        });
+    }
+
+    let items_count = value_offset / BYTES_PER_LENGTH_OFFSET;
     let mut items = Vec::with_capacity(items_count);
 
     for i in 1..=items_count {
-        let items_bytes = (if i == items_count {
-            // read to the end
-            bytes.get(first_value_byte..)
-        } else {
-            let next_first_value_byte = next_offset(&bytes[(i * BYTES_PER_LENGTH_OFFSET)..])?;
+        let items_bytes = (
+            // last item
+            if i == items_count {
+                // read to the end
+                bytes.get(value_offset..)
+            } else {
+                let next_value_offset = next_offset(&bytes[(i * BYTES_PER_LENGTH_OFFSET)..])?;
 
-            let bytes = bytes.get(first_value_byte..next_first_value_byte);
-            first_value_byte = next_first_value_byte;
+                // take all bytes between two offsets
+                let bytes = bytes.get(value_offset..next_value_offset);
+                value_offset = next_value_offset;
 
-            bytes
-        }).ok_or_else(|| DecodeError::OutOfBoundsByte { i: first_value_byte })?;
+                bytes
+        }).ok_or_else(|| DecodeError::OutOfBoundsByte { i: value_offset })?;
 
         items.push(T::from_ssz_bytes(items_bytes)?);
     }
@@ -224,135 +235,224 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_invalid_bool() {
-        assert_eq!(
-            bool::from_ssz_bytes(&[0; 2]),
-            Err(DecodeError::InvalidByteLength {
-                len: 2,
-                expected: 1
-            })
-        );
+    fn test_decode_bool() {
+        assert_eq!(bool::from_ssz_bytes(&[1]).unwrap(), true);
+        assert_eq!(bool::from_ssz_bytes(&[0]).unwrap(), false);
+    }
 
-        assert_eq!(
-            bool::from_ssz_bytes(&[]),
-            Err(DecodeError::InvalidByteLength {
-                len: 0,
-                expected: 1
-            })
-        );
+    #[test]
+    fn test_decode_bool_error() {
+        assert_eq!(bool::from_ssz_bytes(&[1, 1]), Err(DecodeError::InvalidByteLength {
+            len: 2,
+            expected: 1
+        }));
 
-        if let Err(DecodeError::BytesInvalid(_)) = bool::from_ssz_bytes(&[2]) {
-            // Success.
-        } else {
-            panic!("Did not return error on invalid bool val")
-        }
+        assert_eq!(bool::from_ssz_bytes(&[]), Err(DecodeError::InvalidByteLength {
+            len: 0,
+            expected: 1
+        }));
+
+        assert_eq!(bool::from_ssz_bytes(&[2]), Err(DecodeError::BytesInvalid(
+            "Invalid value for boolean: 2".to_string()))
+        )
+    }
+
+    #[test]
+    fn test_decode_u8() {
+        assert_eq!(u8::from_ssz_bytes(&[0]).unwrap(), 0_u8);
+        assert_eq!(u8::from_ssz_bytes(&[1]).unwrap(), 1_u8);
+        assert_eq!(u8::from_ssz_bytes(&[100]).unwrap(), 100_u8);
+        assert_eq!(u8::from_ssz_bytes(&[255]).unwrap(), 255_u8);
+    }
+
+    #[test]
+    fn test_decode_u8_error() {
+        assert_eq!(u8::from_ssz_bytes(&[1, 1]), Err(DecodeError::InvalidByteLength {
+            len: 2,
+            expected: 1
+        }));
+
+        assert_eq!(u8::from_ssz_bytes(&[]), Err(DecodeError::InvalidByteLength {
+            len: 0,
+            expected: 1
+        }));
     }
 
     #[test]
     fn test_decode_u16() {
-        assert_eq!(<u16>::from_ssz_bytes(&[0, 0]), Ok(0));
-        assert_eq!(<u16>::from_ssz_bytes(&[16, 0]), Ok(16));
-        assert_eq!(<u16>::from_ssz_bytes(&[0, 1]), Ok(256));
-        assert_eq!(<u16>::from_ssz_bytes(&[255, 255]), Ok(65535));
-
-        assert_eq!(
-            <u16>::from_ssz_bytes(&[255]),
-            Err(DecodeError::InvalidByteLength {
-                len: 1,
-                expected: 2
-            })
-        );
-
-        assert_eq!(
-            <u16>::from_ssz_bytes(&[]),
-            Err(DecodeError::InvalidByteLength {
-                len: 0,
-                expected: 2
-            })
-        );
-
-        assert_eq!(
-            <u16>::from_ssz_bytes(&[0, 1, 2]),
-            Err(DecodeError::InvalidByteLength {
-                len: 3,
-                expected: 2
-            })
-        );
+        assert_eq!(u16::from_ssz_bytes(&[1, 0]).unwrap(), 1_u16);
+        assert_eq!(u16::from_ssz_bytes(&[100, 0]).unwrap(), 100_u16);
+        assert_eq!(u16::from_ssz_bytes(&[0, 1]).unwrap(), 1_u16 << 8);
+        assert_eq!(u16::from_ssz_bytes(&[255, 255]).unwrap(), 65535_u16);
     }
 
     #[test]
-    fn test_decode_vec_of_u16() {
-        assert_eq!(<Vec<u16>>::from_ssz_bytes(&[0, 0, 0, 0]), Ok(vec![0, 0]));
-        assert_eq!(
-            <Vec<u16>>::from_ssz_bytes(&[0, 0, 1, 0, 2, 0, 3, 0]),
-            Ok(vec![0, 1, 2, 3])
-        );
-        assert_eq!(<u16>::from_ssz_bytes(&[16, 0]), Ok(16));
-        assert_eq!(<u16>::from_ssz_bytes(&[0, 1]), Ok(256));
-        assert_eq!(<u16>::from_ssz_bytes(&[255, 255]), Ok(65535));
+    fn test_decode_u16_error() {
+        assert_eq!(u16::from_ssz_bytes(&[1, 1, 1]), Err(DecodeError::InvalidByteLength {
+            len: 3,
+            expected: 2
+        }));
 
-        assert_eq!(
-            <u16>::from_ssz_bytes(&[255]),
-            Err(DecodeError::InvalidByteLength {
-                len: 1,
-                expected: 2
-            })
-        );
-
-        assert_eq!(
-            <u16>::from_ssz_bytes(&[]),
-            Err(DecodeError::InvalidByteLength {
-                len: 0,
-                expected: 2
-            })
-        );
-
-        assert_eq!(
-            <u16>::from_ssz_bytes(&[0, 1, 2]),
-            Err(DecodeError::InvalidByteLength {
-                len: 3,
-                expected: 2
-            })
-        );
+        assert_eq!(u16::from_ssz_bytes(&[]), Err(DecodeError::InvalidByteLength {
+            len: 0,
+            expected: 2
+        }));
     }
 
     #[test]
-    fn test_decode_vec_of_vec_of_u16() {
-        assert_eq!(
-            <Vec<Vec<u16>>>::from_ssz_bytes(&[4, 0, 0, 0]),
-            Ok(vec![vec![]])
-        );
+    fn test_decode_u32() {
+        assert_eq!(u32::from_ssz_bytes(&[1, 0, 0, 0]).unwrap(), 1_u32);
+        assert_eq!(u32::from_ssz_bytes(&[100, 0, 0, 0]).unwrap(), 100_u32);
+        assert_eq!(u32::from_ssz_bytes(&[0, 0, 1, 0]).unwrap(), 1_u32 << 16);
+        assert_eq!(u32::from_ssz_bytes(&[0, 0, 0, 1]).unwrap(), 1_u32 << 24);
+        assert_eq!(u32::from_ssz_bytes(&[255, 255, 255, 255]).unwrap(), !0_u32);
+    }
 
-        assert_eq!(
-            <Vec<u16>>::from_ssz_bytes(&[0, 0, 1, 0, 2, 0, 3, 0]),
-            Ok(vec![0, 1, 2, 3])
-        );
-        assert_eq!(<u16>::from_ssz_bytes(&[16, 0]), Ok(16));
-        assert_eq!(<u16>::from_ssz_bytes(&[0, 1]), Ok(256));
-        assert_eq!(<u16>::from_ssz_bytes(&[255, 255]), Ok(65535));
+    #[test]
+    fn test_decode_u32_error() {
+        assert_eq!(u32::from_ssz_bytes(&[1, 1, 1, 1, 5]), Err(DecodeError::InvalidByteLength {
+            len: 5,
+            expected: 4
+        }));
 
-        assert_eq!(
-            <u16>::from_ssz_bytes(&[255]),
-            Err(DecodeError::InvalidByteLength {
-                len: 1,
-                expected: 2
-            })
-        );
+        assert_eq!(u32::from_ssz_bytes(&[]), Err(DecodeError::InvalidByteLength {
+            len: 0,
+            expected: 4
+        }));
+    }
 
-        assert_eq!(
-            <u16>::from_ssz_bytes(&[]),
-            Err(DecodeError::InvalidByteLength {
-                len: 0,
-                expected: 2
-            })
-        );
+    #[test]
+    fn test_decode_u64() {
+        assert_eq!(u64::from_ssz_bytes(&[1, 0, 0, 0, 0, 0, 0, 0]).unwrap(), 1_u64);
+        assert_eq!(u64::from_ssz_bytes(&[255, 255, 255, 255, 255, 255, 255, 255]).unwrap(), !0_u64);
+    }
 
-        assert_eq!(
-            <u16>::from_ssz_bytes(&[0, 1, 2]),
-            Err(DecodeError::InvalidByteLength {
-                len: 3,
-                expected: 2
-            })
-        );
+    #[test]
+    fn test_decode_u64_error() {
+        assert_eq!(u64::from_ssz_bytes(&[1, 1, 1, 1, 5, 5, 7, 1, 1]), Err(DecodeError::InvalidByteLength {
+            len: 9,
+            expected: 8
+        }));
+
+        assert_eq!(u64::from_ssz_bytes(&[]), Err(DecodeError::InvalidByteLength {
+            len: 0,
+            expected: 8
+        }));
+    }
+
+    #[test]
+    fn test_decode_vec_of_u8() {
+        assert_eq!(<Vec<u8>>::from_ssz_bytes(&[]).unwrap(), vec![]);
+        assert_eq!(<Vec<u8>>::from_ssz_bytes(&[1]).unwrap(), vec![1]);
+        assert_eq!(<Vec<u8>>::from_ssz_bytes(&[0, 1, 2, 3]).unwrap(), vec![0, 1, 2, 3]);
+    }
+
+    #[test]
+    fn test_decode_vec_of_u64_error() {
+        assert_eq!(<Vec<u64>>::from_ssz_bytes(&[0, 1, 2, 3, 4, 5]), Err(DecodeError::InvalidByteLength {
+            len: 6,
+            expected: 8
+        }));
+
+        assert_eq!(<Vec<u64>>::from_ssz_bytes(&[0, 1, 2, 3, 4, 5, 6, 7, 8]), Err(DecodeError::InvalidByteLength {
+            len: 1,
+            expected: 8
+        }));
+    }
+
+    #[test]
+    fn test_decode_vec_of_vec() {
+        assert_eq!(<Vec<Vec<u8>>>::from_ssz_bytes(&[]).unwrap(), vec![] as Vec<Vec<u8>>);
+        assert_eq!(<Vec<Vec<u8>>>::from_ssz_bytes(&[4, 0, 0, 0]).unwrap(), vec![vec![]] as Vec<Vec<u8>>);
+        assert_eq!(<Vec<Vec<u8>>>::from_ssz_bytes(&[8, 0, 0, 0, 8, 0, 0, 0]).unwrap(), vec![vec![], vec![]] as Vec<Vec<u8>>);
+        assert_eq!(<Vec<Vec<u8>>>::from_ssz_bytes(&[8, 0, 0, 0, 11, 0, 0, 0, 0, 1, 2, 11, 22, 33]).unwrap(), vec![vec![0_u8, 1_u8, 2_u8], vec![11_u8, 22_u8, 33_u8]]);
+    }
+
+    #[test]
+    fn test_decode_vec_of_vec_error() {
+        // offset is too short
+        assert_eq!(<Vec<Vec<u8>>>::from_ssz_bytes(&[0, 1, 1]), Err(DecodeError::InvalidLengthPrefix {
+            len: 3,
+            expected: BYTES_PER_LENGTH_OFFSET
+        }));
+
+        // offset points to the beginning of the bytes
+        assert_eq!(<Vec<Vec<u8>>>::from_ssz_bytes(&[0, 0, 0, 0]), Err(DecodeError::OutOfBoundsByte {
+            i: 0
+        }));
+
+        // offset is too large
+        assert_eq!(<Vec<Vec<u8>>>::from_ssz_bytes(&[8, 0, 0, 0, 32, 0, 0, 0]), Err(DecodeError::OutOfBoundsByte {
+            i: 32
+        }));
+
+        // cannot decode item from data which offset points to
+        assert_eq!(<Vec<Vec<u64>>>::from_ssz_bytes(&[4, 0, 0, 0, 1]), Err(DecodeError::InvalidByteLength {
+            len: 1,
+            expected: 8
+        }));
+    }
+
+    #[test]
+    fn test_decode_union() {
+        assert_eq!(<Option<u8>>::from_ssz_bytes(&[1, 0, 0, 0, 123]).unwrap(), Some(123_u8));
+        assert_eq!(<Option<u8>>::from_ssz_bytes(&[0; 4]).unwrap(), None);
+    }
+
+    #[test]
+    fn test_decode_union_error() {
+        assert_eq!(<Option<u8>>::from_ssz_bytes(&[1, 0, 0]), Err(DecodeError::InvalidByteLength {
+            len: 3,
+            expected: BYTES_PER_LENGTH_OFFSET,
+        }));
+
+        assert_eq!(<Option<u8>>::from_ssz_bytes(&[3, 0, 0, 0]), Err(DecodeError::BytesInvalid(format!(
+            "{} is not a valid union index for Option<T>",
+            3
+        ))));
+    }
+
+    #[test]
+    fn test_decode_h256() {
+        assert_eq!(H256::from_ssz_bytes(&[0; 32]).unwrap(), H256::zero());
+        assert_eq!(H256::from_ssz_bytes(&[1; 32]).unwrap(), H256::from_slice(&[1; 32]));
+
+        let bytes = vec![
+            1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0,
+        ];
+        assert_eq!(H256::from_ssz_bytes(&bytes).unwrap(), H256::from_slice(&bytes));
+    }
+
+    #[test]
+    fn test_decode_h256_error() {
+        assert_eq!(H256::from_ssz_bytes(&[0; 31]), Err(DecodeError::InvalidByteLength {
+            len: 31,
+            expected: 32
+        }));
+
+        assert_eq!(H256::from_ssz_bytes(&[0; 33]), Err(DecodeError::InvalidByteLength {
+            len: 33,
+            expected: 32
+        }));
+    }
+
+    #[test]
+    fn test_decode_u128() {
+        assert_eq!(U128::from_ssz_bytes(&[0; 16]).unwrap(), U128::from_dec_str("0").unwrap());
+        assert_eq!(U128::from_ssz_bytes(&[64, 226, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]).unwrap(), U128::from_dec_str("123456").unwrap());
+    }
+
+    #[test]
+    fn test_decode_u128_error() {
+        assert_eq!(U128::from_ssz_bytes(&[0; 15]), Err(DecodeError::InvalidByteLength {
+            len: 15,
+            expected: 16
+        }));
+
+        assert_eq!(U128::from_ssz_bytes(&[0; 17]), Err(DecodeError::InvalidByteLength {
+            len: 17,
+            expected: 16
+        }));
     }
 }

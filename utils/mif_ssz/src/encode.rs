@@ -82,7 +82,7 @@ impl<'a> SszEncoder<'a> {
         }
     }
 
-    /// Append the variable bytes to main buffer and return encoded data
+    /// Append the variable bytes to the main buffer and return encoded data
     ///
     /// This method has to be called after all `append` operations.
     ///
