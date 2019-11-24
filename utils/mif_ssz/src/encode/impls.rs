@@ -156,6 +156,7 @@ impl Encode for H256 {
     }
 }
 
+/// Little-endian big ints
 macro_rules! le_integer_encoding_impl {
     ($type: ident, $size: expr) => {
         impl Encode for $type {
@@ -266,14 +267,6 @@ mod tests {
     }
 
     #[test]
-    fn test_encode_u128() {
-        assert_eq!(U128::from_dec_str("0").unwrap().as_ssz_bytes(), vec![0; 16]);
-
-        let bytes = vec![64, 226, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        assert_eq!(U128::from_dec_str("123456").unwrap().as_ssz_bytes(), bytes)
-    }
-
-    #[test]
     fn test_encode_h256() {
         assert_eq!(H256::zero().as_ssz_bytes(), vec![0; 32]);
         assert_eq!(H256::from_slice(&[1; 32]).as_ssz_bytes(), vec![1; 32]);
@@ -284,5 +277,13 @@ mod tests {
         ];
 
         assert_eq!(H256::from_slice(&bytes).as_ssz_bytes(), bytes);
+    }
+
+    #[test]
+    fn test_encode_u128() {
+        assert_eq!(U128::from_dec_str("0").unwrap().as_ssz_bytes(), vec![0; 16]);
+
+        let bytes = vec![64, 226, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        assert_eq!(U128::from_dec_str("123456").unwrap().as_ssz_bytes(), bytes)
     }
 }
