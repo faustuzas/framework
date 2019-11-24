@@ -52,8 +52,7 @@ fn get_generalized_index_length(index: usize) -> usize {
 }
 
 fn get_generalized_index_bit(index: usize, position: usize) -> bool {
-    // ((index >> position) & 0x01) == 1 lighthouse 
-    ((index >> position) & 0x01) > 0 //dokumentacija
+    ((index >> position) & 0x01) > 0 
 }
 
 fn generalized_index_sibling(index: usize) -> usize {
@@ -72,24 +71,24 @@ fn generalized_index_parent(index: usize) -> usize {
 
 fn get_branch_indices(tree_index: usize) -> Vec<usize> {
 
-    let mut o = vec![generalized_index_sibling(tree_index)];
+    let mut branch = vec![generalized_index_sibling(tree_index)];
     
-    while o.last() > Some(&1usize) {
-        let temporary_index = o.last().cloned().unwrap();
+    while branch.last() > Some(&1usize) {
+        let temporary_index = branch.last().cloned().unwrap();
         let mut temporary = vec![generalized_index_sibling(generalized_index_parent(temporary_index))];
-            o.append(&mut temporary);
+            branch.append(&mut temporary);
     }
-    return o;
+    return branch;
 }
 
 fn get_path_indices(tree_index: usize) -> Vec<usize> {
     
-    let mut o = vec![tree_index];
-    while o.last() > Some(&1usize) {
-        let temporary_index = o.last().cloned().unwrap();
-        o.append(&mut vec![generalized_index_parent(temporary_index)]);
+    let mut path = vec![tree_index];
+    while path.last() > Some(&1usize) {
+        let temporary_index = path.last().cloned().unwrap();
+        path.append(&mut vec![generalized_index_parent(temporary_index)]);
     }
-    return o; 
+    return path; 
 }
 
 fn get_helper_indices(indices: &[usize]) -> Vec<usize> {
@@ -194,10 +193,6 @@ fn calculate_multi_merkle_root(leaves: &[H256], proof: &[H256], indices: &[usize
 }
 
 
-
-//TEST
-//-----------------------------------------
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -227,7 +222,6 @@ mod tests {
         assert_eq!(get_generalized_index_length(4),2);
         assert_eq!(get_generalized_index_length(7),2);
         assert_eq!(get_generalized_index_length(9),3);
-        // assert_eq!(get_generalized_index_length(0b00),0);
     }
     
     #[test]

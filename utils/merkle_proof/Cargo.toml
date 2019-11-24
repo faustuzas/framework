@@ -13,8 +13,5 @@ eth2_ssz_types = { path = "../ssz_types" }
 eth2_ssz = { path = "../ssz" }
 
 [lib]
-name = "math"
+name = "merkle_proof"
 
-# [dev-dependencies]
-# quickcheck = "0.8"
-# quickcheck_macros = "0.8"
