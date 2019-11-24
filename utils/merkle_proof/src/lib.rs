@@ -4,147 +4,12 @@ use ethereum_types::H256;
 use std::collections::HashSet;
 use std::iter::FromIterator;
 
-// pub struct H256(pub [u8; 32]);
-// const MAX_TREE_DEPTH: usize = 32;
-// const EMPTY_SLICE: &[H256] = &[];
-
 #[macro_use]
-// extern crate lazy_static;
 macro_rules! log_of {
     ($val:expr, $base:expr, $type:ty) => {
          ($val as f32).log($base) as $type
     }
 }
-
-// lazy_static! {
-//     static ref ZERO_HASHES: Vec<H256> = {
-//         let mut hashes = vec![H256::from([0; 32]); MAX_TREE_DEPTH + 1];
-
-//         for i in 0..MAX_TREE_DEPTH {
-//             hashes[i + 1] = hash_and_concat(hashes[i], hashes[i]);
-//         }
-
-//         hashes
-//     };
-
-//     static ref ZERO_NODES: Vec<MerkleTree> = {
-//         (0..=MAX_TREE_DEPTH).map(MerkleTree::Zero).collect()
-//     };
-// }
-
-// #[derive(Debug, Clone)]
-// pub enum MerkleTree {
-//     Leaf(H256),
-//     Node(H256, Box<Self>, Box<Self>),
-//     Zero(usize),
-// }
-
-// impl MerkleTree {
-//     pub fn create(leaves: &[H256], depth: usize) -> Self {
-//         use MerkleTree::*;
-//         if leaves.is_empty() {
-//              return Zero(depth); 
-//         }
-
-//         if depth == 0 {
-//                 assert_eq!(leaves.len(), 1);
-//                 Leaf(leaves[0])
-//         } else {
-//                 let capacity = get_next_power_of_two(depth-1);
-//                 let (l_leaves, r_leaves) = if leaves.len() <= capacity { (leaves, EMPTY_SLICE) } else { leaves.split_at(capacity)};
-//                 let l_subtree = MerkleTree::create(l_leaves, depth - 1);
-//                 let r_subtree = MerkleTree::create(r_leaves, depth - 1);
-//                 let hash = hash_and_concat(l_subtree.hash(), r_subtree.hash());
-//                 Node(hash, Box::new(l_subtree), Box::new(r_subtree))
-//         }
-//     }
-
-//     pub fn hash(&self) -> H256 { 
-//         match *self {
-//             MerkleTree::Leaf(h) => h,
-//             MerkleTree::Node(h, _, _) => h,
-//             MerkleTree::Zero(depth) => ZERO_HASHES[depth],
-//         }
-//     }
-
-//     pub fn left_and_right_branches(&self) -> Option<(&Self, &Self)> {
-//         match *self {
-//             MerkleTree::Leaf(_) | MerkleTree::Zero(0) => None,
-//             MerkleTree::Node(_, ref l, ref r) => Some((l, r)),
-//             MerkleTree::Zero(depth) => Some((&ZERO_NODES[depth - 1], &ZERO_NODES[depth - 1])),
-//         }
-//     }
-
-//     pub fn is_leaf(&self) -> bool {
-//         match self {
-//             MerkleTree::Leaf(_) => true,
-//             _ => false,
-//         }
-//     }
-
-//     pub fn make_proof(&self, index: usize, depth: usize) -> (H256, Vec<H256>) { 
-//         let mut proof = vec![];
-//         let mut current_node = self;
-//         let mut current_depth = depth;
-//         while current_depth > 0 {
-//             let (left, right) = current_node.left_and_right_branches().unwrap();
-//             if get_generalized_index_bit(index, current_depth-1) {
-//                 proof.push(left.hash());
-//                 current_node = right;
-//             } else {
-//                 proof.push(right.hash());
-//                 current_node = left;
-//             }
-//             current_depth -= 1;
-//         }
-
-//         debug_assert_eq!(proof.len(), depth);
-//         debug_assert!(current_node.is_leaf());
-
-//         proof.reverse();
-
-//         (current_node.hash(), proof)
-//     }
-// }
-
-// pub fn verify_merkle_proof( 
-//     leaf: H256,
-//     proof: &[H256],
-//     depth: usize,
-//     index: usize,
-//     root: H256,) -> bool {
-
-//     if proof.len() == depth {
-//         calculate_merkle_root(leaf, proof, depth, index) == root
-//     } else {
-//         false
-//     }
-// }
-
-// fn calculate_merkle_root(
-//     leaf: H256,
-//      proof: &[H256],
-//       depth: usize,
-//        index: usize,) -> H256 { 
-
-//     assert_eq!(proof.len(), get_generalized_index_length(index), "proof length should equal depth");
-
-//     let mut root = leaf.as_bytes().to_vec();
-
-//     for (i, leaf) in proof.iter().enumerate().take(depth) {
-//         // if ((index >> i) & 0x01) == 1 {
-//         if get_generalized_index_bit(index, i) {    
-//             let input = concat(leaf.as_bytes().to_vec(), root);
-//             root = hash(&input);
-//         } else {
-//             let mut input = root;
-//             input.extend_from_slice(leaf.as_bytes());
-//             root = hash(&input);
-//         }
-//     }
-
-//     H256::from_slice(&root)
-// }
 
 fn concat(mut vec1: Vec<u8>, mut vec2: Vec<u8>) -> Vec<u8> {
     vec1.append(&mut vec2);
@@ -158,40 +23,6 @@ fn hash_and_concat(h1: H256, h2: H256) -> H256 {
     )))
 }
 
-fn get_next_power_of_two(depth: usize) -> usize {
-    2usize.pow(depth as u32)      
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-///---------
 fn get_previous_power_of_two(x: usize) -> usize {
     if x <= 2 {
         return x;
@@ -200,11 +31,11 @@ fn get_previous_power_of_two(x: usize) -> usize {
     }
 }
 
-fn maybe_get_next_power_of_two(x: usize) -> usize {
+fn get_next_power_of_two(x: usize) -> usize {
     if x <= 2 {
         return x;
     } else {
-        return 2 * maybe_get_next_power_of_two((x+1)/2);
+        return 2 * get_next_power_of_two((x+1)/2);
     }    
 }
 
@@ -239,7 +70,6 @@ fn generalized_index_parent(index: usize) -> usize {
     return index / 2;
 }
 
-//--------------------------------------------------------
 fn get_branch_indices(tree_index: usize) -> Vec<usize> {
 
     let mut o = vec![generalized_index_sibling(tree_index)];
@@ -293,14 +123,12 @@ fn hashset(data: Vec<usize> ) -> HashSet<usize> {
     HashSet::from_iter(data.iter().cloned())
 }
 
-//----------------------------------------
 fn m_verify_merkle_proof(leaf: H256, proof: &[H256], index: usize, root: H256) -> bool {
     return m_calculate_merkle_root(leaf, proof, index) == root
 }
 
-
 fn m_calculate_merkle_root(leaf: H256, proof: &[H256], index: usize) -> H256 {
-    assert_eq!( proof.len(), get_generalized_index_length(index), "OH SHIET");
+    assert_eq!( proof.len(), get_generalized_index_length(index), "Length of proof should equal generalized index depth");
     let mut root = leaf.as_bytes().to_vec();
 
     for (i, leaf) in proof.iter().enumerate() {
@@ -316,17 +144,16 @@ fn m_calculate_merkle_root(leaf: H256, proof: &[H256], index: usize) -> H256 {
     return H256::from_slice(&root);
 }
 
-//----------------------------------------
-
-fn m_verify_merkle_multiproof(leaves: &[H256],  proof: &[H256], indices: &[usize], root: H256) -> bool {
+fn verify_merkle_multiproof(leaves: &[H256],  proof: &[H256], indices: &[usize], root: H256) -> bool {
     return calculate_multi_merkle_root(leaves, proof, indices) == root
 }
 
-//dabar darau
 fn calculate_multi_merkle_root(leaves: &[H256], proof: &[H256], indices: &[usize]) -> H256 {
     let mut btree_first = HashMap::new();
     let mut btree_second = HashMap::new();
 
+    assert_eq!(leaves.len(), indices.len(), "Length of leaves should be equal");
+    
     let helper_indices = get_helper_indices(indices);
     
     for (index, leave) in indices.iter().zip(leaves.iter()) {
@@ -348,13 +175,12 @@ fn calculate_multi_merkle_root(leaves: &[H256], proof: &[H256], indices: &[usize
     keys = reverse_vector(keys);
     let mut position = 1usize;
 
-    
     while position < keys.len() {
         let k = keys.get(position).unwrap();
-        
+        println!("key: {}", k);
         if btree_first.contains_key(k) && btree_first.contains_key(&(k^1)) && !btree_first.contains_key(&(k / 2)) {
-            let index_first: usize = (k / 2 | 1) ^ 1;
-            let index_second: usize = k / 2 | 1;
+            let index_first: usize = (k | 1) ^ 1;
+            let index_second: usize = k | 1;
             btree_first.insert(k / 2,
             hash_and_concat(
                 *btree_first.get(&index_first).unwrap(),
@@ -366,96 +192,81 @@ fn calculate_multi_merkle_root(leaves: &[H256], proof: &[H256], indices: &[usize
 
     return *btree_first.get(&1usize).unwrap();    
 }
+
+
+
+//TEST
 //-----------------------------------------
-
-
-
-// fn item_length<T: ssz::Encode>() -> usize {
-//    if T::is_ssz_fixed_len() {
-//        if T::ssz_fixed_len() > 32 {
-//            32
-//        } else {
-//            T::ssz_fixed_len()
-//        }
-//    } else {
-//         32
-//    }
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//paklausti ar reik:
-// kokiu funkciju man reik?-nera dokumentacijoj;
-// verify_merkle_multiproof? yra dokumentacijoj
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn sparse_zero_correct() {
-        let depth = 2;
-        let zero = H256::from([0x00; 32]);
-        let dense_tree = MerkleTree::create(&[zero, zero, zero, zero], depth);
-        let sparse_tree = MerkleTree::create(&[], depth);
-        assert_eq!(dense_tree.hash(), sparse_tree.hash());
+    fn get_previous_power_of_two_test() {
+        let x: usize = 3;
+        assert_eq!(get_previous_power_of_two(x), 2);
     }
 
     #[test]
-    fn create_small_example() {
-        // Construct a small merkle tree manually and check that it's consistent with the MerkleTree type.
-        let leaf_b00 = H256::from([0xAA; 32]);
-        let leaf_b01 = H256::from([0xBB; 32]);
-        let leaf_b10 = H256::from([0xCC; 32]);
-        let leaf_b11 = H256::from([0xDD; 32]);
-
-        let node_b0x = hash_and_concat(leaf_b00, leaf_b01);
-        let node_b1x = hash_and_concat(leaf_b10, leaf_b11);
-
-        let root = hash_and_concat(node_b0x, node_b1x);
-
-        let tree = MerkleTree::create(&[leaf_b00, leaf_b01, leaf_b10, leaf_b11], 2);
-        assert_eq!(tree.hash(), root);
+    fn get_next_power_of_two_test() {
+        let x: usize = 3;
+        assert_eq!(get_next_power_of_two(x), 4);
     }
- #[test]
-    fn verify_small_example() {
+
+    #[test]
+    fn concat_generalized_indices_test() {
+        let general_indices = [1usize, 2usize];
+        assert_eq!(2, concat_generalized_indices(&general_indices));
+        let general_indices = [1usize, 2usize, 3usize];
+        assert_eq!(5, concat_generalized_indices(&general_indices));
+    }
+
+    #[test]
+    fn get_generalized_index_length_test() {
+        assert_eq!(get_generalized_index_length(4),2);
+        assert_eq!(get_generalized_index_length(7),2);
+        assert_eq!(get_generalized_index_length(9),3);
+        // assert_eq!(get_generalized_index_length(0b00),0);
+    }
+    
+    #[test]
+    fn get_generalized_index_bit_test() {
+        assert_eq!(true, get_generalized_index_bit(2usize, 1usize));
+        assert_eq!(false, get_generalized_index_bit(3, 2));
+    }
+
+    #[test]
+    fn generalized_index_sibling_test() {
+        assert_eq!(generalized_index_sibling(3),2);
+    }
+
+    #[test]
+    fn generalized_index_child_test() {
+        assert_ne!(generalized_index_child(3,false),7);
+        assert_eq!(generalized_index_child(5,true),11);
+    }
+
+    #[test]
+    fn get_branch_indices_test() {
+        assert_eq!(get_branch_indices(5usize), vec!(4usize,3usize, 0usize));
+        assert_eq!(get_branch_indices(9usize), vec!(8usize,5usize, 3usize, 0usize));
+    }
+
+    #[test]
+    fn get_path_indices_test() {
+        assert_eq!(get_path_indices(9usize), vec!(9usize, 4usize, 2usize, 1usize));
+        assert_eq!(get_path_indices(10usize), vec!(10usize, 5usize, 2usize, 1usize));
+    }
+
+    #[test]
+    fn get_helper_indices_test() {
+        assert_eq!(get_helper_indices(&[9usize, 4usize, 2usize, 1usize]), vec!(8usize,5usize, 3usize, 0usize));
+        assert_eq!(get_helper_indices(&[10usize, 5usize, 2usize, 1usize]), vec!(11usize, 4usize, 3usize, 0usize));
+    }
+
+    #[test]
+    fn m_verify_merkle_proof_test() {
         // Construct a small merkle tree manually
         let leaf_b00 = H256::from([0xAA; 32]);
         let leaf_b01 = H256::from([0xBB; 32]);
@@ -468,76 +279,134 @@ mod tests {
         let root = hash_and_concat(node_b0x, node_b1x);
 
         // Run some proofs
-        assert!(verify_merkle_proof(
+        assert!(m_verify_merkle_proof(
             leaf_b00,
             &[leaf_b01, node_b1x],
-            2,
-            0b00,
+            4,
             root
         ));
-        assert!(verify_merkle_proof(
+        assert!(m_verify_merkle_proof(
             leaf_b01,
             &[leaf_b00, node_b1x],
-            2,
-            0b01,
+            5,
             root
         ));
-        assert!(verify_merkle_proof(
+        assert!(m_verify_merkle_proof(
             leaf_b10,
             &[leaf_b11, node_b0x],
-            2,
-            0b10,
+            6,
             root
         ));
-        assert!(verify_merkle_proof(
+        assert!(m_verify_merkle_proof(
             leaf_b11,
             &[leaf_b10, node_b0x],
-            2,
-            0b11,
+            7,
             root
         ));
-        assert!(verify_merkle_proof(
+        assert!(m_verify_merkle_proof(
             leaf_b11,
             &[leaf_b10],
-            1,
-            0b11,
+            3,
             node_b1x
         ));
-// tests that should fail
-        assert!(!verify_merkle_proof(leaf_b01, &[], 2, 0b01, root));
+        assert!(!m_verify_merkle_proof(leaf_b01, &[], 1, root));
 
-        assert!(!verify_merkle_proof(
+        assert!(!m_verify_merkle_proof(
             leaf_b01,
             &[node_b1x, leaf_b00],
-            2,
-            0b01,
+            5,
             root
         ));
 
-        assert!(!verify_merkle_proof(leaf_b01, &[leaf_b00], 2, 0b01, root));
+        assert!(!m_verify_merkle_proof(leaf_b01, &[leaf_b00], 2, root));
 
-        assert!(!verify_merkle_proof(
+        assert!(!m_verify_merkle_proof(
             leaf_b01,
             &[leaf_b00, node_b1x],
-            2,
-            0b10,
+            4,
             root
         ));
 
-        assert!(!verify_merkle_proof(
+        assert!(!m_verify_merkle_proof(
             leaf_b01,
             &[leaf_b00, node_b1x],
-            2,
-            0b01,
+            5,
             node_b1x
         ));
     }
 
     #[test]
-    fn verify_zero_depth() {
-        let leaf = H256::from([0xD6; 32]);
-        let junk = H256::from([0xD7; 32]);
-        assert!(verify_merkle_proof(leaf, &[], 0, 0, leaf));
-        assert!(!verify_merkle_proof(leaf, &[], 0, 7, junk));
+    fn verify_merkle_multiproof_test() {
+        let leaf_b00 = H256::from([0xAA; 32]);
+        let leaf_b01 = H256::from([0xBB; 32]);
+        let leaf_b10 = H256::from([0xCC; 32]);
+        let leaf_b11 = H256::from([0xDD; 32]);
+
+        let node_b0x = hash_and_concat(leaf_b00, leaf_b01);
+        let node_b1x = hash_and_concat(leaf_b10, leaf_b11);
+
+        let root = hash_and_concat(node_b0x, node_b1x);
+
+        assert!(verify_merkle_multiproof(
+            &[leaf_b00,leaf_b01],
+            &[node_b1x, node_b1x],
+            &[4, 5],
+            root
+        ));
+
+        assert!(verify_merkle_multiproof(
+            &[leaf_b00],
+            &[leaf_b01, node_b1x],
+            &[4],
+            root
+        ));
+        assert!(verify_merkle_multiproof(
+            &[leaf_b01],
+            &[leaf_b00, node_b1x],
+            &[5],
+            root
+        ));
+        assert!(verify_merkle_multiproof(
+            &[leaf_b10],
+            &[leaf_b11, node_b0x],
+            &[6],
+            root
+        ));
+        assert!(verify_merkle_multiproof(
+            &[leaf_b11],
+            &[leaf_b10, node_b0x],
+            &[7],
+            root
+        ));
+        assert!(verify_merkle_multiproof(
+            &[leaf_b11],
+            &[leaf_b10],
+            &[3],
+            node_b1x
+        ));
+        assert!(!verify_merkle_multiproof(&[leaf_b01], &[], &[1], root));
+
+        assert!(!verify_merkle_multiproof(
+            &[leaf_b01],
+            &[node_b1x, leaf_b00],
+            &[5],
+            root
+        ));
+
+        assert!(!verify_merkle_multiproof(&[leaf_b01], &[leaf_b00], &[2], root));
+
+        assert!(!verify_merkle_multiproof(
+            &[leaf_b01],
+            &[leaf_b00, node_b1x],
+            &[4],
+            root
+        ));
+
+        assert!(!verify_merkle_multiproof(
+            &[leaf_b01],
+            &[leaf_b00, node_b1x],
+            &[5],
+            node_b1x
+        ));
     }
 }
