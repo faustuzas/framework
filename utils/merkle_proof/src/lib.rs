@@ -40,11 +40,11 @@ fn get_next_power_of_two(x: usize) -> usize {
 }
 
 fn concat_generalized_indices(indices: &[usize]) -> usize {
-    let mut o = 1usize;
+    let mut cancated_indices = 1usize;
     for index in indices.iter() {
-        o = o * get_previous_power_of_two(*index) + (index - get_previous_power_of_two(*index));
+        cancated_indices = cancated_indices * get_previous_power_of_two(*index) + (index - get_previous_power_of_two(*index));
     }
-    return o;
+    return cancated_indices;
 }
 
 fn get_generalized_index_length(index: usize) -> usize {
@@ -70,29 +70,26 @@ fn generalized_index_parent(index: usize) -> usize {
 }
 
 fn get_branch_indices(tree_index: usize) -> Vec<usize> {
-
     let mut branch = vec![generalized_index_sibling(tree_index)];
     
     while branch.last() > Some(&1usize) {
-        let temporary_index = branch.last().cloned().unwrap();
-        let mut temporary = vec![generalized_index_sibling(generalized_index_parent(temporary_index))];
-            branch.append(&mut temporary);
+        let index = branch.last().cloned().unwrap();
+        let mut next_index = vec![generalized_index_sibling(generalized_index_parent(index))];
+            branch.append(&mut next_index);
     }
     return branch;
 }
 
 fn get_path_indices(tree_index: usize) -> Vec<usize> {
-    
     let mut path = vec![tree_index];
     while path.last() > Some(&1usize) {
-        let temporary_index = path.last().cloned().unwrap();
-        path.append(&mut vec![generalized_index_parent(temporary_index)]);
+        let index = path.last().cloned().unwrap();
+        path.append(&mut vec![generalized_index_parent(index)]);
     }
     return path; 
 }
 
 fn get_helper_indices(indices: &[usize]) -> Vec<usize> {
-
     let mut all_helper_indices: Vec<usize> = vec![];
     let mut all_path_indices: Vec<usize> = vec![];
     for index in indices.iter() {
@@ -158,6 +155,7 @@ fn calculate_multi_merkle_root(leaves: &[H256], proof: &[H256], indices: &[usize
     for (index, leave) in indices.iter().zip(leaves.iter()) {
         btree_first.insert(*index, *leave);
     }
+
     for (helper_step, proof_step) in helper_indices.iter().zip(proof.iter()) {
         btree_second.insert(*helper_step, *proof_step);
     }
@@ -176,14 +174,18 @@ fn calculate_multi_merkle_root(leaves: &[H256], proof: &[H256], indices: &[usize
 
     while position < keys.len() {
         let k = keys.get(position).unwrap();
-        println!("key: {}", k);
-        if btree_first.contains_key(k) && btree_first.contains_key(&(k^1)) && !btree_first.contains_key(&(k / 2)) {
+        let contains_itself: bool = btree_first.contains_key(k);
+        let contains_sibling: bool = btree_first.contains_key(&(k^1));
+        let contains_parent: bool = btree_first.contains_key(&(k / 2));
+
+        if contains_itself && contains_sibling && !contains_parent {
             let index_first: usize = (k | 1) ^ 1;
             let index_second: usize = k | 1;
-            btree_first.insert(k / 2,
-            hash_and_concat(
-                *btree_first.get(&index_first).unwrap(),
-                *btree_first.get(&index_second).unwrap())
+            btree_first.insert(
+                k / 2,
+                hash_and_concat(
+                    *btree_first.get(&index_first).unwrap(),
+                    *btree_first.get(&index_second).unwrap())
             );
         }
         position += 1
@@ -261,7 +263,6 @@ mod tests {
 
     #[test]
     fn m_verify_merkle_proof_test() {
-        // Construct a small merkle tree manually
         let leaf_b00 = H256::from([0xAA; 32]);
         let leaf_b01 = H256::from([0xBB; 32]);
         let leaf_b10 = H256::from([0xCC; 32]);
@@ -272,56 +273,55 @@ mod tests {
 
         let root = hash_and_concat(node_b0x, node_b1x);
 
-        // Run some proofs
-        assert!(m_verify_merkle_proof(
+        assert!(verify_merkle_proof(
             leaf_b00,
             &[leaf_b01, node_b1x],
             4,
             root
         ));
-        assert!(m_verify_merkle_proof(
+        assert!(verify_merkle_proof(
             leaf_b01,
             &[leaf_b00, node_b1x],
             5,
             root
         ));
-        assert!(m_verify_merkle_proof(
+        assert!(verify_merkle_proof(
             leaf_b10,
             &[leaf_b11, node_b0x],
             6,
             root
         ));
-        assert!(m_verify_merkle_proof(
+        assert!(verify_merkle_proof(
             leaf_b11,
             &[leaf_b10, node_b0x],
             7,
             root
         ));
-        assert!(m_verify_merkle_proof(
+        assert!(verify_merkle_proof(
             leaf_b11,
             &[leaf_b10],
             3,
             node_b1x
         ));
-        assert!(!m_verify_merkle_proof(leaf_b01, &[], 1, root));
+        assert!(!verify_merkle_proof(leaf_b01, &[], 1, root));
 
-        assert!(!m_verify_merkle_proof(
+        assert!(!verify_merkle_proof(
             leaf_b01,
             &[node_b1x, leaf_b00],
             5,
             root
         ));
 
-        assert!(!m_verify_merkle_proof(leaf_b01, &[leaf_b00], 2, root));
+        assert!(!verify_merkle_proof(leaf_b01, &[leaf_b00], 2, root));
 
-        assert!(!m_verify_merkle_proof(
+        assert!(!verify_merkle_proof(
             leaf_b01,
             &[leaf_b00, node_b1x],
             4,
             root
         ));
 
-        assert!(!m_verify_merkle_proof(
+        assert!(!verify_merkle_proof(
             leaf_b01,
             &[leaf_b00, node_b1x],
             5,
