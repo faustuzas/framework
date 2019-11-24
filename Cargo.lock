@@ -529,6 +529,10 @@ dependencies = [
 [[package]]
 name = "mif_ssz"
 version = "0.1.0"
+dependencies = [
+ "ethereum-types 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "mif_ssz_derive 0.1.0",
+]
 
 [[package]]
 name = "mif_ssz_derive"
@@ -537,6 +541,14 @@ version = "0.1.0"
 [[package]]
 name = "mif_ssz_types"
 version = "0.1.0"
+dependencies = [
+ "mif_ssz 0.1.0",
+ "serde 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_derive 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_hex 0.1.0",
+ "tree_hash 0.1.1",
+ "typenum 1.11.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "milagro_bls"

@@ -7,8 +7,8 @@ edition = "2018"
 [lib]
 name = "ssz"
 
-[dev-dependencies]
-mif_ssz_derive = { path = "../mif_ssz_derive" }
-
 [dependencies]
 ethereum-types = "0.6"
+
+[dev-dependencies]
+mif_ssz_derive = { path = "../mif_ssz_derive" }
