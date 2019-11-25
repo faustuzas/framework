@@ -4,6 +4,12 @@ use ethereum_types::H256;
 use std::collections::HashSet;
 use std::iter::FromIterator;
 
+#[derive(Debug, PartialEq)]
+pub enum MerkleProofError {
+    /// Params of not eqal length were given
+    InvalidParamLength { len_first: usize, len_second: usize },
+}
+
 #[macro_use]
 macro_rules! log_of {
     ($val:expr, $base:expr, $type:ty) => {
@@ -119,12 +125,22 @@ fn hashset(data: Vec<usize> ) -> HashSet<usize> {
     HashSet::from_iter(data.iter().cloned())
 }
 
-fn verify_merkle_proof(leaf: H256, proof: &[H256], index: usize, root: H256) -> bool {
-    return calculate_merkle_root(leaf, proof, index) == root
+fn verify_merkle_proof(leaf: H256, proof: &[H256], index: usize, root: H256) -> Result<bool, MerkleProofError> {
+    match calculate_merkle_root(leaf, proof, index) {
+        Ok(calculated_root) => Ok(calculated_root== root),
+        Err(err) => Err(err),
+    }
+    // return calculate_merkle_root(leaf, proof, index) == root
 }
 
-fn calculate_merkle_root(leaf: H256, proof: &[H256], index: usize) -> H256 {
-    assert_eq!( proof.len(), get_generalized_index_length(index), "Length of proof should equal generalized index depth");
+fn calculate_merkle_root(leaf: H256, proof: &[H256], index: usize) -> Result<H256, MerkleProofError> {
+    // assert_eq!( proof.len(), get_generalized_index_length(index), "Length of proof should equal generalized index depth");
+    if proof.len() != get_generalized_index_length(index) {
+        return Err(MerkleProofError::InvalidParamLength {
+            len_first: proof.len(), 
+            len_second:  get_generalized_index_length(index)
+        });
+    }
     let mut root = leaf.as_bytes().to_vec();
 
     for (i, leaf) in proof.iter().enumerate() {
@@ -137,19 +153,30 @@ fn calculate_merkle_root(leaf: H256, proof: &[H256], index: usize) -> H256 {
             root = hash(&input);
         }
     }
-    return H256::from_slice(&root);
+    Ok(H256::from_slice(&root))
+    // return H256::from_slice(&root);
 }
 
-fn verify_merkle_multiproof(leaves: &[H256],  proof: &[H256], indices: &[usize], root: H256) -> bool {
-    return calculate_multi_merkle_root(leaves, proof, indices) == root
+fn verify_merkle_multiproof(leaves: &[H256],  proof: &[H256], indices: &[usize], root: H256) -> Result<bool, MerkleProofError> {
+    match calculate_multi_merkle_root(leaves, proof, indices) {
+        Ok(calculated_root) => Ok(calculated_root== root),
+        Err(err) => Err(err)
+        //Err(MerkleProofError::InvalidParamLength) => Err(err),
+    }
+    //Ok(calculate_multi_merkle_root(leaves, proof, indices) == root)
 }
 
-fn calculate_multi_merkle_root(leaves: &[H256], proof: &[H256], indices: &[usize]) -> H256 {
+fn calculate_multi_merkle_root(leaves: &[H256], proof: &[H256], indices: &[usize]) -> Result<H256, MerkleProofError> {
     let mut btree_first = HashMap::new();
     let mut btree_second = HashMap::new();
 
-    assert_eq!(leaves.len(), indices.len(), "Length of leaves should be equal");
-    
+    if leaves.len() != indices.len() {
+        return Err(MerkleProofError::InvalidParamLength {
+            len_first: leaves.len(), 
+            len_second: indices.len()
+        });
+    }
+
     let helper_indices = get_helper_indices(indices);
     
     for (index, leave) in indices.iter().zip(leaves.iter()) {
@@ -191,9 +218,8 @@ fn calculate_multi_merkle_root(leaves: &[H256], proof: &[H256], indices: &[usize
         position += 1
     }
 
-    return *btree_first.get(&1usize).unwrap();    
+    return Ok(*btree_first.get(&1usize).unwrap());    
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -262,7 +288,7 @@ mod tests {
     }
 
     #[test]
-    fn m_verify_merkle_proof_test() {
+    fn verify_merkle_proof_test() {
         let leaf_b00 = H256::from([0xAA; 32]);
         let leaf_b01 = H256::from([0xBB; 32]);
         let leaf_b10 = H256::from([0xCC; 32]);
@@ -273,60 +299,65 @@ mod tests {
 
         let root = hash_and_concat(node_b0x, node_b1x);
 
-        assert!(verify_merkle_proof(
+        assert_eq!(verify_merkle_proof(
             leaf_b00,
             &[leaf_b01, node_b1x],
             4,
             root
-        ));
-        assert!(verify_merkle_proof(
+        ).unwrap(), true);
+        
+        assert_eq!(verify_merkle_proof(
             leaf_b01,
             &[leaf_b00, node_b1x],
             5,
             root
-        ));
-        assert!(verify_merkle_proof(
+        ).unwrap(), true);
+
+        assert_eq!(verify_merkle_proof(
             leaf_b10,
             &[leaf_b11, node_b0x],
             6,
             root
-        ));
-        assert!(verify_merkle_proof(
+        ).unwrap(), true);
+
+        assert_eq!(verify_merkle_proof(
             leaf_b11,
             &[leaf_b10, node_b0x],
             7,
             root
-        ));
-        assert!(verify_merkle_proof(
+        ).unwrap(), true);
+
+        assert_eq!(verify_merkle_proof(
             leaf_b11,
             &[leaf_b10],
             3,
             node_b1x
-        ));
-        assert!(!verify_merkle_proof(leaf_b01, &[], 1, root));
+        ).unwrap(), true);
 
-        assert!(!verify_merkle_proof(
+        assert_eq!(verify_merkle_proof(leaf_b01, &[], 1, root).unwrap(), false);
+
+        assert_eq!(verify_merkle_proof(
             leaf_b01,
             &[node_b1x, leaf_b00],
             5,
             root
-        ));
+        ).unwrap(), false);
 
-        assert!(!verify_merkle_proof(leaf_b01, &[leaf_b00], 2, root));
+        assert_eq!(verify_merkle_proof(leaf_b01, &[leaf_b00], 2, root).unwrap(), false);
 
-        assert!(!verify_merkle_proof(
+        assert_eq!(verify_merkle_proof(
             leaf_b01,
             &[leaf_b00, node_b1x],
             4,
             root
-        ));
+        ).unwrap(), false);
 
-        assert!(!verify_merkle_proof(
+        assert_eq!(verify_merkle_proof(
             leaf_b01,
             &[leaf_b00, node_b1x],
             5,
             node_b1x
-        ));
+        ).unwrap(), false);
     }
 
     #[test]
@@ -341,66 +372,78 @@ mod tests {
 
         let root = hash_and_concat(node_b0x, node_b1x);
 
-        assert!(verify_merkle_multiproof(
+        assert_eq!(verify_merkle_multiproof(
             &[leaf_b00,leaf_b01],
             &[node_b1x, node_b1x],
             &[4, 5],
             root
-        ));
+        ).unwrap(), true);
 
-        assert!(verify_merkle_multiproof(
+        assert_eq!(verify_merkle_multiproof(
             &[leaf_b00],
             &[leaf_b01, node_b1x],
             &[4],
             root
-        ));
-        assert!(verify_merkle_multiproof(
+        ).unwrap(), true);
+
+        assert_eq!(verify_merkle_multiproof(
             &[leaf_b01],
             &[leaf_b00, node_b1x],
             &[5],
             root
-        ));
-        assert!(verify_merkle_multiproof(
+        ).unwrap(), true);
+
+        assert_eq!(verify_merkle_multiproof(
             &[leaf_b10],
             &[leaf_b11, node_b0x],
             &[6],
             root
-        ));
-        assert!(verify_merkle_multiproof(
+        ).unwrap(), true);
+
+        assert_eq!(verify_merkle_multiproof(
             &[leaf_b11],
             &[leaf_b10, node_b0x],
             &[7],
             root
-        ));
-        assert!(verify_merkle_multiproof(
+        ).unwrap(), true);
+
+        assert_eq!(verify_merkle_multiproof(
             &[leaf_b11],
             &[leaf_b10],
             &[3],
             node_b1x
-        ));
-        assert!(!verify_merkle_multiproof(&[leaf_b01], &[], &[1], root));
+        ).unwrap(), true);
 
-        assert!(!verify_merkle_multiproof(
+        assert_eq!(verify_merkle_multiproof(&[leaf_b01], &[], &[1], root).unwrap(), false);
+
+        assert_eq!(verify_merkle_multiproof(
             &[leaf_b01],
             &[node_b1x, leaf_b00],
             &[5],
             root
-        ));
+        ).unwrap(), false);
 
-        assert!(!verify_merkle_multiproof(&[leaf_b01], &[leaf_b00], &[2], root));
+        assert_eq!(verify_merkle_multiproof(&[leaf_b01], &[leaf_b00], &[2], root).unwrap(), false);
 
-        assert!(!verify_merkle_multiproof(
+        assert_eq!(verify_merkle_multiproof(
             &[leaf_b01],
             &[leaf_b00, node_b1x],
             &[4],
             root
-        ));
+        ).unwrap(), false);
 
-        assert!(!verify_merkle_multiproof(
+        assert_eq!(verify_merkle_multiproof(
             &[leaf_b01],
             &[leaf_b00, node_b1x],
             &[5],
             node_b1x
-        ));
+        ).unwrap(), false);
+
+        assert_eq!(verify_merkle_multiproof(
+            &[leaf_b01, node_b0x],
+            &[leaf_b00, node_b1x],
+            &[5],
+            node_b1x
+        ), Err(MerkleProofError::InvalidParamLength { len_first: 2, len_second: 1 }));
     }
 }
