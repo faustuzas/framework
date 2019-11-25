@@ -15,7 +15,6 @@ pub struct FixedVector<T, N> {
 }
 
 impl<T, N: Unsigned> FixedVector<T, N> {
-
     pub fn new(vec: Vec<T>) -> Result<Self, Error> {
         if vec.len() == Self::capacity() {
             Ok(Self {
@@ -144,7 +143,7 @@ impl<T: ssz::Decode + Default, N: Unsigned> ssz::Decode for FixedVector<T, N> {
     fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, ssz::DecodeError> {
         if bytes.is_empty() {
             Err(ssz::DecodeError::InvalidByteLength {
-                len: 0, expected: 1
+                len: 0, expected: N::to_usize() * T::ssz_fixed_len()
             })
         } else if T::is_ssz_fixed_len() {
             let items_result = bytes
@@ -169,5 +168,112 @@ impl<T: ssz::Decode + Default, N: Unsigned> ssz::Decode for FixedVector<T, N> {
             ssz::decode_list_of_variable_length_items(bytes)
                 .and_then(|items| Ok(items.into()))
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use typenum::*;
+    use ssz::*;
+
+    #[test]
+    fn test_new() {
+        let items = vec![1, 2, 3, 4, 5];
+        let vector_result: Result<FixedVector<i32, U5>, _> = FixedVector::new(items.clone());
+        assert!(vector_result.is_ok());
+        assert_eq!(vector_result.unwrap().vec, items);
+    }
+
+    #[test]
+    fn test_new_error() {
+        let vector_result: Result<FixedVector<i32, U3>, _> = FixedVector::new( vec![1, 2, 3, 4, 5]);
+        assert_eq!(vector_result, Err(Error::OutOfBounds {
+            i: 5,
+            len: 3
+        }));
+    }
+
+    #[test]
+    fn test_from_elem() {
+        let vector: FixedVector<i32, U10> = FixedVector::from_elem(5);
+        assert_eq!(vector.vec, vec![5; 10]);
+    }
+
+    #[test]
+    fn test_from_into() {
+        let vector: FixedVector<i32, U4> = FixedVector::from(vec![0, 1, 2, 3]);
+        assert_eq!(vector.len(), 4);
+        assert_eq!(vector.vec, vec![0, 1, 2, 3]);
+
+        let vec: Vec<i32> = vector.into();
+        assert_eq!(vec, vec![0, 1, 2, 3]);
+    }
+
+    #[test]
+    fn test_default() {
+        let vector: FixedVector<i32, U0> = FixedVector::default();
+        assert_eq!(vector.len(), 0);
+        assert_eq!(vector.vec, vec![]);
+    }
+
+    #[test]
+    fn test_index() {
+        let vector: FixedVector<usize, U4> = FixedVector::from(vec![0, 1, 2, 3]);
+        for i in 0..4 {
+            assert_eq!(vector[i], i);
+        }
+    }
+
+    #[test]
+    fn test_index_mut() {
+        let mut vector: FixedVector<usize, U4> = FixedVector::from(vec![0, 1, 2, 3]);
+        for i in 0..4 {
+            vector[i] += 2;
+            assert_eq!(vector[i], i + 2);
+        }
+    }
+
+    #[test]
+    fn test_deref() {
+        let vector: FixedVector<i32, U4> = FixedVector::from(vec![0, 1, 2, 3]);
+        let slice = [0, 1, 2, 3];
+        assert_eq!(*vector, slice);
+    }
+
+    #[test]
+    fn test_into_iter() {
+        let vec_from_vector: Vec<i32> = <FixedVector<i32, U4>>::from(vec![0, 1, 2, 3])
+            .into_iter()
+            .map(|el| el * el)
+            .collect();
+
+        assert_eq!(vec_from_vector, vec![0, 1, 4, 9]);
+    }
+
+    #[test]
+    fn test_ssz_round_trip() {
+        let vector: FixedVector<u16, U4> = FixedVector::from(vec![1, 2, 3, 4]);
+        let decoded_res = <FixedVector<u16, U4>>::from_ssz_bytes(vector.as_ssz_bytes().as_slice());
+        assert!(decoded_res.is_ok());
+        assert_eq!(decoded_res.unwrap(), vector)
+    }
+
+    #[test]
+    fn test_ssz_decode_error() {
+        // 0 bytes passed
+        assert_eq!(<FixedVector<u8, U4>>::from_ssz_bytes(&[]), Err(DecodeError::InvalidByteLength {
+            len: 0, expected: 4
+        }));
+
+        // incorrect amount of bytes passed
+        assert_eq!(<FixedVector<u16, U4>>::from_ssz_bytes(&[0, 1, 0, 2, 0, 3]), Err(ssz::DecodeError::BytesInvalid(
+            "Wrong number of items parsed. Got: 3, expected: 4".to_string()
+        )));
+
+        // invalid bytes passed
+        assert_eq!(<FixedVector<bool, U4>>::from_ssz_bytes(&[0, 2]), Err(DecodeError::BytesInvalid(
+            "Invalid value for boolean: 2".to_string())
+        ));
     }
 }

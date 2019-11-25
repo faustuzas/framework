@@ -104,7 +104,7 @@ impl<T, N: Unsigned> Deref for VariableList<T, N> {
     type Target = [T];
 
     fn deref(&self) -> &[T] {
-        &self.vec[..]
+        self.vec.as_slice()
     }
 }
 
@@ -155,5 +155,95 @@ impl<T: ssz::Decode, N: Unsigned> ssz::Decode for VariableList<T, N> {
 
         Self::new(vec).map_err(|e|
             ssz::DecodeError::BytesInvalid(format!("VariableList {:?}", e)))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use typenum::*;
+    use ssz::*;
+
+    #[test]
+    fn test_new() {
+        let items = vec![1, 2, 3];
+        let list_result: Result<VariableList<i32, U3>, _> = VariableList::new(items.clone());
+        assert!(list_result.is_ok());
+        assert_eq!(list_result.unwrap().vec, items);
+    }
+
+    #[test]
+    fn test_new_error() {
+        let items = vec![1, 2, 3, 4];
+        let list_result: Result<VariableList<i32, U3>, _> = VariableList::new(items.clone());
+        assert_eq!(list_result, Err(Error::OutOfBounds {
+            i: 4,
+            len: 3
+        }));
+    }
+
+    #[test]
+    fn test_empty_len() {
+        let list: VariableList<i32, U0> = VariableList::empty();
+        assert_eq!(list.len(), 0);
+    }
+
+    #[test]
+    fn test_from_into() {
+        let list: VariableList<i32, U3> = VariableList::from(vec![0, 1, 2, 3]);
+        assert_eq!(list.len(), 3);
+        assert_eq!(list.vec, vec![0, 1, 2]);
+
+        let list_vec: Vec<i32> = list.into();
+        assert_eq!(list_vec, vec![0, 1, 2]);
+    }
+
+    #[test]
+    fn test_default() {
+        let list: VariableList<i32, U0> = VariableList::default();
+        assert_eq!(list.len(), 0);
+        assert_eq!(list.vec, vec![]);
+    }
+
+    #[test]
+    fn test_index() {
+        let list: VariableList<usize, U4> = VariableList::from(vec![0, 1, 2, 3]);
+        for i in 0..4 {
+            assert_eq!(list[i], i);
+        }
+    }
+
+    #[test]
+    fn test_index_mut() {
+        let mut list: VariableList<usize, U4> = VariableList::from(vec![0, 1, 2, 3]);
+        for i in 0..4 {
+            list[i] += 2;
+            assert_eq!(list[i], i + 2);
+        }
+    }
+
+    #[test]
+    fn test_deref() {
+        let list: VariableList<i32, U4> = VariableList::from(vec![0, 1, 2, 3]);
+        let slice = [0, 1, 2, 3];
+        assert_eq!(*list, slice);
+    }
+
+    #[test]
+    fn test_into_iter() {
+        let vec_from_list: Vec<i32> = <VariableList<i32, U4>>::from(vec![0, 1, 2, 3])
+            .into_iter()
+            .map(|el| el * el)
+            .collect();
+
+        assert_eq!(vec_from_list, vec![0, 1, 4, 9]);
+    }
+
+    #[test]
+    fn test_ssz_round_trip() {
+        let list: VariableList<u16, U4> = VariableList::from(vec![1, 2, 3, 4]);
+        let decoded_res = <VariableList<u16, U4>>::from_ssz_bytes(list.as_ssz_bytes().as_slice());
+        assert!(decoded_res.is_ok());
+        assert_eq!(decoded_res.unwrap(), list)
     }
 }

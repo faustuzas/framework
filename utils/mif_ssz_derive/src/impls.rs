@@ -89,7 +89,6 @@ pub fn impl_ssz_decode_derive(item_ast: &syn::DeriveInput) -> TokenStream {
 
     // you have to clone it because variable can be used only one time in the pattern
     let field_idents = extract_serializable_idents(struct_meta);
-    let field_idents_1 = field_idents.clone();
 
     let field_types = extract_serializable_types(struct_meta);
     let field_types_1 = field_types.clone();
