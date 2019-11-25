@@ -159,11 +159,9 @@ fn calculate_merkle_root(leaf: H256, proof: &[H256], index: usize) -> Result<H25
 
 fn verify_merkle_multiproof(leaves: &[H256],  proof: &[H256], indices: &[usize], root: H256) -> Result<bool, MerkleProofError> {
     match calculate_multi_merkle_root(leaves, proof, indices) {
-        Ok(calculated_root) => Ok(calculated_root== root),
+        Ok(calculated_root) => Ok(calculated_root == root),
         Err(err) => Err(err)
-        //Err(MerkleProofError::InvalidParamLength) => Err(err),
     }
-    //Ok(calculate_multi_merkle_root(leaves, proof, indices) == root)
 }
 
 fn calculate_multi_merkle_root(leaves: &[H256], proof: &[H256], indices: &[usize]) -> Result<H256, MerkleProofError> {
@@ -178,7 +176,25 @@ fn calculate_multi_merkle_root(leaves: &[H256], proof: &[H256], indices: &[usize
     }
 
     let helper_indices = get_helper_indices(indices);
-    
+
+    let mut repetition_counter: usize = 0;
+    for i in helper_indices.iter() {
+        if indices.contains(i) {
+            repetition_counter += 1;
+        }
+    }
+
+    if indices.len() == 1 {
+        repetition_counter += 1;
+    }
+
+    if (helper_indices.len()-repetition_counter) != proof.len() {
+        return Err(MerkleProofError::InvalidParamLength {
+            len_first: helper_indices.len(), 
+            len_second: proof.len()
+        });
+    }
+
     for (index, leave) in indices.iter().zip(leaves.iter()) {
         btree_first.insert(*index, *leave);
     }
@@ -195,6 +211,16 @@ fn calculate_multi_merkle_root(leaves: &[H256], proof: &[H256], indices: &[usize
         keys.push(key.clone());
     }
 
+    keys.sort();
+    keys = reverse_vector(keys);
+
+    let mut biggest: usize = *keys.get(0usize).clone().unwrap();
+    while biggest > 0 {
+        if !keys.contains(&biggest) {
+            keys.push(biggest);
+        }
+        biggest -=1;
+    }
     keys.sort();
     keys = reverse_vector(keys);
     let mut position = 1usize;
@@ -215,9 +241,8 @@ fn calculate_multi_merkle_root(leaves: &[H256], proof: &[H256], indices: &[usize
                     *btree_first.get(&index_second).unwrap())
             );
         }
-        position += 1
+        position += 1;
     }
-
     return Ok(*btree_first.get(&1usize).unwrap());    
 }
 
@@ -371,7 +396,9 @@ mod tests {
         let node_b1x = hash_and_concat(leaf_b10, leaf_b11);
 
         let root = hash_and_concat(node_b0x, node_b1x);
+        
 
+        
         assert_eq!(verify_merkle_multiproof(
             &[leaf_b00,leaf_b01],
             &[node_b1x, node_b1x],
