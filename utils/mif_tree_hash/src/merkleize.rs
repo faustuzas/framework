@@ -17,7 +17,7 @@ lazy_static! {
 
 pub fn merkleize(bytes: &[u8], min_leaves: usize) -> Vec<u8>{
     // if bytes does not exceed the length of bytes per chunk, it does not need merkleization
-    if bytes.len() <= BYTES_PER_CHUNK {
+    if bytes.len() <= BYTES_PER_CHUNK && min_leaves <= 1{
         let mut root = bytes.to_vec();
 
         // pad value with zeroes
@@ -33,7 +33,7 @@ pub fn merkleize(bytes: &[u8], min_leaves: usize) -> Vec<u8>{
     let parents_with_value_count = std::cmp::max(1, next_even(leaves_with_value_count));
 
     // Number of leaves including padding ones
-    let total_leaves_count = leaves_with_value_count.next_power_of_two();
+    let total_leaves_count = std::cmp::max(leaves_with_value_count, min_leaves).next_power_of_two();
 
     // Buffer to hold created chunks
     let mut chunks = ChunksHolder::for_chunks(parents_with_value_count);
