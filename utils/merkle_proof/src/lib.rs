@@ -6,7 +6,7 @@ use std::iter::FromIterator;
 
 #[derive(Debug, PartialEq)]
 pub enum MerkleProofError {
-    /// Params of not eqal length were given
+    /// Params of not equal length were given
     InvalidParamLength { len_first: usize, len_second: usize },
 }
 
