@@ -7,6 +7,9 @@ edition = "2018"
 [lib]
 name = "tree_hash"
 
+[dev-dependencies]
+mif_tree_hash_derive = { path = "../mif_tree_hash_derive" }
+
 [dependencies]
 eth2_hashing = "0.1"
 ethereum-types = "0.6"
