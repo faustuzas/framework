@@ -130,11 +130,9 @@ fn verify_merkle_proof(leaf: H256, proof: &[H256], index: usize, root: H256) -> 
         Ok(calculated_root) => Ok(calculated_root== root),
         Err(err) => Err(err),
     }
-    // return calculate_merkle_root(leaf, proof, index) == root
 }
 
 fn calculate_merkle_root(leaf: H256, proof: &[H256], index: usize) -> Result<H256, MerkleProofError> {
-    // assert_eq!( proof.len(), get_generalized_index_length(index), "Length of proof should equal generalized index depth");
     if proof.len() != get_generalized_index_length(index) {
         return Err(MerkleProofError::InvalidParamLength {
             len_first: proof.len(), 
@@ -154,7 +152,6 @@ fn calculate_merkle_root(leaf: H256, proof: &[H256], index: usize) -> Result<H25
         }
     }
     Ok(H256::from_slice(&root))
-    // return H256::from_slice(&root);
 }
 
 fn verify_merkle_multiproof(leaves: &[H256],  proof: &[H256], indices: &[usize], root: H256) -> Result<bool, MerkleProofError> {
@@ -165,8 +162,8 @@ fn verify_merkle_multiproof(leaves: &[H256],  proof: &[H256], indices: &[usize],
 }
 
 fn calculate_multi_merkle_root(leaves: &[H256], proof: &[H256], indices: &[usize]) -> Result<H256, MerkleProofError> {
-    let mut btree_first = HashMap::new();
-    let mut btree_second = HashMap::new();
+    let mut index_leave_map = HashMap::new();
+    let mut helper_proof_map = HashMap::new();
 
     if leaves.len() != indices.len() {
         return Err(MerkleProofError::InvalidParamLength {
@@ -176,7 +173,7 @@ fn calculate_multi_merkle_root(leaves: &[H256], proof: &[H256], indices: &[usize
     }
 
     let helper_indices = get_helper_indices(indices);
-
+    
     let mut repetition_counter: usize = 0;
     for i in helper_indices.iter() {
         if indices.contains(i) {
@@ -187,7 +184,6 @@ fn calculate_multi_merkle_root(leaves: &[H256], proof: &[H256], indices: &[usize
     if indices.len() == 1 {
         repetition_counter += 1;
     }
-
     if (helper_indices.len()-repetition_counter) != proof.len() {
         return Err(MerkleProofError::InvalidParamLength {
             len_first: helper_indices.len(), 
@@ -196,18 +192,18 @@ fn calculate_multi_merkle_root(leaves: &[H256], proof: &[H256], indices: &[usize
     }
 
     for (index, leave) in indices.iter().zip(leaves.iter()) {
-        btree_first.insert(*index, *leave);
+        index_leave_map.insert(*index, *leave);
     }
 
     for (helper_step, proof_step) in helper_indices.iter().zip(proof.iter()) {
-        btree_second.insert(*helper_step, *proof_step);
+        helper_proof_map.insert(*helper_step, *proof_step);
     }
 
-    btree_first.extend(btree_second);
+    index_leave_map.extend(helper_proof_map);
 
     let mut keys: Vec<usize> = vec![];
 
-    for(key, _value) in btree_first.iter_mut() {
+    for(key, _value) in index_leave_map.iter_mut() {
         keys.push(key.clone());
     }
 
@@ -215,35 +211,41 @@ fn calculate_multi_merkle_root(leaves: &[H256], proof: &[H256], indices: &[usize
     keys = reverse_vector(keys);
 
     let mut biggest: usize = *keys.get(0usize).clone().unwrap();
+
     while biggest > 0 {
         if !keys.contains(&biggest) {
             keys.push(biggest);
         }
         biggest -=1;
     }
+
     keys.sort();
     keys = reverse_vector(keys);
+
     let mut position = 1usize;
 
     while position < keys.len() {
+        // Safe because keys vector is filled above.
         let k = keys.get(position).unwrap();
-        let contains_itself: bool = btree_first.contains_key(k);
-        let contains_sibling: bool = btree_first.contains_key(&(k^1));
-        let contains_parent: bool = btree_first.contains_key(&(k / 2));
-
+        let contains_itself: bool = index_leave_map.contains_key(k);
+        let contains_sibling: bool = index_leave_map.contains_key(&(k^1));
+        let contains_parent: bool = index_leave_map.contains_key(&(k / 2));
+        
         if contains_itself && contains_sibling && !contains_parent {
+            
             let index_first: usize = (k | 1) ^ 1;
             let index_second: usize = k | 1;
-            btree_first.insert(
+            index_leave_map.insert(
                 k / 2,
                 hash_and_concat(
-                    *btree_first.get(&index_first).unwrap(),
-                    *btree_first.get(&index_second).unwrap())
+                    *index_leave_map.get(&index_first).unwrap(),
+                    *index_leave_map.get(&index_second).unwrap())
             );
         }
         position += 1;
     }
-    return Ok(*btree_first.get(&1usize).unwrap());    
+    // Safe because keys vector is full and value is inserted in those indeces.
+    return Ok(*index_leave_map.get(&1usize).unwrap());    
 }
 
 #[cfg(test)]
@@ -396,8 +398,13 @@ mod tests {
         let node_b1x = hash_and_concat(leaf_b10, leaf_b11);
 
         let root = hash_and_concat(node_b0x, node_b1x);
-        
 
+        assert_eq!(verify_merkle_multiproof(
+            &[leaf_b00,leaf_b01, leaf_b10],
+            &[ leaf_b11, node_b1x],
+            &[4, 5, 6],
+            root
+        ).unwrap(), true);
         
         assert_eq!(verify_merkle_multiproof(
             &[leaf_b00,leaf_b01],
