@@ -1,5 +1,3 @@
-#![allow(clippy::needless_borrow)]
-
 #![recursion_limit = "128"]
 #![allow(clippy::needless_borrow)]
 //! Provides procedural derive macros for the `Encode` and `Decode` traits of the `eth2_ssz` crate.
