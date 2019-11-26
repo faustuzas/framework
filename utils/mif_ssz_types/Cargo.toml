@@ -8,9 +8,9 @@ edition = "2018"
 name = "ssz_types"
 
 [dependencies]
-tree_hash = "0.1"
 serde = "1.0"
 serde_derive = "1.0"
 serde_hex = { path = "../serde_hex" }
 mif_ssz = { path = "../mif_ssz" }
+mif_tree_hash = { path = "../mif_tree_hash" }
 typenum = "1.10"

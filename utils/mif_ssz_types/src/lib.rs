@@ -1,3 +1,4 @@
+mod tree_hash;
 mod variable_list;
 mod fixed_vector;
 mod bitfield;
