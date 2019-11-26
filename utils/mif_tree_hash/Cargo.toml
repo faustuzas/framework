@@ -8,3 +8,5 @@ edition = "2018"
 name = "tree_hash"
 
 [dependencies]
+eth2_hashing = "0.1"
+lazy_static = "1.4"
