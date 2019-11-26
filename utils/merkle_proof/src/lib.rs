@@ -125,7 +125,7 @@ fn hashset(data: Vec<usize> ) -> HashSet<usize> {
     HashSet::from_iter(data.iter().cloned())
 }
 
-fn verify_merkle_proof(leaf: H256, proof: &[H256], index: usize, root: H256) -> Result<bool, MerkleProofError> {
+pub fn verify_merkle_proof(leaf: H256, proof: &[H256], index: usize, root: H256) -> Result<bool, MerkleProofError> {
     match calculate_merkle_root(leaf, proof, index) {
         Ok(calculated_root) => Ok(calculated_root== root),
         Err(err) => Err(err),
@@ -154,7 +154,7 @@ fn calculate_merkle_root(leaf: H256, proof: &[H256], index: usize) -> Result<H25
     Ok(H256::from_slice(&root))
 }
 
-fn verify_merkle_multiproof(leaves: &[H256],  proof: &[H256], indices: &[usize], root: H256) -> Result<bool, MerkleProofError> {
+pub fn verify_merkle_multiproof(leaves: &[H256],  proof: &[H256], indices: &[usize], root: H256) -> Result<bool, MerkleProofError> {
     match calculate_multi_merkle_root(leaves, proof, indices) {
         Ok(calculated_root) => Ok(calculated_root == root),
         Err(err) => Err(err)
@@ -232,7 +232,6 @@ fn calculate_multi_merkle_root(leaves: &[H256], proof: &[H256], indices: &[usize
         let contains_parent: bool = index_leave_map.contains_key(&(k / 2));
         
         if contains_itself && contains_sibling && !contains_parent {
-            
             let index_first: usize = (k | 1) ^ 1;
             let index_second: usize = k | 1;
             index_leave_map.insert(
