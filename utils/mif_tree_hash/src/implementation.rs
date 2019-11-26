@@ -56,11 +56,11 @@ macro_rules! impl_for_u8_array {
             }
 
             fn tree_hash_packed_encoding(&self) -> Vec<u8> {
-                unreachable!("bytesN should never be packed.")
+                unreachable!("shouldn't be packed.")
             }
 
             fn tree_hash_packing_factor() -> usize {
-                unreachable!("bytesN should never be packed.")
+                unreachable!("shouldn't be packed.")
             }
 
             fn tree_hash_root(&self) -> Vec<u8> {
@@ -138,19 +138,19 @@ macro_rules! impl_for_list {
             T: TreeHash,
         {
             fn tree_hash_type() -> TreeHashType {
-                unimplemented!("TreeHash is not implemented for Vec or slice")
+                unimplemented!("Not implemented for Vec or slice")
             }
 
             fn tree_hash_packed_encoding(&self) -> Vec<u8> {
-                unimplemented!("TreeHash is not implemented for Vec or slice")
+                unimplemented!("Not implemented for Vec or slice")
             }
 
             fn tree_hash_packing_factor() -> usize {
-                unimplemented!("TreeHash is not implemented for Vec or slice")
+                unimplemented!("Not implemented for Vec or slice")
             }
 
             fn tree_hash_root(&self) -> Vec<u8> {
-                unimplemented!("TreeHash is not implemented for Vec or slice")
+                unimplemented!("Not implemented for Vec or slice")
             }
         }
     };
