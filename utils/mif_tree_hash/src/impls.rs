@@ -56,11 +56,11 @@ macro_rules! impl_for_u8_array {
             }
 
             fn tree_hash_packed_encoding(&self) -> Vec<u8> {
-                unreachable!("shouldn't be packed.")
+                unreachable!("Int bytes should not be packed")
             }
 
             fn tree_hash_packing_factor() -> usize {
-                unreachable!("shouldn't be packed.")
+                unreachable!("Int bytes should not be packed")
             }
 
             fn tree_hash_root(&self) -> Vec<u8> {
