@@ -1,6 +1,8 @@
 mod merkleize;
 use merkleize::*;
 
+mod impls;
+
 #[macro_use]
 extern crate lazy_static;
 

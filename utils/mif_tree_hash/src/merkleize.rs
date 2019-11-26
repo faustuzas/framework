@@ -30,7 +30,7 @@ pub fn merkleize(bytes: &[u8]) -> Vec<u8>{
     let leaves_with_value_count = (bytes.len() + BYTES_PER_CHUNK - 1) / BYTES_PER_CHUNK;
 
     // Number of parents the leaves with value will have
-    let parents_with_value_count = std::cmp::max(1, next_even(leaves_count));
+    let parents_with_value_count = std::cmp::max(1, next_even(leaves_with_value_count));
 
     // Number of leaves including padding ones
     let total_leaves_count = leaves_with_value_count.next_power_of_two();
@@ -84,8 +84,7 @@ pub fn merkleize(bytes: &[u8]) -> Vec<u8>{
             let parent_hash = hash_concat(left_child, right_child);
 
             // Store a parent hash
-            chunks
-                .set(i, &parent_hash)
+            chunks.set(parent_index, &parent_hash)
                 .expect("Buffer has allocated enough space");
         }
 
@@ -115,7 +114,7 @@ impl ChunksHolder {
 
     fn set(&mut self, chunk: usize, value: &[u8]) -> Result<(), ()> {
         if chunk < self.chunks_stored() && value.len() == BYTES_PER_CHUNK {
-            let slice = &mut self.0[chunk_left_offset(chunk)..chunk_right_offset(chunk)];
+            let slice = &mut self.bytes[chunk_left_offset(chunk)..chunk_right_offset(chunk)];
             slice.copy_from_slice(value);
             Ok(())
         } else {

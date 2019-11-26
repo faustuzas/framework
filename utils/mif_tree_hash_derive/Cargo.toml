@@ -1,13 +1,13 @@
 [package]
-name = "mif_tree_hash"
+name = "mif_tree_hash_derive"
 version = "0.1.0"
 authors = ["Faustas Butkus <faustas.butkus@gmail.com>"]
 edition = "2018"
 
 [lib]
-name = "tree_hash"
+name = "tree_hash_derive"
+proc-macro = true
 
 [dependencies]
-eth2_hashing = "0.1"
-ethereum-types = "0.6"
-lazy_static = "1.4"
+syn = "0.15"
+quote = "0.6"

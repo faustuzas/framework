@@ -13,7 +13,7 @@ macro_rules! impl_for_bitsize {
             }
 
             fn tree_hash_packing_factor() -> usize {
-                HASHSIZE / ($bit_size / 8)
+                HASH_SIZE / ($bit_size / 8)
             }
 
             #[allow(clippy::cast_lossless)]
@@ -64,7 +64,7 @@ macro_rules! impl_for_u8_array {
             }
 
             fn tree_hash_root(&self) -> Vec<u8> {
-                merkle_root(&self[..], 0)
+                merkle_root(&self[..])
             }
         }
     };
@@ -89,7 +89,7 @@ impl TreeHash for U128 {
     }
 
     fn tree_hash_root(&self) -> Vec<u8> {
-        merkle_root(&self.tree_hash_packed_encoding(), 0)
+        merkle_root(&self.tree_hash_packed_encoding())
     }
 }
 
@@ -109,7 +109,7 @@ impl TreeHash for U256 {
     }
 
     fn tree_hash_root(&self) -> Vec<u8> {
-        merkle_root(&self.tree_hash_packed_encoding(), 0)
+        merkle_root(&self.tree_hash_packed_encoding())
     }
 }
 
@@ -127,7 +127,7 @@ impl TreeHash for H256 {
     }
 
     fn tree_hash_root(&self) -> Vec<u8> {
-        merkle_root(&self.as_bytes().to_vec(), 0)
+        merkle_root(&self.as_bytes().to_vec())
     }
 }
 
@@ -171,7 +171,7 @@ mod test {
     use super::*;
 
     #[test]
-    fn boolean_test() {
+    fn test_boolean() {
         let mut true_bytes: Vec<u8> = vec![1];
         true_bytes.append(&mut vec![0; 31]);
 
@@ -182,7 +182,7 @@ mod test {
     }
 
     #[test]
-    fn int_to_bytes() {
+    fn test_int_to_bytes() {
         assert_eq!(&int_to_full_hash(0), &[0; 32]);
         assert_eq!(
             &int_to_full_hash(1),
