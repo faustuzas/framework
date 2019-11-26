@@ -1,3 +1,4 @@
+use super::tree_hash::vec_tree_hash_root;
 use super::Error;
 use serde_derive::{Deserialize, Serialize};
 use std::marker::PhantomData;
@@ -168,6 +169,24 @@ impl<T: ssz::Decode + Default, N: Unsigned> ssz::Decode for FixedVector<T, N> {
             ssz::decode_list_of_variable_length_items(bytes)
                 .and_then(|items| Ok(items.into()))
         }
+    }
+}
+
+impl<T: tree_hash::TreeHash, N: Unsigned> tree_hash::TreeHash for FixedVector<T, N> {
+    fn tree_hash_type() -> tree_hash::TreeHashType {
+        tree_hash::TreeHashType::Vector
+    }
+
+    fn tree_hash_packed_encoding(&self) -> Vec<u8> {
+        unreachable!("Vector should not be packed.")
+    }
+
+    fn tree_hash_packing_factor() -> usize {
+        unreachable!("Vector should not be packed.")
+    }
+
+    fn tree_hash_root(&self) -> Vec<u8> {
+        vec_tree_hash_root::<T, N>(&self.vec)
     }
 }
 

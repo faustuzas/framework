@@ -1,3 +1,4 @@
+use crate::tree_hash::vec_tree_hash_root;
 use super::Error;
 use std::marker::PhantomData;
 use typenum::Unsigned;
@@ -155,6 +156,26 @@ impl<T: ssz::Decode, N: Unsigned> ssz::Decode for VariableList<T, N> {
 
         Self::new(vec).map_err(|e|
             ssz::DecodeError::BytesInvalid(format!("VariableList {:?}", e)))
+    }
+}
+
+impl<T: tree_hash::TreeHash, N: Unsigned> tree_hash::TreeHash for VariableList<T, N> {
+    fn tree_hash_type() -> tree_hash::TreeHashType {
+        tree_hash::TreeHashType::List
+    }
+
+    fn tree_hash_packed_encoding(&self) -> Vec<u8> {
+        unreachable!("List should not be packed.")
+    }
+
+    fn tree_hash_packing_factor() -> usize {
+        unreachable!("List should not be packed.")
+    }
+
+    fn tree_hash_root(&self) -> Vec<u8> {
+        let root = vec_tree_hash_root::<T, N>(&self.vec);
+
+        tree_hash::mix_in_length(&root, self.len())
     }
 }
 

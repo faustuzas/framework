@@ -36,6 +36,13 @@ pub trait SignedRoot: TreeHash {
     fn signed_root(&self) -> Vec<u8>;
 }
 
+pub fn mix_in_length(root: &[u8], length: usize) -> Vec<u8> {
+    let mut length_bytes = length.to_le_bytes().to_vec();
+    length_bytes.resize(BYTES_PER_CHUNK, 0);
+
+    merkleize::hash_concat(root, &length_bytes)
+}
+
 #[macro_export]
 macro_rules! tree_hash_ssz_encoding_as_list {
     ($type: ident) => {

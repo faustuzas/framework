@@ -4,8 +4,7 @@ use typenum::Unsigned;
 pub fn vec_tree_hash_root<T: TreeHash, N: Unsigned>(vec: &[T]) -> Vec<u8> {
     let (leaves, minimum_chunks) = match T::tree_hash_type() {
         TreeHashType::Basic => {
-            let mut leaves =
-                Vec::with_capacity((BYTES_PER_CHUNK / T::tree_hash_packing_factor()) * vec.len());
+            let mut leaves = Vec::with_capacity((BYTES_PER_CHUNK / T::tree_hash_packing_factor()) * vec.len());
 
             for el in vec {
                 leaves.append(&mut el.tree_hash_packed_encoding());
@@ -29,12 +28,12 @@ pub fn vec_tree_hash_root<T: TreeHash, N: Unsigned>(vec: &[T]) -> Vec<u8> {
         }
     };
 
-    merkle_root(&leaves, minimum_leaves)
+    merkle_root(&leaves, minimum_chunks)
 }
 
 pub fn bitfield_bytes_tree_hash_root<N: Unsigned>(bytes: &[u8]) -> Vec<u8> {
-    let byte_size = (N::to_usize() + 7) / 8;
-    let minimum_chunk_count = (byte_size + BYTES_PER_CHUNK - 1) / BYTES_PER_CHUNK;
+    let bits_len = (N::to_usize() + 7) / 8;
+    let minimum_chunk_count = (bits_len + BYTES_PER_CHUNK - 1) / BYTES_PER_CHUNK;
 
     merkle_root(bytes, minimum_chunk_count)
 }
