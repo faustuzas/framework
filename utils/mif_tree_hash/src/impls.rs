@@ -64,7 +64,7 @@ macro_rules! impl_for_u8_array {
             }
 
             fn tree_hash_root(&self) -> Vec<u8> {
-                merkle_root(&self[..])
+                merkle_root(&self[..], 0)
             }
         }
     };
@@ -89,7 +89,7 @@ impl TreeHash for U128 {
     }
 
     fn tree_hash_root(&self) -> Vec<u8> {
-        merkle_root(&self.tree_hash_packed_encoding())
+        merkle_root(&self.tree_hash_packed_encoding(), 0)
     }
 }
 
@@ -109,7 +109,7 @@ impl TreeHash for U256 {
     }
 
     fn tree_hash_root(&self) -> Vec<u8> {
-        merkle_root(&self.tree_hash_packed_encoding())
+        merkle_root(&self.tree_hash_packed_encoding(), 0)
     }
 }
 
@@ -127,7 +127,7 @@ impl TreeHash for H256 {
     }
 
     fn tree_hash_root(&self) -> Vec<u8> {
-        merkle_root(&self.as_bytes().to_vec())
+        merkle_root(&self.as_bytes().to_vec(), 0)
     }
 }
 

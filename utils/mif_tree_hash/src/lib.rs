@@ -10,8 +10,8 @@ pub const BYTES_PER_CHUNK: usize = 32;
 pub const HASH_SIZE: usize = 32;
 pub const MERKLE_HASH_CHUNK: usize = 2 * BYTES_PER_CHUNK;
 
-pub fn merkle_root(bytes: &[u8]) -> Vec<u8> {
-    merkleize(bytes)
+pub fn merkle_root(bytes: &[u8], min_leaves: usize) -> Vec<u8> {
+    merkleize(bytes, min_leaves)
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -76,7 +76,7 @@ macro_rules! tree_hash_ssz_encoding_as_vector {
             }
 
             fn tree_hash_root(&self) -> Vec<u8> {
-                tree_hash::merkle_root(&ssz::ssz_encode(self))
+                tree_hash::merkle_root(&ssz::ssz_encode(self), 0)
             }
         }
     };

@@ -15,7 +15,7 @@ lazy_static! {
     };
 }
 
-pub fn merkleize(bytes: &[u8]) -> Vec<u8>{
+pub fn merkleize(bytes: &[u8], min_leaves: usize) -> Vec<u8>{
     // if bytes does not exceed the length of bytes per chunk, it does not need merkleization
     if bytes.len() <= BYTES_PER_CHUNK {
         let mut root = bytes.to_vec();
