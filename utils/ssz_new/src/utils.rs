@@ -4,8 +4,7 @@ pub fn byte_index(bit_index: usize) -> usize {
     bit_index / 8
 }
 
-const MAX_POSSIBLE_OFFSET_VALUE: usize =
-    usize::max_value() >> BYTES_PER_LENGTH_OFFSET * 8;
+const MAX_POSSIBLE_OFFSET_VALUE: usize = usize::max_value() >> BYTES_PER_LENGTH_OFFSET * 8;
 
 pub fn serialize_offset(offset: usize) -> Result<Vec<u8>, Error> {
     if offset < MAX_POSSIBLE_OFFSET_VALUE {

@@ -4,7 +4,7 @@ use crate::utils::serialize_offset;
 
 macro_rules! ssz_encode_for_uintn {
     ( $($type_ident: ty),* ) => { $(
-        impl SszEncode for $type_ident {
+        impl Serialize for $type_ident {
             fn serialize(&self) -> Result<Vec<u8>, Error> {
                 Ok(self.to_le_bytes().to_vec())
             }
@@ -18,7 +18,7 @@ macro_rules! ssz_encode_for_uintn {
 
 ssz_encode_for_uintn!(u8, u16, u32, u64);
 
-impl SszEncode for bool {
+impl Serialize for bool {
     fn serialize(&self) -> Result<Vec<u8>, Error> {
         let byte = if *self {
             0b0000_0001
@@ -34,7 +34,7 @@ impl SszEncode for bool {
     }
 }
 
-impl<N: Unsigned> SszEncode for Bitvector<N> {
+impl<N: Unsigned> Serialize for Bitvector<N> {
     fn serialize(&self) -> Result<Vec<u8>, Error> {
         let mut buf = vec![0; (N::to_usize() + 7) / 8];
         for i in 0..N::to_usize() {
@@ -48,8 +48,7 @@ impl<N: Unsigned> SszEncode for Bitvector<N> {
     }
 }
 
-impl<T: SszEncode> SszEncode for Vec<T> {
-
+impl<T: Serialize> Serialize for Vec<T> {
     fn serialize(&self) -> Result<Vec<u8>, Error> {
         let mut fixed_parts = Vec::with_capacity(self.len());
         for element in self {

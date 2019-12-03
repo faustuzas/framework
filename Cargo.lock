@@ -870,7 +870,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "ssz_new"
 version = "0.1.0"
 dependencies = [
+ "ssz_new_derive 0.1.0",
  "typenum 1.11.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "ssz_new_derive"
+version = "0.1.0"
+dependencies = [
+ "quote 0.6.13 (registry+https://github.com/rust-lang/crates.io-index)",
+ "syn 0.15.44 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

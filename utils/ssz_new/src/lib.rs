@@ -5,10 +5,12 @@ mod utils;
 mod encode;
 
 pub use types::{Bitvector};
+pub use utils::serialize_offset;
+pub use ssz_derive::SszSerialize;
 
 pub const BYTES_PER_LENGTH_OFFSET: usize = 4;
 
-trait SszEncode {
+pub trait Serialize {
     fn serialize(&self) -> Result<Vec<Byte>, Error>;
 
     fn is_variable_size() -> bool;
