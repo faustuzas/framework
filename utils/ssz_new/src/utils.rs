@@ -1,9 +1,5 @@
 use crate::*;
 
-pub fn byte_index(bit_index: usize) -> usize {
-    bit_index / 8
-}
-
 const MAX_POSSIBLE_OFFSET_VALUE: usize = usize::max_value() >> BYTES_PER_LENGTH_OFFSET * 8;
 
 pub fn serialize_offset(offset: usize) -> Result<Vec<u8>, Error> {
@@ -17,15 +13,6 @@ pub fn serialize_offset(offset: usize) -> Result<Vec<u8>, Error> {
 #[cfg(test)]
 mod test {
     use super::*;
-    
-    #[test]
-    fn test_byte_index() {
-        assert_eq!(byte_index(0), 0);
-        assert_eq!(byte_index(1), 0);
-        assert_eq!(byte_index(15), 1);
-        assert_eq!(byte_index(16), 2);
-        assert_eq!(byte_index(17), 2);
-    }
 
     #[test]
     fn test_serialize_offset() {

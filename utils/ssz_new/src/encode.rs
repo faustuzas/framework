@@ -1,5 +1,4 @@
 use crate::*;
-use typenum::Unsigned;
 use crate::utils::serialize_offset;
 
 macro_rules! ssz_encode_for_uintn {
@@ -31,20 +30,6 @@ impl Serialize for bool {
 
     fn is_variable_size() -> bool {
         false
-    }
-}
-
-impl<N: Unsigned> Serialize for Bitvector<N> {
-    fn serialize(&self) -> Result<Vec<u8>, Error> {
-        let mut buf = vec![0; (N::to_usize() + 7) / 8];
-        for i in 0..N::to_usize() {
-            buf[i / 8] |= self[i] << (i % 8) as u8
-        }
-        Ok(buf)
-    }
-
-    fn is_variable_size() -> bool {
-        true
     }
 }
 

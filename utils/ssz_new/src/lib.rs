@@ -1,10 +1,8 @@
 type Byte = u8;
 
-mod types;
 mod utils;
 mod encode;
 
-pub use types::{Bitvector};
 pub use utils::serialize_offset;
 pub use ssz_derive::SszSerialize;
 
