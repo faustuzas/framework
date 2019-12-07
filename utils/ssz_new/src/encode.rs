@@ -1,7 +1,7 @@
 use crate::*;
 use crate::utils::serialize_offset;
 
-macro_rules! ssz_encode_for_uintn {
+macro_rules! serialize_for_uintn {
     ( $($type_ident: ty),* ) => { $(
         impl Serialize for $type_ident {
             fn serialize(&self) -> Result<Vec<u8>, Error> {
@@ -15,7 +15,7 @@ macro_rules! ssz_encode_for_uintn {
     )* };
 }
 
-ssz_encode_for_uintn!(u8, u16, u32, u64);
+serialize_for_uintn!(u8, u16, u32, u64);
 
 impl Serialize for bool {
     fn serialize(&self) -> Result<Vec<u8>, Error> {

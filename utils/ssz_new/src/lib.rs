@@ -2,6 +2,7 @@ type Byte = u8;
 
 mod utils;
 mod encode;
+mod decode;
 
 pub use utils::serialize_offset;
 pub use ssz_derive::SszSerialize;
@@ -14,9 +15,19 @@ pub trait Serialize {
     fn is_variable_size() -> bool;
 }
 
+pub trait Deserialize: Sized {
+    fn deserialize(bytes: &[Byte]) -> Result<Self, Error>;
+
+    fn is_variable_size() -> bool;
+
+    fn fixed_length() -> usize;
+}
+
 #[derive(Debug)]
 pub enum Error {
-    TooBigOffset { offset: usize },
+    TooBigOffset(usize),
+    InvalidByteLength { required: usize, got: usize },
     BitsOverflow { bits_count: usize, max_bits: usize },
-    IndexOutOfBound { index: usize, max: usize }
+    IndexOutOfBound { index: usize, max: usize },
+    InvalidBytes(String)
 }
