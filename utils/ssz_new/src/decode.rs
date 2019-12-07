@@ -5,14 +5,14 @@ macro_rules! deserialize_for_uintn {
     ( $(($type_ident: ty, $size_in_bits: expr)),* ) => { $(
         impl Deserialize for $type_ident {
             fn deserialize(bytes: &[u8]) -> Result<Self, Error> {
-                if bytes.len() == Self::length_in_bytes() {
+                if bytes.len() == Self::fixed_length() {
                     let mut arr = [0; $size_in_bits / 8];
                     arr.clone_from_slice(bytes);
                     Ok(<$type_ident>::from_le_bytes(arr))
                 } else {
                     Err(Error::InvalidByteLength {
                         got: bytes.len(),
-                        required: Self::length_in_bytes()
+                        required: Self::fixed_length()
                     })
                 }
             }
@@ -21,7 +21,7 @@ macro_rules! deserialize_for_uintn {
                 false
             }
 
-            fn length_in_bytes() -> usize {
+            fn fixed_length() -> usize {
                 $size_in_bits / 8
             }
         }

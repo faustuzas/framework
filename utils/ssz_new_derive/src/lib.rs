@@ -44,7 +44,7 @@ pub fn serialize_derive(input: TokenStream) -> TokenStream {
         });
 
         is_variable_sizes.push(quote! {
-            <#field_type>::is_variable_size()
+            <#field_type as ssz::Serialize>::is_variable_size()
         });
     }
 
@@ -104,9 +104,83 @@ pub fn serialize_derive(input: TokenStream) -> TokenStream {
 
             fn is_variable_size() -> bool {
                 #(
-                    #is_variable_sizes &&
+                    #is_variable_sizes ||
                 )*
-                    true
+                    false
+            }
+        }
+    };
+
+    generated.into()
+}
+
+#[proc_macro_derive(SszDeserialize)]
+pub fn deserialize_derive(input: TokenStream) -> TokenStream {
+    let ast: DeriveInput = syn::parse(input).unwrap();
+
+    let name = &ast.ident;
+    let fields = match &ast.data {
+        syn::Data::Struct(struct_data) => &struct_data.fields,
+        _ => panic!("Deserialization only available for structs")
+    };
+    let fields_count = fields.iter().len();
+
+    let mut next_types = Vec::with_capacity(fields_count);
+    let mut fields_initialization = Vec::with_capacity(fields_count);
+    let mut is_variable_sizes = Vec::with_capacity(fields_count);
+    let mut fixed_lengths = Vec::with_capacity(fields_count);
+    for field in fields {
+        let field_type = &field.ty;
+        let field_name = match &field.ident {
+            Some(ident) => ident,
+            _ => panic!("All fields must have names")
+        };
+
+        next_types.push(quote! {
+            decoder.next_type::<#field_type>()?
+        });
+
+        fields_initialization.push(quote! {
+            #field_name: decoder.deserialize_next::<#field_type>()?
+        });
+
+        is_variable_sizes.push(quote! {
+            <#field_type as ssz::Deserialize>::is_variable_size()
+        });
+
+        fixed_lengths.push(quote! {
+           <#field_type>::fixed_length()
+        });
+    }
+
+    let generated = quote! {
+        impl ssz::Deserialize for #name {
+            fn deserialize(bytes: &[u8]) -> Result<Self, ssz::Error> {
+                let mut decoder = ssz::Decoder::for_bytes(bytes);
+
+                #(
+                    #next_types;
+                )*
+
+                Ok(Self {
+                    #(
+                        #fields_initialization,
+                    )*
+                })
+            }
+
+            fn is_variable_size() -> bool {
+                #(
+                    #is_variable_sizes ||
+                )*
+                    false
+            }
+
+            fn fixed_length() -> usize {
+                #(
+                    #fixed_lengths +
+                )*
+                    0
             }
         }
     };

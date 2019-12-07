@@ -4,8 +4,8 @@ mod utils;
 mod encode;
 mod decode;
 
-pub use utils::serialize_offset;
-pub use ssz_derive::SszSerialize;
+pub use utils::{serialize_offset, Decoder};
+pub use ssz_derive::{SszSerialize, SszDeserialize};
 
 pub const BYTES_PER_LENGTH_OFFSET: usize = 4;
 
@@ -28,6 +28,6 @@ pub enum Error {
     TooBigOffset(usize),
     InvalidByteLength { required: usize, got: usize },
     BitsOverflow { bits_count: usize, max_bits: usize },
-    IndexOutOfBound { index: usize, max: usize },
+    NoOffsetsLeft,
     InvalidBytes(String)
 }
