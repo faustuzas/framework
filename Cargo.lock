@@ -510,52 +510,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "mif_ssz"
-version = "0.1.0"
-dependencies = [
- "ethereum-types 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "mif_ssz_derive 0.1.0",
-]
-
-[[package]]
-name = "mif_ssz_derive"
-version = "0.1.0"
-dependencies = [
- "quote 0.6.13 (registry+https://github.com/rust-lang/crates.io-index)",
- "syn 0.15.44 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "mif_ssz_types"
-version = "0.1.0"
-dependencies = [
- "mif_ssz 0.1.0",
- "mif_tree_hash 0.1.0",
- "serde 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_derive 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
- "serde_hex 0.1.0",
- "typenum 1.11.2 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "mif_tree_hash"
-version = "0.1.0"
-dependencies = [
- "eth2_hashing 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "ethereum-types 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "mif_tree_hash_derive 0.1.0",
-]
-
-[[package]]
-name = "mif_tree_hash_derive"
-version = "0.1.0"
-dependencies = [
- "quote 0.6.13 (registry+https://github.com/rust-lang/crates.io-index)",
- "syn 0.15.44 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
 name = "milagro_bls"
 version = "0.11.0"
 source = "git+https://github.com/sigp/milagro_bls?tag=v0.11.0#cd4606c16a716fec49023c4074fffe4a19d21f02"
@@ -911,6 +865,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 name = "spin"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "ssz_new"
+version = "0.1.0"
+dependencies = [
+ "ssz_new_derive 0.1.0",
+ "typenum 1.11.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "ssz_new_derive"
+version = "0.1.0"
+dependencies = [
+ "quote 0.6.13 (registry+https://github.com/rust-lang/crates.io-index)",
+ "syn 0.15.44 (registry+https://github.com/rust-lang/crates.io-index)",
+]
 
 [[package]]
 name = "static_assertions"

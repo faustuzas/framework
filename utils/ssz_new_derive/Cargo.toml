@@ -1,11 +1,11 @@
 [package]
-name = "mif_tree_hash_derive"
+name = "ssz_new_derive"
 version = "0.1.0"
-authors = ["Faustas Butkus <faustas.butkus@gmail.com>"]
+authors = ["Faustas <faustas.butkus@gmail.com>"]
 edition = "2018"
 
 [lib]
-name = "tree_hash_derive"
+name = "ssz_derive"
 proc-macro = true
 
 [dependencies]
