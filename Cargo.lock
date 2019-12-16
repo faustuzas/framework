@@ -883,6 +883,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "ssz_new_types"
+version = "0.1.0"
+dependencies = [
+ "serde 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_derive 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_hex 0.1.0",
+ "tree_hash 0.1.1",
+ "tree_hash_derive 0.2.0",
+ "typenum 1.11.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "static_assertions"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
