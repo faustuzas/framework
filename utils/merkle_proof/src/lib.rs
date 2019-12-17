@@ -238,8 +238,9 @@ fn calculate_multi_merkle_root(leaves: &[H256], proof: &[H256], indices: &[usize
         }
         position += 1;
     }
+ 
     // Safe because keys vector is full and value is inserted in those indeces.
-  //  index_leave_map.remove(&1usize);
+    // index_leave_map.remove(&1usize);
     return Ok(*index_leave_map.get(&1usize).unwrap());
 }
 
@@ -303,15 +304,15 @@ mod tests {
 
     #[test]
     fn verify_merkle_proof_test() {
-        let leaf_b00 = H256::from([0xAA; 32]);
-        let leaf_b01 = H256::from([0xBB; 32]);
-        let leaf_b10 = H256::from([0xCC; 32]);
-        let leaf_b11 = H256::from([0xDD; 32]);
+        let leaf_b00 = H256::from([0xAA; 32]);//4
+        let leaf_b01 = H256::from([0xBB; 32]);//5
+        let leaf_b10 = H256::from([0xCC; 32]);//6
+        let leaf_b11 = H256::from([0xDD; 32]);//7
 
-        let node_b0x = hash_and_concat(leaf_b00, leaf_b01);
-        let node_b1x = hash_and_concat(leaf_b10, leaf_b11);
+        let node_b0x = hash_and_concat(leaf_b00, leaf_b01);//3
+        let node_b1x = hash_and_concat(leaf_b10, leaf_b11);//2
 
-        let root = hash_and_concat(node_b0x, node_b1x);
+        let root = hash_and_concat(node_b0x, node_b1x);//1
 
         assert_eq!(verify_merkle_proof(
             leaf_b00,
@@ -534,5 +535,66 @@ mod tests {
             &[5],
             node_b1x
         ), Err(MerkleProofError::InvalidParamLength { len_first: 2, len_second: 1 }));
+
+        assert_eq!(verify_merkle_multiproof(
+            &[leaf_b11, leaf_b10],
+            &[node_b0x],
+            &[7, 6],
+            root
+        ), Ok(true));
+    }
+
+    #[test]
+    fn verify_merkle_proof_bigger_test() {
+        let leaf_b000 = H256::from([0xAA; 32]);//8
+        let leaf_b001 = H256::from([0xBB; 32]);//9
+        let leaf_b010 = H256::from([0xCC; 32]);//10
+        let leaf_b011 = H256::from([0xDD; 32]);//11
+
+        let node_b00x = hash_and_concat(leaf_b000, leaf_b001);//4
+        let node_b01x = hash_and_concat(leaf_b010, leaf_b011);//5
+
+        let leaf_b100 = H256::from([0xAA; 32]);//12
+        let leaf_b101 = H256::from([0xBB; 32]);//13
+        let leaf_b110 = H256::from([0xCC; 32]);//14
+        let leaf_b111 = H256::from([0xDD; 32]);//15
+
+        let node_b10x = hash_and_concat(leaf_b100, leaf_b101);//6
+        let node_b11x = hash_and_concat(leaf_b110, leaf_b111);//7
+            
+        let node_b0xx = hash_and_concat(node_b00x, node_b01x);//2
+        let node_b1xx = hash_and_concat(node_b10x, node_b11x);//3
+        
+
+        let root = hash_and_concat(node_b0xx, node_b1xx);//1
+
+
+        assert_eq!(get_path_indices(15usize), vec!(15usize, 7usize, 3usize, 1usize));
+    
+        assert_eq!(verify_merkle_proof(
+            leaf_b000,
+            &[leaf_b001, node_b01x, node_b1xx],
+            0,
+            8,
+            root
+        ), Ok(true)); 
+
+        assert_eq!(verify_merkle_proof(
+            leaf_b000,
+            &[leaf_b001, node_b01x, node_b1xx],
+            0,
+            9,
+            root
+        ), Ok(false)); 
+
+
+        assert_eq!(verify_merkle_proof(
+            leaf_b000,
+            &[leaf_b001, node_b01x, node_b1xx, node_b00x],
+            0,
+            9,
+            root
+        ), Err(MerkleProofError::InvalidParamLength { len_first: 4, len_second: 3 }));
+
     }
 }
