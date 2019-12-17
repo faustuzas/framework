@@ -23,6 +23,47 @@ pub fn deserialize_offset(bytes: &[u8]) -> Result<usize, Error> {
     }
 }
 
+pub fn deserialize_variable_sized_items<T: Deserialize>(bytes: &[u8]) -> Result<Vec<T>, Error> {
+    let first_offset_bytes = bytes.get(0..BYTES_PER_LENGTH_OFFSET);
+    let first_offset = match first_offset_bytes {
+        Some(bytes) => deserialize_offset(bytes),
+        _ => Err(Error::InvalidByteLength {
+            required: BYTES_PER_LENGTH_OFFSET,
+            got: bytes.len()
+        })
+    }?;
+
+    let number_of_elements = first_offset / BYTES_PER_LENGTH_OFFSET;
+    let mut result = Vec::with_capacity(number_of_elements);
+
+    let mut previous_offset = first_offset;
+    for i in 1..=number_of_elements {
+        let next_offset = if i == number_of_elements {
+            bytes.len()
+        } else {
+            match bytes.get(i * BYTES_PER_LENGTH_OFFSET .. (i + 1) * BYTES_PER_LENGTH_OFFSET) {
+                Some(bytes) => deserialize_offset(bytes),
+                _ => Err(Error::InvalidByteLength {
+                    required: (i + 1) * BYTES_PER_LENGTH_OFFSET,
+                    got: bytes.len()
+                })
+            }?
+        };
+
+        let element = match bytes.get(previous_offset..next_offset) {
+            Some(bytes) => T::deserialize(bytes),
+            _ => Err(Error::InvalidByteLength {
+                required: next_offset,
+                got: bytes.len()
+            })
+        }?;
+
+        result.push(element);
+        previous_offset = next_offset;
+    }
+    Ok(result)
+}
+
 pub struct Decoder<'a> {
     bytes: &'a[u8],
     registration_offset: usize,
@@ -165,6 +206,58 @@ mod tests {
             assert_eq!(decoder.deserialize_next::<Vec<u8>>().unwrap(), vec![3, 2, 3]);
             assert_eq!(decoder.deserialize_next::<u32>().unwrap(), u32::max_value());
             assert_eq!(decoder.deserialize_next::<Vec<u16>>().unwrap(), vec![1, 2, 3]);
+        }
+    }
+
+    mod deserialize_variable_sized_items {
+        use super::*;
+
+        #[test]
+        fn happy_path() {
+            let items: Vec<Vec<u8>> = deserialize_variable_sized_items(&[
+                12, 0, 0, 0,
+                16, 0, 0, 0,
+                22, 0, 0, 0,
+                1, 2, 3, 4,
+                5, 6, 7, 8, 9, 10
+            ]).unwrap();
+
+            assert_eq!(items, vec![vec![1, 2, 3, 4], vec![5, 6, 7, 8, 9, 10], vec![]])
+        }
+
+        #[test]
+        fn empty_bytes() {
+            let result: Result<Vec<Vec<u8>>, _> = deserialize_variable_sized_items(&[]);
+            assert!(result.is_err())
+        }
+
+        #[test]
+        fn bad_first_offset() {
+            let result: Result<Vec<Vec<u16>>, _> = deserialize_variable_sized_items(&[
+                88, 0, 0, 0,
+                1, 2, 3
+            ]);
+            assert!(result.is_err())
+        }
+
+        #[test]
+        fn bad_next_offsets() {
+            let result: Result<Vec<Vec<u16>>, _> = deserialize_variable_sized_items(&[
+                8, 0, 0, 0,
+                100, 0, 0, 0,
+                1, 2, 3
+            ]);
+            assert!(result.is_err())
+        }
+
+        #[test]
+        fn bad_element_data() {
+            let result: Result<Vec<Vec<u16>>, _> = deserialize_variable_sized_items(&[
+                8, 0, 0, 0,
+                9, 0, 0, 0,
+                1
+            ]);
+            assert!(result.is_err())
         }
     }
 }

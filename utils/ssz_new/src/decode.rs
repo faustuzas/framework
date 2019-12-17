@@ -1,5 +1,4 @@
 use crate::*;
-use crate::utils::deserialize_offset;
 
 macro_rules! deserialize_for_uintn {
     ( $(($type_ident: ty, $size_in_bits: expr)),* ) => { $(
@@ -62,44 +61,7 @@ impl<T: Deserialize> Deserialize for Vec<T> {
         if bytes.is_empty() {
             Ok(vec![])
         } else if T::is_variable_size() {
-            let first_offset_bytes = bytes.get(0..BYTES_PER_LENGTH_OFFSET);
-            let first_offset = match first_offset_bytes {
-                Some(bytes) => deserialize_offset(bytes),
-                _ => Err(Error::InvalidByteLength {
-                    required: BYTES_PER_LENGTH_OFFSET,
-                    got: bytes_len
-                })
-            }?;
-
-            let number_of_elements = first_offset / T::fixed_length();
-            let mut result = Vec::with_capacity(number_of_elements);
-
-            let mut previous_offset = first_offset;
-            for i in 1..=number_of_elements {
-                let next_offset = if i == number_of_elements {
-                    bytes_len
-                } else {
-                    match bytes.get(i * BYTES_PER_LENGTH_OFFSET .. (i + 1) * BYTES_PER_LENGTH_OFFSET) {
-                        Some(bytes) => deserialize_offset(bytes),
-                        _ => Err(Error::InvalidByteLength {
-                            required: BYTES_PER_LENGTH_OFFSET,
-                            got: bytes_len
-                        })
-                    }?
-                };
-
-                let element = match bytes.get(previous_offset..next_offset) {
-                    Some(bytes) => T::deserialize(bytes),
-                    _ => Err(Error::InvalidByteLength {
-                        required: next_offset,
-                        got: bytes_len
-                    })
-                }?;
-
-                result.push(element);
-                previous_offset = next_offset;
-            }
-            Ok(result)
+            deserialize_variable_sized_items(bytes)
         } else {
             if bytes_len % T::fixed_length() == 0 {
                 let mut result = Vec::with_capacity(bytes.len() / T::fixed_length());
