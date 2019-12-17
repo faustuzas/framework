@@ -15,6 +15,6 @@ tree_hash_derive = "0.2"
 serde = "1.0"
 serde_derive = "1.0"
 serde_hex = { path = "../serde_hex" }
-#ssz_new = { path = "../ssz_new" }
+ssz_new = { path = "../ssz_new" }
 typenum = "1.10"
 

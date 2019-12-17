@@ -889,6 +889,7 @@ dependencies = [
  "serde 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.102 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_hex 0.1.0",
+ "ssz_new 0.1.0",
  "tree_hash 0.1.1",
  "tree_hash_derive 0.2.0",
  "typenum 1.11.2 (registry+https://github.com/rust-lang/crates.io-index)",

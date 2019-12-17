@@ -1,6 +1,7 @@
 pub use typenum;
 
 mod vendor;
+mod impls;
 
 pub use vendor::{
   FixedVector,
