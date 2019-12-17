@@ -131,7 +131,13 @@ fn hashset(data: Vec<usize> ) -> HashSet<usize> {
 }
 
 // merkle proof
-pub fn verify_merkle_proof(leaf: H256, proof: &[H256], index: usize, root: H256) -> Result<bool, MerkleProofError> {
+pub fn verify_merkle_proof(
+    leaf: H256, 
+    proof: &[H256],
+    _depth: usize, // not needed
+    index: usize,
+    root: H256) -> Result<bool, MerkleProofError> {
+
     match calculate_merkle_root(leaf, proof, index) {
         Ok(calculated_root) => Ok(calculated_root== root),
         Err(err) => Err(err),
@@ -148,7 +154,7 @@ fn calculate_merkle_root(leaf: H256, proof: &[H256], index: usize) -> Result<H25
     let mut root = leaf.as_bytes().to_vec();
 
     for (i, leaf) in proof.iter().enumerate() {
-        if get_generalized_index_bit(index, i) {    
+        if get_generalized_index_bit(index, i) { //select how leaf's are concated
             let input = concat(leaf.as_bytes().to_vec(), root);
             root = hash(&input);
         } else {
@@ -310,6 +316,7 @@ mod tests {
         assert_eq!(verify_merkle_proof(
             leaf_b00,
             &[leaf_b01, node_b1x],
+            0,
             4,
             root
         ).unwrap(), true);
@@ -317,6 +324,7 @@ mod tests {
         assert_eq!(verify_merkle_proof(
             leaf_b01,
             &[leaf_b00, node_b1x],
+            0,
             5,
             node_b1x
         ), Ok(false));
@@ -324,6 +332,7 @@ mod tests {
         assert_eq!(verify_merkle_proof(
             leaf_b01,
             &[leaf_b01, leaf_b00, node_b1x],
+            0,
             5,
             node_b1x
         ), Err(MerkleProofError::InvalidParamLength { len_first: 3, len_second: 2 }));
@@ -331,6 +340,7 @@ mod tests {
         assert_eq!(verify_merkle_proof(
             leaf_b01,
             &[leaf_b01],
+            0,
             5,
             node_b1x
         ), Err(MerkleProofError::InvalidParamLength { len_first: 1, len_second: 2 }));
@@ -338,6 +348,7 @@ mod tests {
         assert_eq!(verify_merkle_proof(
             leaf_b00,
             &[node_b1x, leaf_b01],
+            0,
             4,
             root
         ).unwrap(), false);
@@ -345,6 +356,7 @@ mod tests {
         assert_eq!(verify_merkle_proof(
             leaf_b01,
             &[leaf_b00, node_b1x],
+            0,
             5,
             root
         ).unwrap(), true);
@@ -352,6 +364,7 @@ mod tests {
         assert_eq!(verify_merkle_proof(
             leaf_b10,
             &[leaf_b11, node_b0x],
+            0,
             6,
             root
         ).unwrap(), true);
@@ -359,6 +372,7 @@ mod tests {
         assert_eq!(verify_merkle_proof(
             leaf_b11,
             &[leaf_b10, node_b0x],
+            0,
             7,
             root
         ).unwrap(), true);
@@ -366,24 +380,27 @@ mod tests {
         assert_eq!(verify_merkle_proof(
             leaf_b11,
             &[leaf_b10],
+            0,
             3,
             node_b1x
         ).unwrap(), true);
 
-        assert_eq!(verify_merkle_proof(leaf_b01, &[], 1, root).unwrap(), false);
+        assert_eq!(verify_merkle_proof(leaf_b01, &[], 0, 1, root).unwrap(), false);
 
         assert_eq!(verify_merkle_proof(
             leaf_b01,
             &[node_b1x, leaf_b00],
+            0,
             5,
             root
         ).unwrap(), false);
 
-        assert_eq!(verify_merkle_proof(leaf_b01, &[leaf_b00], 2, root).unwrap(), false);
+        assert_eq!(verify_merkle_proof(leaf_b01, &[leaf_b00], 0, 2, root).unwrap(), false);
 
         assert_eq!(verify_merkle_proof(
             leaf_b01,
             &[leaf_b00, node_b1x],
+            0,
             4,
             root
         ).unwrap(), false);
@@ -391,6 +408,7 @@ mod tests {
         assert_eq!(verify_merkle_proof(
             leaf_b01,
             &[leaf_b00, node_b1x],
+            0,
             5,
             node_b1x
         ).unwrap(), false);
