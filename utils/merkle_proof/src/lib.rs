@@ -46,17 +46,16 @@ fn get_next_power_of_two(x: usize) -> usize {
         return x;
     } else {
         return 2 * get_next_power_of_two((x + 1) / 2);
-    }    
+    }
 }
 
-// length of path 
+// length of path
 fn get_generalized_index_length(index: usize) -> usize {
     return log_of!(index, 2., usize);
 }
 
-
 fn get_generalized_index_bit(index: usize, position: usize) -> bool {
-    ((index >> position) & 0x01) > 0 
+    ((index >> position) & 0x01) > 0
 }
 
 //get index sibling
@@ -94,16 +93,16 @@ fn get_path_indices(tree_index: usize) -> Vec<usize> {
         let index = path.last().cloned().unwrap();
         path.append(&mut vec![generalized_index_parent(index)]);
     }
-    return path; 
+    return path;
 }
 
-//gt all indices of all indices needed for the proof 
+//get all indices of all indices needed for the proof
 fn get_helper_indices(indices: &[usize]) -> Vec<usize> {
     let mut all_helper_indices: Vec<usize> = vec![];
     let mut all_path_indices: Vec<usize> = vec![];
     for index in indices.iter() {
         all_helper_indices.append(&mut get_branch_indices(*index).clone());
-        all_path_indices.append(&mut get_path_indices(*index).clone());      
+        all_path_indices.append(&mut get_path_indices(*index).clone());
     }
 
     let pre_answer = hashset(all_helper_indices);
@@ -132,7 +131,7 @@ fn hashset(data: Vec<usize>) -> HashSet<usize> {
 
 // merkle proof
 pub fn verify_merkle_proof(
-    leaf: H256, 
+    leaf: H256,
     proof: &[H256],
     _depth: usize, // not needed
     index: usize,
@@ -152,8 +151,8 @@ fn calculate_merkle_root(
 ) -> Result<H256, MerkleProofError> {
     if proof.len() != get_generalized_index_length(index) {
         return Err(MerkleProofError::InvalidParamLength {
-            len_first: proof.len(), 
-            len_second:  get_generalized_index_length(index)
+            len_first: proof.len(),
+            len_second: get_generalized_index_length(index)
         });
     }
     let mut root = leaf.as_bytes().to_vec();
@@ -180,13 +179,13 @@ pub fn verify_merkle_multiproof(
 ) -> Result<bool, MerkleProofError> {
     match calculate_multi_merkle_root(leaves, proof, indices) {
         Ok(calculated_root) => Ok(calculated_root == root),
-        Err(err) => Err(err)
+        Err(err) => Err(err),
     }
 }
 
 fn calculate_multi_merkle_root(
-    leaves: &[H256], 
-    proof: &[H256], 
+    leaves: &[H256],
+    proof: &[H256],
     indices: &[usize],
 ) -> Result<H256, MerkleProofError> {
     let mut index_leave_map = HashMap::new();
@@ -194,8 +193,8 @@ fn calculate_multi_merkle_root(
 
     if leaves.len() != indices.len() {
         return Err(MerkleProofError::InvalidParamLength {
-            len_first: leaves.len(), 
-            len_second: indices.len()
+            len_first: leaves.len(),
+            len_second: indices.len(),
         });
     }
 
@@ -242,15 +241,15 @@ fn calculate_multi_merkle_root(
         
         if contains_itself && contains_sibling && !contains_parent {
             
-            let index_first: usize = (k | 1) ^ 1;//right
-            let index_second: usize = k | 1;//left
+            let index_first: usize = (k | 1) ^ 1; //right
+            let index_second: usize = k | 1; //left
 
             index_leave_map.insert(
                 k / 2,
                 hash_and_concat(
                     *index_leave_map.get(&index_first).unwrap(),
                     *index_leave_map.get(&index_second).unwrap(),
-                )
+                ),
             );
         }
         position += 1;
@@ -283,7 +282,7 @@ mod tests {
         assert_eq!(get_generalized_index_length(7), 2);
         assert_eq!(get_generalized_index_length(9), 3);
     }
-    
+
     #[test]
     fn get_generalized_index_bit_test() {
         assert_eq!(true, get_generalized_index_bit(2usize, 1usize));
@@ -297,8 +296,8 @@ mod tests {
 
     #[test]
     fn generalized_index_child_test() {
-        assert_ne!(generalized_index_child(3,false), 7);
-        assert_eq!(generalized_index_child(5,true), 11);
+        assert_ne!(generalized_index_child(3, false), 7);
+        assert_eq!(generalized_index_child(5, true), 11);
     }
 
     #[test]
@@ -314,20 +313,24 @@ mod tests {
     fn get_path_indices_test() {
         assert_eq!(
             get_path_indices(9usize),
-            vec!(9usize, 4usize, 2usize, 1usize));
+            vec!(9usize, 4usize, 2usize, 1usize)
+        );
         assert_eq!(
             get_path_indices(10usize),
-            vec!(10usize, 5usize, 2usize, 1usize));
+            vec!(10usize, 5usize, 2usize, 1usize)
+        );
     }
 
     #[test]
     fn get_helper_indices_test() {
         assert_eq!(
             get_helper_indices(&[9usize, 4usize, 2usize, 1usize]),
-             vec!(8usize, 5usize, 3usize, 0usize));
+             vec!(8usize, 5usize, 3usize, 0usize)
+            );
         assert_eq!(
             get_helper_indices(&[10usize, 5usize, 2usize, 1usize]),
-            vec!(11usize, 4usize, 3usize, 0usize));
+            vec!(11usize, 4usize, 3usize, 0usize)
+        );
     }
 
     #[test]
@@ -346,12 +349,11 @@ mod tests {
             verify_merkle_proof(leaf_b00, &[leaf_b01, node_b1x], 0, 4, root).unwrap(),
             true
         );
-            
+
         assert_eq!(
             verify_merkle_proof(leaf_b01, &[leaf_b00, node_b1x], 0, 5, node_b1x),
             Ok(false)
         );
-            
 
         assert_eq!(
             verify_merkle_proof(leaf_b01, &[leaf_b01, leaf_b00, node_b1x], 0, 5, node_b1x),
@@ -360,20 +362,20 @@ mod tests {
                 len_second: 2
             })
         );
-            
+
         assert_eq!(
             verify_merkle_proof(leaf_b01, &[leaf_b01], 0, 5, node_b1x),
             Err(MerkleProofError::InvalidParamLength {
                 len_first: 1,
                 len_second: 2
             })
-        ); 
+        );
 
         assert_eq!(
             verify_merkle_proof(leaf_b00, &[node_b1x, leaf_b01], 0, 4, root).unwrap(),
             false
         );
-            
+
         assert_eq!(
             verify_merkle_proof(leaf_b01, &[leaf_b00, node_b1x], 0, 5, root).unwrap(),
             true
@@ -383,7 +385,7 @@ mod tests {
             verify_merkle_proof(leaf_b10, &[leaf_b11, node_b0x], 0, 6, root).unwrap(),
             true
         );
-            
+
         assert_eq!(
             verify_merkle_proof(leaf_b11, &[leaf_b10, node_b0x], 0, 7, root).unwrap(),
             true
@@ -393,22 +395,22 @@ mod tests {
             verify_merkle_proof(leaf_b11, &[leaf_b10], 0, 3, node_b1x).unwrap(),
             true
         );
-            
+
         assert_eq!(
             verify_merkle_proof(leaf_b01, &[], 0, 1, root).unwrap(),
             false
         );
-            
+
         assert_eq!(
             verify_merkle_proof(leaf_b01, &[node_b1x, leaf_b00], 0, 5, root).unwrap(),
             false
         );
-            
+
         assert_eq!(
             verify_merkle_proof(leaf_b01, &[leaf_b00], 0, 2, root).unwrap(),
             false
         );
-    
+
         assert_eq!(
             verify_merkle_proof(leaf_b01, &[leaf_b00, node_b1x], 0, 4, root).unwrap(),
             false
@@ -417,7 +419,7 @@ mod tests {
         assert_eq!(
             verify_merkle_proof(leaf_b01, &[leaf_b00, node_b1x], 0, 5, node_b1x).unwrap(),
             false
-        );    
+        );
     }
 
     #[test]
@@ -554,7 +556,7 @@ mod tests {
         assert_eq!(
             verify_merkle_multiproof(&[leaf_b11, leaf_b10], &[node_b0x], &[7, 6], root),
             Ok(true)
-        );         
+        );
     }
 
     #[test]
