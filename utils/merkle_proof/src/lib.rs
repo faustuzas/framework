@@ -15,7 +15,7 @@ pub enum MerkleProofError {
 macro_rules! log_of {
     ($val:expr, $base:expr, $type:ty) => {
         ($val as f32).log($base) as $type
-    }
+    };
 }
 
 //concats 2 vectors
@@ -118,7 +118,7 @@ fn get_helper_indices(indices: &[usize]) -> Vec<usize> {
 
     vector_answer.sort();
     return reverse_vector(vector_answer);
-}   
+}
 
 //reverts the vector
 fn reverse_vector(data: Vec<usize>) -> Vec<usize> {
@@ -442,7 +442,7 @@ mod tests {
             .unwrap(),
             true
         );
-    
+
         assert_eq!(
             verify_merkle_multiproof(
                 &[leaf_b00, leaf_b01, leaf_b10, leaf_b11],
@@ -453,7 +453,7 @@ mod tests {
             .unwrap(),
             true
         );
-    
+
         assert_eq!(
             verify_merkle_multiproof(
                 &[leaf_b00, leaf_b01, leaf_b10],
@@ -464,7 +464,7 @@ mod tests {
             .unwrap(),
             false
         );
-    
+
         assert_eq!(
             verify_merkle_multiproof(
                 &[leaf_b00, leaf_b10, leaf_b01],
@@ -475,7 +475,7 @@ mod tests {
             .unwrap(),
             false
         );
-   
+
         assert_eq!(
             verify_merkle_multiproof(
                 &[leaf_b00, leaf_b01, leaf_b10],
@@ -486,63 +486,63 @@ mod tests {
             .unwrap(),
             true
         );
-    
+
         assert_eq!(
             verify_merkle_multiproof(&[leaf_b00, leaf_b01], &[node_b1x, node_b1x], &[4, 5], root)
                 .unwrap(),
             true
         );
-   
+
         assert_eq!(
             verify_merkle_multiproof(&[leaf_b00], &[leaf_b01, node_b1x], &[4], root).unwrap(),
             true
         );
-    
+
         assert_eq!(
             verify_merkle_multiproof(&[leaf_b01], &[leaf_b00, node_b1x], &[5], root).unwrap(),
             true
         );
-    
+
         assert_eq!(
             verify_merkle_multiproof(&[leaf_b10], &[leaf_b11, node_b0x], &[6], root).unwrap(),
             true
         );
-    
+
         assert_eq!(
             verify_merkle_multiproof(&[leaf_b11], &[leaf_b10, node_b0x], &[7], root).unwrap(),
             true
         );
-    
+
         assert_eq!(
             verify_merkle_multiproof(&[leaf_b11], &[leaf_b10], &[3], node_b1x).unwrap(),
             true
         );
-    
+
         assert_eq!(
             verify_merkle_multiproof(&[leaf_b01], &[], &[1], root).unwrap(),
             false
         );
-    
+
         assert_eq!(
             verify_merkle_multiproof(&[leaf_b01], &[node_b1x, leaf_b00], &[5], root).unwrap(),
             false
         );
-    
+
         assert_eq!(
             verify_merkle_multiproof(&[leaf_b01], &[leaf_b00], &[2], root).unwrap(),
             false
         );
-    
+
         assert_eq!(
             verify_merkle_multiproof(&[leaf_b01], &[leaf_b00, node_b1x], &[4], root).unwrap(),
             false
         );
-    
+
         assert_eq!(
             verify_merkle_multiproof(&[leaf_b01], &[leaf_b00, node_b1x], &[5], node_b1x).unwrap(),
             false
         );
-    
+
         assert_eq!(
             verify_merkle_multiproof(&[leaf_b01, node_b0x], &[leaf_b00, node_b1x], &[5], node_b1x),
             Err(MerkleProofError::InvalidParamLength {
@@ -574,10 +574,9 @@ mod tests {
 
         let node_b10x = hash_and_concat(leaf_b100, leaf_b101); //6
         let node_b11x = hash_and_concat(leaf_b110, leaf_b111); //7
-            
+
         let node_b0xx = hash_and_concat(node_b00x, node_b01x); //2
         let node_b1xx = hash_and_concat(node_b10x, node_b11x); //3
-        
 
         let root = hash_and_concat(node_b0xx, node_b1xx); //1
 
@@ -585,12 +584,12 @@ mod tests {
             get_path_indices(15usize),
             vec!(15usize, 7usize, 3usize, 1usize)
         );
-    
+
         assert_eq!(
             verify_merkle_proof(leaf_b000, &[leaf_b001, node_b01x, node_b1xx], 0, 8, root),
             Ok(true)
         );
-    
+
         assert_eq!(
             verify_merkle_proof(leaf_b000, &[leaf_b001, node_b01x, node_b1xx], 0, 9, root),
             Ok(false)
