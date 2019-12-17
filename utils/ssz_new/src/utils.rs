@@ -18,7 +18,7 @@ pub fn deserialize_offset(bytes: &[u8]) -> Result<usize, Error> {
     } else {
         Err(Error::InvalidByteLength {
             got: bytes.len(),
-            required: BYTES_PER_LENGTH_OFFSET
+            required: BYTES_PER_LENGTH_OFFSET,
         })
     }
 }
@@ -29,8 +29,8 @@ pub fn deserialize_variable_sized_items<T: Deserialize>(bytes: &[u8]) -> Result<
         Some(bytes) => deserialize_offset(bytes),
         _ => Err(Error::InvalidByteLength {
             required: BYTES_PER_LENGTH_OFFSET,
-            got: bytes.len()
-        })
+            got: bytes.len(),
+        }),
     }?;
 
     let number_of_elements = first_offset / BYTES_PER_LENGTH_OFFSET;
@@ -41,12 +41,12 @@ pub fn deserialize_variable_sized_items<T: Deserialize>(bytes: &[u8]) -> Result<
         let next_offset = if i == number_of_elements {
             bytes.len()
         } else {
-            match bytes.get(i * BYTES_PER_LENGTH_OFFSET .. (i + 1) * BYTES_PER_LENGTH_OFFSET) {
+            match bytes.get(i * BYTES_PER_LENGTH_OFFSET..(i + 1) * BYTES_PER_LENGTH_OFFSET) {
                 Some(bytes) => deserialize_offset(bytes),
                 _ => Err(Error::InvalidByteLength {
                     required: (i + 1) * BYTES_PER_LENGTH_OFFSET,
-                    got: bytes.len()
-                })
+                    got: bytes.len(),
+                }),
             }?
         };
 
@@ -54,8 +54,8 @@ pub fn deserialize_variable_sized_items<T: Deserialize>(bytes: &[u8]) -> Result<
             Some(bytes) => T::deserialize(bytes),
             _ => Err(Error::InvalidByteLength {
                 required: next_offset,
-                got: bytes.len()
-            })
+                got: bytes.len(),
+            }),
         }?;
 
         result.push(element);
@@ -65,32 +65,35 @@ pub fn deserialize_variable_sized_items<T: Deserialize>(bytes: &[u8]) -> Result<
 }
 
 pub struct Decoder<'a> {
-    bytes: &'a[u8],
+    bytes: &'a [u8],
     registration_offset: usize,
     fixed_part_offset: usize,
     offsets: Vec<usize>,
-    current_offset_index: usize
+    current_offset_index: usize,
 }
 
 impl<'a> Decoder<'a> {
-    pub fn for_bytes(bytes: &'a[u8]) -> Self {
+    pub fn for_bytes(bytes: &'a [u8]) -> Self {
         Self {
             bytes,
             registration_offset: 0,
             fixed_part_offset: 0,
             offsets: vec![],
-            current_offset_index: 0
+            current_offset_index: 0,
         }
     }
 
-    pub fn next_type<T: Deserialize>(&mut self) -> Result<(), Error>{
+    pub fn next_type<T: Deserialize>(&mut self) -> Result<(), Error> {
         if T::is_variable_size() {
-            let offset = match self.bytes.get(self.registration_offset .. self.registration_offset + BYTES_PER_LENGTH_OFFSET) {
+            let offset = match self
+                .bytes
+                .get(self.registration_offset..self.registration_offset + BYTES_PER_LENGTH_OFFSET)
+            {
                 Some(bytes) => deserialize_offset(bytes),
                 _ => Err(Error::InvalidByteLength {
-                        got: self.bytes.len(),
-                        required: self.registration_offset + BYTES_PER_LENGTH_OFFSET
-                    })
+                    got: self.bytes.len(),
+                    required: self.registration_offset + BYTES_PER_LENGTH_OFFSET,
+                }),
             }?;
             self.offsets.push(offset);
         }
@@ -102,28 +105,31 @@ impl<'a> Decoder<'a> {
         let result = if T::is_variable_size() {
             let current_offset = match self.offsets.get(self.current_offset_index) {
                 Some(offset) => Ok(*offset),
-                _ => Err(Error::NoOffsetsLeft)
+                _ => Err(Error::NoOffsetsLeft),
             }?;
 
             let next_offset = match self.offsets.get(self.current_offset_index + 1) {
                 Some(offset) => *offset,
-                _ => self.bytes.len()
+                _ => self.bytes.len(),
             };
 
             match self.bytes.get(current_offset..next_offset) {
                 Some(bytes) => T::deserialize(bytes),
                 _ => Err(Error::InvalidByteLength {
                     got: self.bytes.len(),
-                    required: next_offset
-                })
+                    required: next_offset,
+                }),
             }
         } else {
-            match self.bytes.get(self.fixed_part_offset .. self.fixed_part_offset + T::fixed_length()) {
+            match self
+                .bytes
+                .get(self.fixed_part_offset..self.fixed_part_offset + T::fixed_length())
+            {
                 Some(bytes) => T::deserialize(bytes),
                 _ => Err(Error::InvalidByteLength {
                     got: self.bytes.len(),
-                    required: self.fixed_part_offset + T::fixed_length()
-                })
+                    required: self.fixed_part_offset + T::fixed_length(),
+                }),
             }
         };
 
@@ -144,7 +150,10 @@ mod tests {
 
     #[test]
     fn test_serialize_offset() {
-        assert_eq!(serialize_offset(0).unwrap(), vec![0; BYTES_PER_LENGTH_OFFSET]);
+        assert_eq!(
+            serialize_offset(0).unwrap(),
+            vec![0; BYTES_PER_LENGTH_OFFSET]
+        );
         assert_eq!(serialize_offset(5).unwrap(), vec![5, 0, 0, 0]);
     }
 
@@ -156,7 +165,10 @@ mod tests {
 
     #[test]
     fn test_deserialize_offset() {
-        assert_eq!(deserialize_offset(&[0; BYTES_PER_LENGTH_OFFSET]).unwrap(), 0);
+        assert_eq!(
+            deserialize_offset(&[0; BYTES_PER_LENGTH_OFFSET]).unwrap(),
+            0
+        );
         assert_eq!(deserialize_offset(&[5, 0, 0, 0]).unwrap(), 5);
     }
 
@@ -167,7 +179,7 @@ mod tests {
 
     mod decoder {
         use super::*;
-        
+
         #[test]
         fn only_fixed() {
             let mut decoder = Decoder::for_bytes(&[1, 2, 3, 4]);
@@ -185,27 +197,31 @@ mod tests {
         fn single_vec() {
             let mut decoder = Decoder::for_bytes(&[4, 0, 0, 0, 1, 2, 3, 4]);
             decoder.next_type::<Vec<u8>>().unwrap();
-            assert_eq!(decoder.deserialize_next::<Vec<u8>>().unwrap(), vec![1, 2, 3, 4]);
+            assert_eq!(
+                decoder.deserialize_next::<Vec<u8>>().unwrap(),
+                vec![1, 2, 3, 4]
+            );
         }
 
         #[test]
         fn mixed() {
             let mut decoder = Decoder::for_bytes(&[
-                1,
-                13, 0, 0, 0,
-                255, 255, 255, 255,
-                16, 0, 0, 0,
-                3, 2, 3,
-                1, 0, 2, 0, 3, 0
+                1, 13, 0, 0, 0, 255, 255, 255, 255, 16, 0, 0, 0, 3, 2, 3, 1, 0, 2, 0, 3, 0,
             ]);
             decoder.next_type::<bool>().unwrap();
             decoder.next_type::<Vec<u8>>().unwrap();
             decoder.next_type::<u32>().unwrap();
             decoder.next_type::<Vec<u16>>().unwrap();
             assert_eq!(decoder.deserialize_next::<bool>().unwrap(), true);
-            assert_eq!(decoder.deserialize_next::<Vec<u8>>().unwrap(), vec![3, 2, 3]);
             assert_eq!(decoder.deserialize_next::<u32>().unwrap(), u32::max_value());
-            assert_eq!(decoder.deserialize_next::<Vec<u16>>().unwrap(), vec![1, 2, 3]);
+            assert_eq!(
+                decoder.deserialize_next::<Vec<u8>>().unwrap(),
+                vec![3, 2, 3]
+            );
+            assert_eq!(
+                decoder.deserialize_next::<Vec<u16>>().unwrap(),
+                vec![1, 2, 3]
+            );
         }
     }
 
@@ -215,14 +231,14 @@ mod tests {
         #[test]
         fn happy_path() {
             let items: Vec<Vec<u8>> = deserialize_variable_sized_items(&[
-                12, 0, 0, 0,
-                16, 0, 0, 0,
-                22, 0, 0, 0,
-                1, 2, 3, 4,
-                5, 6, 7, 8, 9, 10
-            ]).unwrap();
+                12, 0, 0, 0, 16, 0, 0, 0, 22, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+            ])
+            .unwrap();
 
-            assert_eq!(items, vec![vec![1, 2, 3, 4], vec![5, 6, 7, 8, 9, 10], vec![]])
+            assert_eq!(
+                items,
+                vec![vec![1, 2, 3, 4], vec![5, 6, 7, 8, 9, 10], vec![]]
+            )
         }
 
         #[test]
@@ -233,30 +249,22 @@ mod tests {
 
         #[test]
         fn bad_first_offset() {
-            let result: Result<Vec<Vec<u16>>, _> = deserialize_variable_sized_items(&[
-                88, 0, 0, 0,
-                1, 2, 3
-            ]);
+            let result: Result<Vec<Vec<u16>>, _> =
+                deserialize_variable_sized_items(&[88, 0, 0, 0, 1, 2, 3]);
             assert!(result.is_err())
         }
 
         #[test]
         fn bad_next_offsets() {
-            let result: Result<Vec<Vec<u16>>, _> = deserialize_variable_sized_items(&[
-                8, 0, 0, 0,
-                100, 0, 0, 0,
-                1, 2, 3
-            ]);
+            let result: Result<Vec<Vec<u16>>, _> =
+                deserialize_variable_sized_items(&[8, 0, 0, 0, 100, 0, 0, 0, 1, 2, 3]);
             assert!(result.is_err())
         }
 
         #[test]
         fn bad_element_data() {
-            let result: Result<Vec<Vec<u16>>, _> = deserialize_variable_sized_items(&[
-                8, 0, 0, 0,
-                9, 0, 0, 0,
-                1
-            ]);
+            let result: Result<Vec<Vec<u16>>, _> =
+                deserialize_variable_sized_items(&[8, 0, 0, 0, 9, 0, 0, 0, 1]);
             assert!(result.is_err())
         }
     }

@@ -13,7 +13,7 @@ pub fn serialize_derive(input: TokenStream) -> TokenStream {
     let name = &ast.ident;
     let fields = match &ast.data {
         syn::Data::Struct(struct_data) => &struct_data.fields,
-        _ => panic!("Serialization only available for structs")
+        _ => panic!("Serialization only available for structs"),
     };
     let fields_count = fields.iter().len();
 
@@ -24,7 +24,7 @@ pub fn serialize_derive(input: TokenStream) -> TokenStream {
         let field_type = &field.ty;
         let field_name = match &field.ident {
             Some(ident) => ident,
-            _ => panic!("All fields must have names")
+            _ => panic!("All fields must have names"),
         };
 
         fixed_parts_pushes.push(quote! {
@@ -121,7 +121,7 @@ pub fn deserialize_derive(input: TokenStream) -> TokenStream {
     let name = &ast.ident;
     let fields = match &ast.data {
         syn::Data::Struct(struct_data) => &struct_data.fields,
-        _ => panic!("Deserialization only available for structs")
+        _ => panic!("Deserialization only available for structs"),
     };
     let fields_count = fields.iter().len();
 
@@ -133,7 +133,7 @@ pub fn deserialize_derive(input: TokenStream) -> TokenStream {
         let field_type = &field.ty;
         let field_name = match &field.ident {
             Some(ident) => ident,
-            _ => panic!("All fields must have names")
+            _ => panic!("All fields must have names"),
         };
 
         next_types.push(quote! {

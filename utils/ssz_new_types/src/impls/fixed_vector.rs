@@ -1,8 +1,7 @@
 use super::*;
-use ssz::Error;
 
 impl<T: ssz::Serialize, N: Unsigned> ssz::Serialize for FixedVector<T, N> {
-    fn serialize(&self) -> Result<Vec<u8>, Error> {
+    fn serialize(&self) -> Result<Vec<u8>, ssz::Error> {
         if T::is_variable_size() {
             let mut variable_parts = Vec::with_capacity(self.len());
             for element in self.iter() {
@@ -10,9 +9,8 @@ impl<T: ssz::Serialize, N: Unsigned> ssz::Serialize for FixedVector<T, N> {
             }
 
             let fixed_length = self.len() * ssz::BYTES_PER_LENGTH_OFFSET;
-            let variable_lengths: Vec<usize> = variable_parts.iter()
-                .map(|part| part.len())
-                .collect();
+            let variable_lengths: Vec<usize> =
+                variable_parts.iter().map(|part| part.len()).collect();
 
             let mut variable_offsets = Vec::with_capacity(self.len());
             for i in 0..self.len() {
@@ -39,9 +37,7 @@ impl<T: ssz::Serialize, N: Unsigned> ssz::Serialize for FixedVector<T, N> {
                 fixed_parts.push(element.serialize()?);
             }
 
-            let len = fixed_parts.iter()
-                .map(|part| part.len())
-                .sum();
+            let len = fixed_parts.iter().map(|part| part.len()).sum();
 
             let mut result = Vec::with_capacity(len);
             for part in fixed_parts {
@@ -58,11 +54,11 @@ impl<T: ssz::Serialize, N: Unsigned> ssz::Serialize for FixedVector<T, N> {
 }
 
 impl<T: ssz::Deserialize + Default, N: Unsigned> ssz::Deserialize for FixedVector<T, N> {
-    fn deserialize(bytes: &[u8]) -> Result<Self, Error> {
+    fn deserialize(bytes: &[u8]) -> Result<Self, ssz::Error> {
         if bytes.is_empty() {
-            return Err(Error::InvalidByteLength {
-               got: 0,
-               required: T::fixed_length()
+            return Err(ssz::Error::InvalidByteLength {
+                got: 0,
+                required: T::fixed_length(),
             });
         }
 
@@ -73,9 +69,10 @@ impl<T: ssz::Deserialize + Default, N: Unsigned> ssz::Deserialize for FixedVecto
             if items_count == items.len() {
                 Ok(items.into())
             } else {
-                Err(Error::InvalidBytes(
-                    format!("Cannot parse FixedVector[{}] from bytes", items_count))
-                )
+                Err(ssz::Error::InvalidBytes(format!(
+                    "Cannot parse FixedVector[{}] from bytes",
+                    items_count
+                )))
             }
         } else {
             if bytes.len() % items_count == 0 {
@@ -86,9 +83,9 @@ impl<T: ssz::Deserialize + Default, N: Unsigned> ssz::Deserialize for FixedVecto
 
                 Ok(result.into())
             } else {
-                Err(Error::InvalidByteLength {
+                Err(ssz::Error::InvalidByteLength {
                     got: bytes.len(),
-                    required: bytes.len() / T::fixed_length() + 1
+                    required: bytes.len() / T::fixed_length() + 1,
                 })
             }
         }
@@ -125,27 +122,21 @@ mod test {
 
         #[test]
         fn variable() {
-            let vec: FixedVector<Vec<u8>, typenum::U3> = FixedVector::from(
-                vec![vec![1, 2], vec![], vec![3]]
+            let vec: FixedVector<Vec<u8>, typenum::U3> =
+                FixedVector::from(vec![vec![1, 2], vec![], vec![3]]);
+            assert_eq!(
+                vec.serialize().unwrap(),
+                vec![12, 0, 0, 0, 14, 0, 0, 0, 14, 0, 0, 0, 1, 2, 3]
             );
-            assert_eq!(vec.serialize().unwrap(), vec![
-                12, 0, 0, 0,
-                14, 0, 0, 0,
-                14, 0, 0, 0,
-                1, 2, 3
-            ]);
 
-            let vec: FixedVector<Vec<u8>, typenum::U5> = FixedVector::from(
-                vec![vec![1, 2], vec![], vec![3, 4, 5]]
+            let vec: FixedVector<Vec<u8>, typenum::U5> =
+                FixedVector::from(vec![vec![1, 2], vec![], vec![3, 4, 5]]);
+            assert_eq!(
+                vec.serialize().unwrap(),
+                vec![
+                    20, 0, 0, 0, 22, 0, 0, 0, 22, 0, 0, 0, 25, 0, 0, 0, 25, 0, 0, 0, 1, 2, 3, 4, 5
+                ]
             );
-            assert_eq!(vec.serialize().unwrap(), vec![
-                20, 0, 0, 0,
-                22, 0, 0, 0,
-                22, 0, 0, 0,
-                25, 0, 0, 0,
-                25, 0, 0, 0,
-                1, 2, 3, 4, 5
-            ]);
         }
     }
 
@@ -156,32 +147,31 @@ mod test {
 
         #[test]
         fn fixed() {
-            let vec = <FixedVector<u16, U3> as Deserialize>::deserialize(&[5, 0, 2, 0, 3, 0]).unwrap();
+            let vec =
+                <FixedVector<u16, U3> as Deserialize>::deserialize(&[5, 0, 2, 0, 3, 0]).unwrap();
             assert_eq!(vec.to_vec(), vec![5, 2, 3]);
-            let vec = <FixedVector<u8, U6> as Deserialize>::deserialize(&[5, 0, 2, 0, 3, 0]).unwrap();
+            let vec =
+                <FixedVector<u8, U6> as Deserialize>::deserialize(&[5, 0, 2, 0, 3, 0]).unwrap();
             assert_eq!(vec.to_vec(), vec![5, 0, 2, 0, 3, 0]);
         }
 
         #[test]
         fn variable() {
             let vec = <FixedVector<Vec<u8>, U3> as Deserialize>::deserialize(&[
-                12, 0, 0, 0,
-                14, 0, 0, 0,
-                14, 0, 0, 0,
-                1, 2, 3
-            ]).unwrap();
+                12, 0, 0, 0, 14, 0, 0, 0, 14, 0, 0, 0, 1, 2, 3,
+            ])
+            .unwrap();
 
             assert_eq!(vec.to_vec(), vec![vec![1, 2], vec![], vec![3]]);
 
             let vec = <FixedVector<Vec<u8>, U5> as Deserialize>::deserialize(&[
-                20, 0, 0, 0,
-                22, 0, 0, 0,
-                22, 0, 0, 0,
-                25, 0, 0, 0,
-                25, 0, 0, 0,
-                1, 2, 3, 4, 5
-            ]).unwrap();
-            assert_eq!(vec.to_vec(), vec![vec![1, 2], vec![], vec![3, 4, 5], vec![], vec![]]);
+                20, 0, 0, 0, 22, 0, 0, 0, 22, 0, 0, 0, 25, 0, 0, 0, 25, 0, 0, 0, 1, 2, 3, 4, 5,
+            ])
+            .unwrap();
+            assert_eq!(
+                vec.to_vec(),
+                vec![vec![1, 2], vec![], vec![3, 4, 5], vec![], vec![]]
+            );
         }
 
         mod errors {
@@ -189,16 +179,11 @@ mod test {
 
             #[test]
             fn wrong_size() {
-                let result = <FixedVector<u8, U6> as Deserialize>::deserialize(&[
-                    1, 2, 3, 4
-                ]);
+                let result = <FixedVector<u8, U6> as Deserialize>::deserialize(&[1, 2, 3, 4]);
                 assert!(result.is_err());
 
                 let result = <FixedVector<Vec<u8>, U6> as Deserialize>::deserialize(&[
-                    12, 0, 0, 0,
-                    14, 0, 0, 0,
-                    14, 0, 0, 0,
-                    1, 2, 3
+                    12, 0, 0, 0, 14, 0, 0, 0, 14, 0, 0, 0, 1, 2, 3,
                 ]);
                 assert!(result.is_err());
             }

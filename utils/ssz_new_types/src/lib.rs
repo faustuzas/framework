@@ -1,15 +1,10 @@
 pub use typenum;
 
-mod vendor;
 mod impls;
+mod vendor;
 
-pub use vendor::{
-  FixedVector,
-  VariableList,
-  BitList, BitVector, Bitfield
-};
+pub use vendor::{BitList, BitVector, Bitfield, FixedVector, VariableList};
 
 pub mod length {
     pub use crate::vendor::{Fixed, Variable};
 }
-
