@@ -1,5 +1,4 @@
 ///#![allow(clippy::use_self)] // there is probably a bug with generic vectors
-
 use crate::utils::serialize_offset;
 use crate::*;
 
@@ -113,7 +112,10 @@ mod test {
         assert_eq!(0_u16.as_ssz_bytes(), vec![0b0000_0000, 0b0000_0000]);
         assert_eq!(1_u16.as_ssz_bytes(), vec![0b0000_0001, 0b0000_0000]);
         assert_eq!(128_u16.as_ssz_bytes(), vec![0b1000_0000, 0b0000_0000]);
-        assert_eq!(u16::max_value().as_ssz_bytes(), vec![0b1111_1111, 0b1111_1111]);
+        assert_eq!(
+            u16::max_value().as_ssz_bytes(),
+            vec![0b1111_1111, 0b1111_1111]
+        );
         assert_eq!(0x8000_u16.as_ssz_bytes(), vec![0b0000_0000, 0b1000_0000]);
     }
 
@@ -125,7 +127,10 @@ mod test {
             1_u32.as_ssz_bytes(),
             vec![0b0000_0001, 0b0000_0000, 0b0000_0000, 0b0000_0000]
         );
-        assert_eq!(128_u32.as_ssz_bytes(), vec![0b1000_0000, 0b0000_0000, 0b0000_0000, 0b0000_0000]);
+        assert_eq!(
+            128_u32.as_ssz_bytes(),
+            vec![0b1000_0000, 0b0000_0000, 0b0000_0000, 0b0000_0000]
+        );
         assert_eq!(
             0x8000_u32.as_ssz_bytes(),
             vec![0b0000_0000, 0b1000_0000, 0b0000_0000, 0b0000_0000]
@@ -155,8 +160,7 @@ mod test {
         );
         assert_eq!(
             128_u64.as_ssz_bytes(),
-            vec![
-                0b1000_0000,
+            vec![0b1000_0000,
                 0b0000_0000,
                 0b0000_0000,
                 0b0000_0000,
