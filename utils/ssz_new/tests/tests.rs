@@ -132,9 +132,8 @@ mod deserialize_derive {
         };
 
         assert_eq!(
-            Nested::from_ssz_bytes(&[
-                5, 0, 0, 7, 0, 0, 0, 80, 0, 7, 0, 0, 0, 1, 1, 2, 3, 4
-            ]).unwrap(),
+            Nested::from_ssz_bytes(&[5, 0, 0, 7, 0, 0, 0, 80, 0, 7, 0, 0, 0, 1, 1, 2, 3, 4])
+                .unwrap(),
             nested
         );
     }

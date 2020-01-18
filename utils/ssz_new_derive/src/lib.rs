@@ -212,13 +212,11 @@ fn get_serializable_fields(data: &Data) -> Vec<&Field> {
 
 fn should_ship_serialization(field: &Field) -> bool {
     field.attrs.iter().any(|attr| {
-        attr.path.is_ident("ssz")
-            && attr.tts.to_string().replace(" ", "") == "(skip_serializing)"
+        attr.path.is_ident("ssz") && attr.tts.to_string().replace(" ", "") == "(skip_serializing)"
     })
 }
 fn should_ship_deserialization(field: &Field) -> bool {
     field.attrs.iter().any(|attr| {
-        attr.path.is_ident("ssz")
-            && attr.tts.to_string().replace(" ", "") == "(skip_deserializing)"
+        attr.path.is_ident("ssz") && attr.tts.to_string().replace(" ", "") == "(skip_deserializing)"
     })
 }

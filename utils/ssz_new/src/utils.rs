@@ -100,19 +100,19 @@ impl<'a> Decoder<'a> {
             match self
                 .bytes
                 .get(self.fixed_part_offset..self.fixed_part_offset + T::ssz_fixed_len())
-                {
-                    Some(bytes) => T::from_ssz_bytes(bytes),
-                    _ => Err(DecodeError::InvalidByteLength {
-                        len: self.bytes.len(),
-                        expected: self.fixed_part_offset + T::ssz_fixed_len(),
-                    }),
-                }
+            {
+                Some(bytes) => T::from_ssz_bytes(bytes),
+                _ => Err(DecodeError::InvalidByteLength {
+                    len: self.bytes.len(),
+                    expected: self.fixed_part_offset + T::ssz_fixed_len(),
+                }),
+            }
         } else {
             let current_offset = match self.offsets.get(self.current_offset_index) {
                 Some(offset) => Ok(*offset),
                 _ => Err(DecodeError::InvalidByteLength {
                     len: self.bytes.len(),
-                    expected: self.current_offset_index
+                    expected: self.current_offset_index,
                 }),
             }?;
 
@@ -147,10 +147,7 @@ mod tests {
 
     #[test]
     fn test_serialize_offset() {
-        assert_eq!(
-            serialize_offset(0),
-            vec![0; BYTES_PER_LENGTH_OFFSET]
-        );
+        assert_eq!(serialize_offset(0), vec![0; BYTES_PER_LENGTH_OFFSET]);
         assert_eq!(serialize_offset(5), vec![5, 0, 0, 0]);
     }
 

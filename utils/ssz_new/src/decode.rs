@@ -134,19 +134,23 @@ mod tests {
             u32::max_value()
         );
         assert_eq!(
-            u32::from_ssz_bytes(&[0b0000_0001, 0b0000_0000, 0b0000_0000, 0b0000_0000]).expect("Test"),
+            u32::from_ssz_bytes(&[0b0000_0001, 0b0000_0000, 0b0000_0000, 0b0000_0000])
+                .expect("Test"),
             1
         );
         assert_eq!(
-            u32::from_ssz_bytes(&[0b1000_0000, 0b0000_0000, 0b0000_0000, 0b0000_0000]).expect("Test"),
+            u32::from_ssz_bytes(&[0b1000_0000, 0b0000_0000, 0b0000_0000, 0b0000_0000])
+                .expect("Test"),
             128
         );
         assert_eq!(
-            u32::from_ssz_bytes(&[0b0000_0000, 0b1000_0000, 0b0000_0000, 0b0000_0000]).expect("Test"),
+            u32::from_ssz_bytes(&[0b0000_0000, 0b1000_0000, 0b0000_0000, 0b0000_0000])
+                .expect("Test"),
             0x8000
         );
         assert_eq!(
-            u32::from_ssz_bytes(&[0b0000_0000, 0b0000_0000, 0b0000_0000, 0b1000_0000]).expect("Test"),
+            u32::from_ssz_bytes(&[0b0000_0000, 0b0000_0000, 0b0000_0000, 0b1000_0000])
+                .expect("Test"),
             0x8000_0000
         );
     }

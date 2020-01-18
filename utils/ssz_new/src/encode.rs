@@ -103,53 +103,29 @@ mod test {
     #[test]
     fn u8() {
         assert_eq!(0_u8.as_ssz_bytes(), vec![0b0000_0000]);
-        assert_eq!(
-            u8::max_value().as_ssz_bytes(),
-            vec![0b1111_1111]
-        );
+        assert_eq!(u8::max_value().as_ssz_bytes(), vec![0b1111_1111]);
         assert_eq!(1_u8.as_ssz_bytes(), vec![0b0000_0001]);
         assert_eq!(128_u8.as_ssz_bytes(), vec![0b1000_0000]);
     }
 
     #[test]
     fn u16() {
-        assert_eq!(
-            0_u16.as_ssz_bytes(),
-            vec![0b0000_0000, 0b0000_0000]
-        );
-        assert_eq!(
-            1_u16.as_ssz_bytes(),
-            vec![0b0000_0001, 0b0000_0000]
-        );
-        assert_eq!(
-            128_u16.as_ssz_bytes(),
-            vec![0b1000_0000, 0b0000_0000]
-        );
-        assert_eq!(
-            u16::max_value().as_ssz_bytes(),
-            vec![0b1111_1111, 0b1111_1111]
-        );
-        assert_eq!(
-            0x8000_u16.as_ssz_bytes(),
-            vec![0b0000_0000, 0b1000_0000]
-        );
+        assert_eq!(0_u16.as_ssz_bytes(), vec![0b0000_0000, 0b0000_0000]);
+        assert_eq!(1_u16.as_ssz_bytes(), vec![0b0000_0001, 0b0000_0000]);
+        assert_eq!(128_u16.as_ssz_bytes(), vec![0b1000_0000, 0b0000_0000]);
+        assert_eq!(u16::max_value().as_ssz_bytes(), vec![0b1111_1111, 0b1111_1111]);
+        assert_eq!(0x8000_u16.as_ssz_bytes(), vec![0b0000_0000, 0b1000_0000]);
     }
 
     #[test]
     fn u32() {
         assert_eq!(0_u32.as_ssz_bytes(), vec![0b0000_0000; 4]);
-        assert_eq!(
-            u32::max_value().as_ssz_bytes(),
-            vec![0b1111_1111; 4]
-        );
+        assert_eq!(u32::max_value().as_ssz_bytes(), vec![0b1111_1111; 4]);
         assert_eq!(
             1_u32.as_ssz_bytes(),
             vec![0b0000_0001, 0b0000_0000, 0b0000_0000, 0b0000_0000]
         );
-        assert_eq!(
-            128_u32.as_ssz_bytes(),
-            vec![0b1000_0000, 0b0000_0000, 0b0000_0000, 0b0000_0000]
-        );
+        assert_eq!(128_u32.as_ssz_bytes(), vec![0b1000_0000, 0b0000_0000, 0b0000_0000, 0b0000_0000]);
         assert_eq!(
             0x8000_u32.as_ssz_bytes(),
             vec![0b0000_0000, 0b1000_0000, 0b0000_0000, 0b0000_0000]
@@ -163,10 +139,7 @@ mod test {
     #[test]
     fn u64() {
         assert_eq!(0_u64.as_ssz_bytes(), vec![0b0000_0000; 8]);
-        assert_eq!(
-            u64::max_value().as_ssz_bytes(),
-            vec![0b1111_1111; 8]
-        );
+        assert_eq!(u64::max_value().as_ssz_bytes(), vec![0b1111_1111; 8]);
         assert_eq!(
             1_u64.as_ssz_bytes(),
             vec![
