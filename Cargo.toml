@@ -9,7 +9,8 @@ members = [
     'transition_functions',
     'helper_functions/helper_functions_2',
     'utils/ssz_new',
-    'utils/ssz_new_derive'
+    'utils/ssz_new_derive',
+    'utils/ssz_new_types'
 ]
 
 [profile.release]
