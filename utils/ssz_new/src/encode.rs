@@ -1,3 +1,5 @@
+#![allow(clippy::use_self)]
+
 use crate::utils::serialize_offset;
 use crate::*;
 
