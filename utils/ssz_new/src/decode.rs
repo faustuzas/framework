@@ -1,5 +1,3 @@
-#![allow(clippy::use_self)]
-
 use crate::*;
 
 macro_rules! decode_for_uintn {

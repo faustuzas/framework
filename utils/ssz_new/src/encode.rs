@@ -1,4 +1,3 @@
-///#![allow(clippy::use_self)] // there is probably a bug with generic vectors
 use crate::utils::serialize_offset;
 use crate::*;
 
