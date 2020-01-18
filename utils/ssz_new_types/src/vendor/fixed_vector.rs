@@ -1,6 +1,6 @@
 use super::tree_hash::vec_tree_hash_root;
 use super::Error;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Serialize, Deserialize};
 use std::marker::PhantomData;
 use std::ops::{Deref, Index, IndexMut};
 use std::slice::SliceIndex;

@@ -1,6 +1,6 @@
 use super::tree_hash::vec_tree_hash_root;
 use super::Error;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Serialize, Deserialize};
 use std::marker::PhantomData;
 use std::ops::{Deref, DerefMut, Index, IndexMut};
 use std::slice::SliceIndex;
@@ -48,7 +48,7 @@ pub use typenum;
 #[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct VariableList<T, N> {
-    pub vec: Vec<T>,
+    vec: Vec<T>,
     _phantom: PhantomData<N>,
 }
 
@@ -90,6 +90,11 @@ impl<T, N: Unsigned> VariableList<T, N> {
     /// Returns the type-level maximum length.
     pub fn max_len() -> usize {
         N::to_usize()
+    }
+
+    /// Returns the inner vector representation of items
+    pub fn to_vec(&self) -> &Vec<T> {
+        &self.vec
     }
 
     /// Appends `value` to the back of `self`.
