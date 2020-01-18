@@ -10,4 +10,4 @@ name = "ssz"
 
 [dependencies]
 typenum = "1.10"
-ssz_new_derive = { path = "../ssz_new_derive" }
+# ssz_new_derive = { path = "../ssz_new_derive" }

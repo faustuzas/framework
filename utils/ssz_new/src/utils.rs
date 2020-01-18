@@ -1,35 +1,29 @@
 use crate::*;
 
-const MAX_POSSIBLE_OFFSET_VALUE: usize = usize::max_value() >> (BYTES_PER_LENGTH_OFFSET * 8);
-
-pub fn serialize_offset(offset: usize) -> Result<Vec<u8>, Error> {
-    if offset < MAX_POSSIBLE_OFFSET_VALUE {
-        Ok(offset.to_le_bytes()[..BYTES_PER_LENGTH_OFFSET].to_vec())
-    } else {
-        Err(Error::TooBigOffset(offset))
-    }
+pub fn serialize_offset(offset: usize) -> Vec<u8> {
+    offset.to_le_bytes()[..BYTES_PER_LENGTH_OFFSET].to_vec()
 }
 
-pub fn deserialize_offset(bytes: &[u8]) -> Result<usize, Error> {
+pub fn deserialize_offset(bytes: &[u8]) -> Result<usize, DecodeError> {
     if bytes.len() == BYTES_PER_LENGTH_OFFSET {
         let mut arr = [0; BYTES_PER_LENGTH_OFFSET];
         arr.clone_from_slice(bytes);
         Ok(u32::from_le_bytes(arr) as usize)
     } else {
-        Err(Error::InvalidByteLength {
-            got: bytes.len(),
-            required: BYTES_PER_LENGTH_OFFSET,
+        Err(DecodeError::InvalidByteLength {
+            len: bytes.len(),
+            expected: BYTES_PER_LENGTH_OFFSET,
         })
     }
 }
 
-pub fn deserialize_variable_sized_items<T: Deserialize>(bytes: &[u8]) -> Result<Vec<T>, Error> {
+pub fn deserialize_variable_sized_items<T: Decode>(bytes: &[u8]) -> Result<Vec<T>, DecodeError> {
     let first_offset_bytes = bytes.get(0..BYTES_PER_LENGTH_OFFSET);
     let first_offset = match first_offset_bytes {
         Some(bytes) => deserialize_offset(bytes),
-        _ => Err(Error::InvalidByteLength {
-            required: BYTES_PER_LENGTH_OFFSET,
-            got: bytes.len(),
+        _ => Err(DecodeError::InvalidByteLength {
+            len: bytes.len(),
+            expected: BYTES_PER_LENGTH_OFFSET,
         }),
     }?;
 
@@ -43,18 +37,18 @@ pub fn deserialize_variable_sized_items<T: Deserialize>(bytes: &[u8]) -> Result<
         } else {
             match bytes.get(i * BYTES_PER_LENGTH_OFFSET..(i + 1) * BYTES_PER_LENGTH_OFFSET) {
                 Some(bytes) => deserialize_offset(bytes),
-                _ => Err(Error::InvalidByteLength {
-                    required: (i + 1) * BYTES_PER_LENGTH_OFFSET,
-                    got: bytes.len(),
+                _ => Err(DecodeError::InvalidByteLength {
+                    len: bytes.len(),
+                    expected: (i + 1) * BYTES_PER_LENGTH_OFFSET,
                 }),
             }?
         };
 
         let element = match bytes.get(previous_offset..next_offset) {
-            Some(bytes) => T::deserialize(bytes),
-            _ => Err(Error::InvalidByteLength {
-                required: next_offset,
-                got: bytes.len(),
+            Some(bytes) => T::from_ssz_bytes(bytes),
+            _ => Err(DecodeError::InvalidByteLength {
+                len: bytes.len(),
+                expected: next_offset,
             }),
         }?;
 
@@ -83,29 +77,43 @@ impl<'a> Decoder<'a> {
         }
     }
 
-    pub fn next_type<T: Deserialize>(&mut self) -> Result<(), Error> {
-        if T::is_variable_size() {
+    pub fn next_type<T: Decode>(&mut self) -> Result<(), DecodeError> {
+        if !T::is_ssz_fixed_len() {
             let offset = match self
                 .bytes
                 .get(self.registration_offset..self.registration_offset + BYTES_PER_LENGTH_OFFSET)
             {
                 Some(bytes) => deserialize_offset(bytes),
-                _ => Err(Error::InvalidByteLength {
-                    got: self.bytes.len(),
-                    required: self.registration_offset + BYTES_PER_LENGTH_OFFSET,
+                _ => Err(DecodeError::InvalidByteLength {
+                    len: self.bytes.len(),
+                    expected: self.registration_offset + BYTES_PER_LENGTH_OFFSET,
                 }),
             }?;
             self.offsets.push(offset);
         }
-        self.registration_offset += T::fixed_length();
+        self.registration_offset += T::ssz_fixed_len();
         Ok(())
     }
 
-    pub fn deserialize_next<T: Deserialize>(&mut self) -> Result<T, Error> {
-        let result = if T::is_variable_size() {
+    pub fn deserialize_next<T: Decode>(&mut self) -> Result<T, DecodeError> {
+        let result = if T::is_ssz_fixed_len() {
+            match self
+                .bytes
+                .get(self.fixed_part_offset..self.fixed_part_offset + T::ssz_fixed_len())
+                {
+                    Some(bytes) => T::from_ssz_bytes(bytes),
+                    _ => Err(DecodeError::InvalidByteLength {
+                        len: self.bytes.len(),
+                        expected: self.fixed_part_offset + T::ssz_fixed_len(),
+                    }),
+                }
+        } else {
             let current_offset = match self.offsets.get(self.current_offset_index) {
                 Some(offset) => Ok(*offset),
-                _ => Err(Error::NoOffsetsLeft),
+                _ => Err(DecodeError::InvalidByteLength {
+                    len: self.bytes.len(),
+                    expected: self.current_offset_index
+                }),
             }?;
 
             let next_offset = match self.offsets.get(self.current_offset_index + 1) {
@@ -114,30 +122,19 @@ impl<'a> Decoder<'a> {
             };
 
             match self.bytes.get(current_offset..next_offset) {
-                Some(bytes) => T::deserialize(bytes),
-                _ => Err(Error::InvalidByteLength {
-                    got: self.bytes.len(),
-                    required: next_offset,
-                }),
-            }
-        } else {
-            match self
-                .bytes
-                .get(self.fixed_part_offset..self.fixed_part_offset + T::fixed_length())
-            {
-                Some(bytes) => T::deserialize(bytes),
-                _ => Err(Error::InvalidByteLength {
-                    got: self.bytes.len(),
-                    required: self.fixed_part_offset + T::fixed_length(),
+                Some(bytes) => T::from_ssz_bytes(bytes),
+                _ => Err(DecodeError::InvalidByteLength {
+                    len: self.bytes.len(),
+                    expected: next_offset,
                 }),
             }
         };
 
         if result.is_ok() {
-            if T::is_variable_size() {
+            if !T::is_ssz_fixed_len() {
                 self.current_offset_index += 1;
             }
-            self.fixed_part_offset += T::fixed_length();
+            self.fixed_part_offset += T::ssz_fixed_len();
         }
 
         result
@@ -151,16 +148,10 @@ mod tests {
     #[test]
     fn test_serialize_offset() {
         assert_eq!(
-            serialize_offset(0).expect("Test"),
+            serialize_offset(0),
             vec![0; BYTES_PER_LENGTH_OFFSET]
         );
-        assert_eq!(serialize_offset(5).expect("Test"), vec![5, 0, 0, 0]);
-    }
-
-    #[test]
-    fn test_serialize_offset_error() {
-        assert!(serialize_offset(usize::max_value()).is_err());
-        assert!(serialize_offset(MAX_POSSIBLE_OFFSET_VALUE + 1).is_err())
+        assert_eq!(serialize_offset(5), vec![5, 0, 0, 0]);
     }
 
     #[test]
@@ -214,12 +205,12 @@ mod tests {
             decoder.next_type::<Vec<u16>>().expect("Test");
             assert_eq!(decoder.deserialize_next::<bool>().expect("Test"), true);
             assert_eq!(
-                decoder.deserialize_next::<u32>().expect("Test"),
-                u32::max_value()
-            );
-            assert_eq!(
                 decoder.deserialize_next::<Vec<u8>>().expect("Test"),
                 vec![3, 2, 3]
+            );
+            assert_eq!(
+                decoder.deserialize_next::<u32>().expect("Test"),
+                u32::max_value()
             );
             assert_eq!(
                 decoder.deserialize_next::<Vec<u16>>().expect("Test"),
