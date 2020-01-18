@@ -1,3 +1,4 @@
+/// These data structures' code is taken from Lighthouse implementation
 mod tree_hash;
 
 mod variable_list;

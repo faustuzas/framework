@@ -1,6 +1,6 @@
 use crate::*;
 
-const MAX_POSSIBLE_OFFSET_VALUE: usize = usize::max_value() >> BYTES_PER_LENGTH_OFFSET * 8;
+const MAX_POSSIBLE_OFFSET_VALUE: usize = usize::max_value() >> (BYTES_PER_LENGTH_OFFSET * 8);
 
 pub fn serialize_offset(offset: usize) -> Result<Vec<u8>, Error> {
     if offset < MAX_POSSIBLE_OFFSET_VALUE {
@@ -151,10 +151,10 @@ mod tests {
     #[test]
     fn test_serialize_offset() {
         assert_eq!(
-            serialize_offset(0).unwrap(),
+            serialize_offset(0).expect("Test"),
             vec![0; BYTES_PER_LENGTH_OFFSET]
         );
-        assert_eq!(serialize_offset(5).unwrap(), vec![5, 0, 0, 0]);
+        assert_eq!(serialize_offset(5).expect("Test"), vec![5, 0, 0, 0]);
     }
 
     #[test]
@@ -166,10 +166,10 @@ mod tests {
     #[test]
     fn test_deserialize_offset() {
         assert_eq!(
-            deserialize_offset(&[0; BYTES_PER_LENGTH_OFFSET]).unwrap(),
+            deserialize_offset(&[0; BYTES_PER_LENGTH_OFFSET]).expect("Test"),
             0
         );
-        assert_eq!(deserialize_offset(&[5, 0, 0, 0]).unwrap(), 5);
+        assert_eq!(deserialize_offset(&[5, 0, 0, 0]).expect("Test"), 5);
     }
 
     #[test]
@@ -183,22 +183,22 @@ mod tests {
         #[test]
         fn only_fixed() {
             let mut decoder = Decoder::for_bytes(&[1, 2, 3, 4]);
-            decoder.next_type::<u8>().unwrap();
-            decoder.next_type::<u8>().unwrap();
-            decoder.next_type::<u8>().unwrap();
-            decoder.next_type::<u8>().unwrap();
-            assert_eq!(decoder.deserialize_next::<u8>().unwrap(), 1);
-            assert_eq!(decoder.deserialize_next::<u8>().unwrap(), 2);
-            assert_eq!(decoder.deserialize_next::<u8>().unwrap(), 3);
-            assert_eq!(decoder.deserialize_next::<u8>().unwrap(), 4);
+            decoder.next_type::<u8>().expect("Test");
+            decoder.next_type::<u8>().expect("Test");
+            decoder.next_type::<u8>().expect("Test");
+            decoder.next_type::<u8>().expect("Test");
+            assert_eq!(decoder.deserialize_next::<u8>().expect("Test"), 1);
+            assert_eq!(decoder.deserialize_next::<u8>().expect("Test"), 2);
+            assert_eq!(decoder.deserialize_next::<u8>().expect("Test"), 3);
+            assert_eq!(decoder.deserialize_next::<u8>().expect("Test"), 4);
         }
 
         #[test]
         fn single_vec() {
             let mut decoder = Decoder::for_bytes(&[4, 0, 0, 0, 1, 2, 3, 4]);
-            decoder.next_type::<Vec<u8>>().unwrap();
+            decoder.next_type::<Vec<u8>>().expect("Test");
             assert_eq!(
-                decoder.deserialize_next::<Vec<u8>>().unwrap(),
+                decoder.deserialize_next::<Vec<u8>>().expect("Test"),
                 vec![1, 2, 3, 4]
             );
         }
@@ -208,18 +208,21 @@ mod tests {
             let mut decoder = Decoder::for_bytes(&[
                 1, 13, 0, 0, 0, 255, 255, 255, 255, 16, 0, 0, 0, 3, 2, 3, 1, 0, 2, 0, 3, 0,
             ]);
-            decoder.next_type::<bool>().unwrap();
-            decoder.next_type::<Vec<u8>>().unwrap();
-            decoder.next_type::<u32>().unwrap();
-            decoder.next_type::<Vec<u16>>().unwrap();
-            assert_eq!(decoder.deserialize_next::<bool>().unwrap(), true);
-            assert_eq!(decoder.deserialize_next::<u32>().unwrap(), u32::max_value());
+            decoder.next_type::<bool>().expect("Test");
+            decoder.next_type::<Vec<u8>>().expect("Test");
+            decoder.next_type::<u32>().expect("Test");
+            decoder.next_type::<Vec<u16>>().expect("Test");
+            assert_eq!(decoder.deserialize_next::<bool>().expect("Test"), true);
             assert_eq!(
-                decoder.deserialize_next::<Vec<u8>>().unwrap(),
+                decoder.deserialize_next::<u32>().expect("Test"),
+                u32::max_value()
+            );
+            assert_eq!(
+                decoder.deserialize_next::<Vec<u8>>().expect("Test"),
                 vec![3, 2, 3]
             );
             assert_eq!(
-                decoder.deserialize_next::<Vec<u16>>().unwrap(),
+                decoder.deserialize_next::<Vec<u16>>().expect("Test"),
                 vec![1, 2, 3]
             );
         }
@@ -233,7 +236,7 @@ mod tests {
             let items: Vec<Vec<u8>> = deserialize_variable_sized_items(&[
                 12, 0, 0, 0, 16, 0, 0, 0, 22, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
             ])
-            .unwrap();
+            .expect("Test");
 
             assert_eq!(
                 items,

@@ -77,7 +77,6 @@ fn generalized_index_parent(index: usize) -> usize {
 // get indices of sister chunks
 fn get_branch_indices(tree_index: usize) -> Vec<usize> {
     let mut branch = vec![generalized_index_sibling(tree_index)];
-    
     while branch.last() > Some(&1usize) {
         let index = branch.last().cloned().unwrap();
         let mut next_index = vec![generalized_index_sibling(generalized_index_parent(index))];
@@ -137,7 +136,6 @@ pub fn verify_merkle_proof(
     index: usize,
     root: H256,
 ) -> Result<bool, MerkleProofError> {
-
     match calculate_merkle_root(leaf, proof, index) {
         Ok(calculated_root) => Ok(calculated_root == root),
         Err(err) => Err(err),
@@ -152,7 +150,7 @@ fn calculate_merkle_root(
     if proof.len() != get_generalized_index_length(index) {
         return Err(MerkleProofError::InvalidParamLength {
             len_first: proof.len(),
-            len_second: get_generalized_index_length(index)
+            len_second: get_generalized_index_length(index),
         });
     }
     let mut root = leaf.as_bytes().to_vec();
@@ -238,9 +236,8 @@ fn calculate_multi_merkle_root(
         let contains_itself: bool = index_leave_map.contains_key(k);
         let contains_sibling: bool = index_leave_map.contains_key(&(k ^ 1));
         let contains_parent: bool = index_leave_map.contains_key(&(k / 2));
-        
+
         if contains_itself && contains_sibling && !contains_parent {
-            
             let index_first: usize = (k | 1) ^ 1; //right
             let index_second: usize = k | 1; //left
 
@@ -254,7 +251,7 @@ fn calculate_multi_merkle_root(
         }
         position += 1;
     }
- 
+
     // Safe because keys vector is full and value is inserted in those indeces.
     // index_leave_map.remove(&1usize);
     return Ok(*index_leave_map.get(&1usize).unwrap());
@@ -325,8 +322,8 @@ mod tests {
     fn get_helper_indices_test() {
         assert_eq!(
             get_helper_indices(&[9usize, 4usize, 2usize, 1usize]),
-             vec!(8usize, 5usize, 3usize, 0usize)
-            );
+            vec!(8usize, 5usize, 3usize, 0usize)
+        );
         assert_eq!(
             get_helper_indices(&[10usize, 5usize, 2usize, 1usize]),
             vec!(11usize, 4usize, 3usize, 0usize)

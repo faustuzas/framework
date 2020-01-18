@@ -8,7 +8,7 @@ use syn::DeriveInput;
 
 #[proc_macro_derive(SszSerialize)]
 pub fn serialize_derive(input: TokenStream) -> TokenStream {
-    let ast: DeriveInput = syn::parse(input).unwrap();
+    let ast: DeriveInput = syn::parse(input).expect("AST should be correct");
 
     let name = &ast.ident;
     let fields = match &ast.data {
@@ -116,7 +116,7 @@ pub fn serialize_derive(input: TokenStream) -> TokenStream {
 
 #[proc_macro_derive(SszDeserialize)]
 pub fn deserialize_derive(input: TokenStream) -> TokenStream {
-    let ast: DeriveInput = syn::parse(input).unwrap();
+    let ast: DeriveInput = syn::parse(input).expect("AST should be correct");
 
     let name = &ast.ident;
     let fields = match &ast.data {

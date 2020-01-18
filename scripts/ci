@@ -67,6 +67,7 @@ cargo clippy                                      \
     --warn clippy::unimplemented                  \
     --warn clippy::use_debug                      \
     --warn clippy::wrong_pub_self_convention      \
+    --allow clippy::must_use_candidate            \
     --deny warnings
 
 tarpaulin() {

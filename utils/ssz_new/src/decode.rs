@@ -1,3 +1,5 @@
+#![allow(clippy::use_self)]
+
 use crate::*;
 
 macro_rules! deserialize_for_uintn {
@@ -65,20 +67,18 @@ impl<T: Deserialize> Deserialize for Vec<T> {
             Ok(vec![])
         } else if T::is_variable_size() {
             deserialize_variable_sized_items(bytes)
-        } else {
-            if bytes_len % T::fixed_length() == 0 {
-                let mut result = Vec::with_capacity(bytes.len() / T::fixed_length());
-                for chunk in bytes.chunks(T::fixed_length()) {
-                    result.push(T::deserialize(chunk)?);
-                }
-
-                Ok(result)
-            } else {
-                Err(Error::InvalidByteLength {
-                    got: bytes_len,
-                    required: bytes.len() / T::fixed_length() + 1,
-                })
+        } else if bytes_len % T::fixed_length() == 0 {
+            let mut result = Vec::with_capacity(bytes.len() / T::fixed_length());
+            for chunk in bytes.chunks(T::fixed_length()) {
+                result.push(T::deserialize(chunk)?);
             }
+
+            Ok(result)
+        } else {
+            Err(Error::InvalidByteLength {
+                got: bytes_len,
+                required: bytes.len() / T::fixed_length() + 1,
+            })
         }
     }
 
@@ -97,57 +97,69 @@ mod tests {
 
     #[test]
     fn u8() {
-        assert_eq!(u8::deserialize(&[0b0000_0000]).unwrap(), 0);
-        assert_eq!(u8::deserialize(&[0b1111_1111]).unwrap(), u8::max_value());
-        assert_eq!(u8::deserialize(&[0b0000_0001]).unwrap(), 1);
-        assert_eq!(u8::deserialize(&[0b1000_0000]).unwrap(), 128);
+        assert_eq!(u8::deserialize(&[0b0000_0000]).expect("Test"), 0);
+        assert_eq!(
+            u8::deserialize(&[0b1111_1111]).expect("Test"),
+            u8::max_value()
+        );
+        assert_eq!(u8::deserialize(&[0b0000_0001]).expect("Test"), 1);
+        assert_eq!(u8::deserialize(&[0b1000_0000]).expect("Test"), 128);
     }
 
     #[test]
     fn u16() {
-        assert_eq!(u16::deserialize(&[0b0000_0000, 0b0000_0000]).unwrap(), 0);
-        assert_eq!(u16::deserialize(&[0b0000_0001, 0b0000_0000]).unwrap(), 1);
-        assert_eq!(u16::deserialize(&[0b1000_0000, 0b0000_0000]).unwrap(), 128);
         assert_eq!(
-            u16::deserialize(&[0b1111_1111, 0b1111_1111]).unwrap(),
+            u16::deserialize(&[0b0000_0000, 0b0000_0000]).expect("Test"),
+            0
+        );
+        assert_eq!(
+            u16::deserialize(&[0b0000_0001, 0b0000_0000]).expect("Test"),
+            1
+        );
+        assert_eq!(
+            u16::deserialize(&[0b1000_0000, 0b0000_0000]).expect("Test"),
+            128
+        );
+        assert_eq!(
+            u16::deserialize(&[0b1111_1111, 0b1111_1111]).expect("Test"),
             u16::max_value()
         );
         assert_eq!(
-            u16::deserialize(&[0b0000_0000, 0b1000_0000]).unwrap(),
-            32768
+            u16::deserialize(&[0b0000_0000, 0b1000_0000]).expect("Test"),
+            0x8000
         );
     }
 
     #[test]
     fn u32() {
-        assert_eq!(u32::deserialize(&[0b0000_0000; 4]).unwrap(), 0);
+        assert_eq!(u32::deserialize(&[0b0000_0000; 4]).expect("Test"), 0);
         assert_eq!(
-            u32::deserialize(&[0b1111_1111; 4]).unwrap(),
+            u32::deserialize(&[0b1111_1111; 4]).expect("Test"),
             u32::max_value()
         );
         assert_eq!(
-            u32::deserialize(&[0b0000_0001, 0b0000_0000, 0b0000_0000, 0b0000_0000]).unwrap(),
+            u32::deserialize(&[0b0000_0001, 0b0000_0000, 0b0000_0000, 0b0000_0000]).expect("Test"),
             1
         );
         assert_eq!(
-            u32::deserialize(&[0b1000_0000, 0b0000_0000, 0b0000_0000, 0b0000_0000]).unwrap(),
+            u32::deserialize(&[0b1000_0000, 0b0000_0000, 0b0000_0000, 0b0000_0000]).expect("Test"),
             128
         );
         assert_eq!(
-            u32::deserialize(&[0b0000_0000, 0b1000_0000, 0b0000_0000, 0b0000_0000]).unwrap(),
-            32768
+            u32::deserialize(&[0b0000_0000, 0b1000_0000, 0b0000_0000, 0b0000_0000]).expect("Test"),
+            0x8000
         );
         assert_eq!(
-            u32::deserialize(&[0b0000_0000, 0b0000_0000, 0b0000_0000, 0b1000_0000]).unwrap(),
-            2147483648u32
+            u32::deserialize(&[0b0000_0000, 0b0000_0000, 0b0000_0000, 0b1000_0000]).expect("Test"),
+            0x8000_0000
         );
     }
 
     #[test]
     fn u64() {
-        assert_eq!(u64::deserialize(&[0b0000_0000; 8]).unwrap(), 0);
+        assert_eq!(u64::deserialize(&[0b0000_0000; 8]).expect("Test"), 0);
         assert_eq!(
-            u64::deserialize(&[0b1111_1111; 8]).unwrap(),
+            u64::deserialize(&[0b1111_1111; 8]).expect("Test"),
             u64::max_value()
         );
         assert_eq!(
@@ -161,7 +173,7 @@ mod tests {
                 0b0000_0000,
                 0b0000_0000
             ])
-            .unwrap(),
+            .expect("Test"),
             1
         );
         assert_eq!(
@@ -175,7 +187,7 @@ mod tests {
                 0b0000_0000,
                 0b0000_0000
             ])
-            .unwrap(),
+            .expect("Test"),
             128
         );
         assert_eq!(
@@ -189,8 +201,8 @@ mod tests {
                 0b0000_0000,
                 0b0000_0000
             ])
-            .unwrap(),
-            32768
+            .expect("Test"),
+            0x8000
         );
         assert_eq!(
             u64::deserialize(&[
@@ -203,8 +215,8 @@ mod tests {
                 0b0000_0000,
                 0b0000_0000
             ])
-            .unwrap(),
-            2147483648
+            .expect("Test"),
+            0x8000_0000
         );
         assert_eq!(
             u64::deserialize(&[
@@ -217,62 +229,63 @@ mod tests {
                 0b0000_0000,
                 0b1000_0000
             ])
-            .unwrap(),
-            9223372036854775808
+            .expect("Test"),
+            0x8000_0000_0000_0000
         );
     }
 
     #[test]
     fn bool() {
-        assert_eq!(bool::deserialize(&[0u8]).unwrap(), false);
-        assert_eq!(bool::deserialize(&[1u8]).unwrap(), true);
-        assert!(bool::deserialize(&[2u8]).is_err());
-        assert!(bool::deserialize(&[0u8, 0u8]).is_err());
+        assert_eq!(bool::deserialize(&[0_u8]).expect("Test"), false);
+        assert_eq!(bool::deserialize(&[1_u8]).expect("Test"), true);
+        assert!(bool::deserialize(&[2_u8]).is_err());
+        assert!(bool::deserialize(&[0_u8, 0_u8]).is_err());
     }
 
     #[test]
     fn vector_fixed() {
-        assert_eq!(<Vec<u8>>::deserialize(&[]).unwrap(), vec![]);
+        assert_eq!(<Vec<u8>>::deserialize(&[]).expect("Test"), vec![]);
         assert_eq!(
-            <Vec<u8>>::deserialize(&[0, 1, 2, 3]).unwrap(),
+            <Vec<u8>>::deserialize(&[0, 1, 2, 3]).expect("Test"),
             vec![0, 1, 2, 3]
         );
         assert_eq!(
-            <Vec<u8>>::deserialize(&[u8::max_value(); 100]).unwrap(),
+            <Vec<u8>>::deserialize(&[u8::max_value(); 100]).expect("Test"),
             vec![u8::max_value(); 100]
         );
 
-        assert_eq!(<Vec<u16>>::deserialize(&[]).unwrap(), vec![]);
+        assert_eq!(<Vec<u16>>::deserialize(&[]).expect("Test"), vec![]);
         assert_eq!(
-            <Vec<u16>>::deserialize(&[1, 0, 2, 0, 3, 0, 4, 0]).unwrap(),
+            <Vec<u16>>::deserialize(&[1, 0, 2, 0, 3, 0, 4, 0]).expect("Test"),
             vec![1, 2, 3, 4]
         );
         assert_eq!(
-            <Vec<u16>>::deserialize(&[u8::max_value(); 200]).unwrap(),
+            <Vec<u16>>::deserialize(&[u8::max_value(); 200]).expect("Test"),
             vec![u16::max_value(); 100]
         );
 
-        assert_eq!(<Vec<u32>>::deserialize(&[]).unwrap(), vec![]);
+        assert_eq!(<Vec<u32>>::deserialize(&[]).expect("Test"), vec![]);
         assert_eq!(
-            <Vec<u32>>::deserialize(&[1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 4, 0, 0, 0]).unwrap(),
+            <Vec<u32>>::deserialize(&[1, 0, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 4, 0, 0, 0])
+                .expect("Test"),
             vec![1, 2, 3, 4]
         );
         assert_eq!(
-            <Vec<u32>>::deserialize(&[u8::max_value(); 400]).unwrap(),
+            <Vec<u32>>::deserialize(&[u8::max_value(); 400]).expect("Test"),
             vec![u32::max_value(); 100]
         );
 
-        assert_eq!(<Vec<u64>>::deserialize(&[]).unwrap(), vec![]);
+        assert_eq!(<Vec<u64>>::deserialize(&[]).expect("Test"), vec![]);
         assert_eq!(
             <Vec<u64>>::deserialize(&[
                 1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0,
                 0, 0, 0, 0
             ])
-            .unwrap(),
+            .expect("Test"),
             vec![1, 2, 3, 4]
         );
         assert_eq!(
-            <Vec<u64>>::deserialize(&[u8::max_value(); 800]).unwrap(),
+            <Vec<u64>>::deserialize(&[u8::max_value(); 800]).expect("Test"),
             vec![u64::max_value(); 100]
         );
     }
@@ -289,17 +302,18 @@ mod tests {
     #[test]
     fn vector_variable() {
         let vec: Vec<Vec<u8>> = vec![];
-        assert_eq!(<Vec<Vec<u8>>>::deserialize(&[]).unwrap(), vec);
+        assert_eq!(<Vec<Vec<u8>>>::deserialize(&[]).expect("Test"), vec);
 
         let vec: Vec<Vec<u8>> = vec![vec![], vec![]];
         assert_eq!(
-            <Vec<Vec<u8>>>::deserialize(&[8, 0, 0, 0, 8, 0, 0, 0]).unwrap(),
+            <Vec<Vec<u8>>>::deserialize(&[8, 0, 0, 0, 8, 0, 0, 0]).expect("Test"),
             vec
         );
 
         let vec: Vec<Vec<u8>> = vec![vec![1, 2, 3], vec![4, 5, 6]];
         assert_eq!(
-            <Vec<Vec<u8>>>::deserialize(&[8, 0, 0, 0, 11, 0, 0, 0, 1, 2, 3, 4, 5, 6]).unwrap(),
+            <Vec<Vec<u8>>>::deserialize(&[8, 0, 0, 0, 11, 0, 0, 0, 1, 2, 3, 4, 5, 6])
+                .expect("Test"),
             vec
         );
     }

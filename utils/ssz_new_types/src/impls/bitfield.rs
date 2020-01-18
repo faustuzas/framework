@@ -30,7 +30,7 @@ impl<N: Unsigned + Clone> ssz::Deserialize for Bitfield<length::Variable<N>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ssz::{Deserialize, Serialize};
+    use ssz::Serialize;
     use typenum::*;
 
     mod bitlist {
@@ -40,7 +40,6 @@ mod tests {
         pub type BitList1 = Bitfield<length::Variable<U1>>;
         pub type BitList8 = Bitfield<length::Variable<U8>>;
         pub type BitList16 = Bitfield<length::Variable<U16>>;
-        pub type BitList1024 = Bitfield<length::Variable<U1024>>;
 
         #[test]
         fn serialize() {

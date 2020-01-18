@@ -513,10 +513,6 @@ impl<N: Unsigned + Clone> tree_hash::TreeHash for Bitfield<Fixed<N>> {
 mod bitlist {
     use super::*;
 
-    pub type BitList0 = BitList<typenum::U0>;
-    pub type BitList1 = BitList<typenum::U1>;
-    pub type BitList8 = BitList<typenum::U8>;
-    pub type BitList16 = BitList<typenum::U16>;
     pub type BitList1024 = BitList<typenum::U1024>;
 
     #[test]
