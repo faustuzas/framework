@@ -200,13 +200,7 @@ fn get_serializable_fields(data: &Data) -> Vec<&Field> {
 
     fields
         .iter()
-        .filter_map(|f| {
-            if should_ship_serialization(f) {
-                None
-            } else {
-                Some(f)
-            }
-        })
+        .filter(|f| !should_ship_serialization(f))
         .collect()
 }
 
