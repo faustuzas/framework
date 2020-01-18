@@ -2,7 +2,6 @@ mod decode;
 mod encode;
 mod utils;
 
-// pub use ssz_derive::{SszDeserialize, SszSerialize};
 pub use utils::{deserialize_offset, deserialize_variable_sized_items, serialize_offset, Decoder};
 
 pub const BYTES_PER_LENGTH_OFFSET: usize = 4;

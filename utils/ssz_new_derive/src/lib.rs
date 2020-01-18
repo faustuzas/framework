@@ -4,22 +4,21 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::DeriveInput;
+use syn::{DeriveInput, Data, Field};
 
-#[proc_macro_derive(SszSerialize)]
-pub fn serialize_derive(input: TokenStream) -> TokenStream {
+#[proc_macro_derive(Encode, attributes(ssz))]
+pub fn encode_derive(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input).expect("AST should be correct");
 
     let name = &ast.ident;
-    let fields = match &ast.data {
-        syn::Data::Struct(struct_data) => &struct_data.fields,
-        _ => panic!("Serialization only available for structs"),
-    };
+    let (impl_generics, ty_generics, where_clause) = &ast.generics.split_for_impl();
+    let fields = get_serializable_fields(&ast.data);
+
     let fields_count = fields.iter().len();
 
     let mut fixed_parts_pushes = Vec::with_capacity(fields_count);
     let mut variable_parts_pushes = Vec::with_capacity(fields_count);
-    let mut is_variable_sizes = Vec::with_capacity(fields_count);
+    let mut is_fixed_lens = Vec::with_capacity(fields_count);
     for field in fields {
         let field_type = &field.ty;
         let field_name = match &field.ident {
@@ -28,29 +27,29 @@ pub fn serialize_derive(input: TokenStream) -> TokenStream {
         };
 
         fixed_parts_pushes.push(quote! {
-            fixed_parts.push(if !<#field_type as ssz::Serialize>::is_variable_size() {
-                Some(self.#field_name.serialize()?)
+            fixed_parts.push(if <#field_type as ssz::Encode>::is_ssz_fixed_len() {
+                Some(self.#field_name.as_ssz_bytes())
             } else {
                 None
             });
         });
 
         variable_parts_pushes.push(quote! {
-            variable_parts.push(if <#field_type as ssz::Serialize>::is_variable_size() {
-                self.#field_name.serialize()?
-            } else {
+            variable_parts.push(if <#field_type as ssz::Encode>::is_ssz_fixed_len() {
                 vec![]
+            } else {
+                self.#field_name.as_ssz_bytes()
             });
         });
 
-        is_variable_sizes.push(quote! {
-            <#field_type as ssz::Serialize>::is_variable_size()
+        is_fixed_lens.push(quote! {
+            <#field_type as ssz::Encode>::is_ssz_fixed_len()
         });
     }
 
     let generated = quote! {
-        impl ssz::Serialize for #name {
-            fn serialize(&self) -> Result<Vec<u8>, ssz::Error> {
+        impl #impl_generics ssz::Encode for #name #ty_generics #where_clause {
+            fn as_ssz_bytes(&self) -> Vec<u8> {
                 let fields_count = #fields_count;
 
                 let mut fixed_parts = Vec::with_capacity(fields_count);
@@ -77,7 +76,7 @@ pub fn serialize_derive(input: TokenStream) -> TokenStream {
                 for i in 0..fields_count {
                     let variable_length_sum: usize = variable_lengths[..i].iter().sum();
                     let offset = fixed_length + variable_length_sum;
-                    variable_offsets.push(ssz::serialize_offset(offset)?);
+                    variable_offsets.push(ssz::serialize_offset(offset));
                 }
 
                 let fixed_parts: Vec<&Vec<u8>> = fixed_parts.iter()
@@ -99,14 +98,14 @@ pub fn serialize_derive(input: TokenStream) -> TokenStream {
                     result.extend(part);
                 }
 
-                Ok(result)
+                result
             }
 
-            fn is_variable_size() -> bool {
+            fn is_ssz_fixed_len() -> bool {
                 #(
-                    #is_variable_sizes ||
+                    #is_fixed_lens &&
                 )*
-                    false
+                    true
             }
         }
     };
@@ -114,20 +113,19 @@ pub fn serialize_derive(input: TokenStream) -> TokenStream {
     generated.into()
 }
 
-#[proc_macro_derive(SszDeserialize)]
-pub fn deserialize_derive(input: TokenStream) -> TokenStream {
+#[proc_macro_derive(Decode, attributes(ssz))]
+pub fn decode_derive(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input).expect("AST should be correct");
 
     let name = &ast.ident;
-    let fields = match &ast.data {
-        syn::Data::Struct(struct_data) => &struct_data.fields,
-        _ => panic!("Deserialization only available for structs"),
-    };
+    let (impl_generics, ty_generics, where_clause) = &ast.generics.split_for_impl();
+    let fields = get_serializable_fields(&ast.data);
+
     let fields_count = fields.iter().len();
 
     let mut next_types = Vec::with_capacity(fields_count);
     let mut fields_initialization = Vec::with_capacity(fields_count);
-    let mut is_variable_sizes = Vec::with_capacity(fields_count);
+    let mut is_fixed_lens = Vec::with_capacity(fields_count);
     let mut fixed_lengths = Vec::with_capacity(fields_count);
     for field in fields {
         let field_type = &field.ty;
@@ -136,26 +134,32 @@ pub fn deserialize_derive(input: TokenStream) -> TokenStream {
             _ => panic!("All fields must have names"),
         };
 
-        next_types.push(quote! {
-            decoder.next_type::<#field_type>()?
-        });
+        if should_ship_deserialization(field) {
+            fields_initialization.push(quote! {
+                #field_name: <_>::default()
+            });
+        } else {
+            next_types.push(quote! {
+                decoder.next_type::<#field_type>()?
+            });
 
-        fields_initialization.push(quote! {
-            #field_name: decoder.deserialize_next::<#field_type>()?
-        });
+            fields_initialization.push(quote! {
+                #field_name: decoder.deserialize_next::<#field_type>()?
+            });
 
-        is_variable_sizes.push(quote! {
-            <#field_type as ssz::Deserialize>::is_variable_size()
-        });
+            is_fixed_lens.push(quote! {
+                <#field_type as ssz::Decode>::is_ssz_fixed_len()
+            });
 
-        fixed_lengths.push(quote! {
-           <#field_type>::fixed_length()
-        });
+            fixed_lengths.push(quote! {
+               <#field_type as ssz::Decode>::ssz_fixed_len()
+            });
+        }
     }
 
     let generated = quote! {
-        impl ssz::Deserialize for #name {
-            fn deserialize(bytes: &[u8]) -> Result<Self, ssz::Error> {
+        impl #impl_generics ssz::Decode for #name #ty_generics #where_clause {
+            fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, ssz::DecodeError> {
                 let mut decoder = ssz::Decoder::for_bytes(bytes);
 
                 #(
@@ -169,14 +173,14 @@ pub fn deserialize_derive(input: TokenStream) -> TokenStream {
                 })
             }
 
-            fn is_variable_size() -> bool {
+            fn is_ssz_fixed_len() -> bool {
                 #(
-                    #is_variable_sizes ||
+                    #is_fixed_lens &&
                 )*
-                    false
+                    true
             }
 
-            fn fixed_length() -> usize {
+            fn ssz_fixed_len() -> usize {
                 #(
                     #fixed_lengths +
                 )*
@@ -186,4 +190,35 @@ pub fn deserialize_derive(input: TokenStream) -> TokenStream {
     };
 
     generated.into()
+}
+
+fn get_serializable_fields(data: &Data) -> Vec<&Field> {
+    let fields = match data {
+        syn::Data::Struct(struct_data) => &struct_data.fields,
+        _ => panic!("Serialization only available for structs"),
+    };
+
+    fields
+        .iter()
+        .filter_map(|f| {
+            if should_ship_serialization(f) {
+                None
+            } else {
+                Some(f)
+            }
+        })
+        .collect()
+}
+
+fn should_ship_serialization(field: &Field) -> bool {
+    field.attrs.iter().any(|attr| {
+        attr.path.is_ident("ssz")
+            && attr.tts.to_string().replace(" ", "") == "(skip_serializing)"
+    })
+}
+fn should_ship_deserialization(field: &Field) -> bool {
+    field.attrs.iter().any(|attr| {
+        attr.path.is_ident("ssz")
+            && attr.tts.to_string().replace(" ", "") == "(skip_deserializing)"
+    })
 }
