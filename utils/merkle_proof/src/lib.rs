@@ -104,8 +104,8 @@ fn get_helper_indices(indices: &[usize]) -> Vec<usize> {
         all_path_indices.append(&mut get_path_indices(*index).clone());
     }
 
-    let pre_answer = hashset(all_helper_indices);
-    let pre_answer_2 = hashset(all_path_indices);
+    let pre_answer = hashset(&all_helper_indices);
+    let pre_answer_2 = hashset(&all_path_indices);
 
     let mut hash_answer: HashSet<usize> = pre_answer.difference(&pre_answer_2).cloned().collect();
     let mut vector_answer: Vec<usize> = Vec::with_capacity(hash_answer.len());
@@ -115,7 +115,7 @@ fn get_helper_indices(indices: &[usize]) -> Vec<usize> {
     }
 
     vector_answer.sort();
-    reverse_vector(vector_answer)
+    reverse_vector(&vector_answer)
 }
 
 //reverts the vector
@@ -215,7 +215,7 @@ fn calculate_multi_merkle_root(
     }
 
     keys.sort();
-    keys = reverse_vector(keys);
+    keys = reverse_vector(&keys);
     let mut biggest: usize = *keys.get(0_usize).clone().unwrap();
 
     while biggest > 0 {
@@ -226,14 +226,14 @@ fn calculate_multi_merkle_root(
     }
 
     keys.sort();
-    keys = reverse_vector(keys);
+    keys = reverse_vector(&keys);
 
     let mut position = 1_usize;
 
     while position < keys.len() {
         // Safe because keys vector is filled above.
         let k = keys[position];
-        let contains_itself: bool = index_leave_map.contains_key(k);
+        let contains_itself: bool = index_leave_map.contains_key(&k);
         let contains_sibling: bool = index_leave_map.contains_key(&(k ^ 1));
         let contains_parent: bool = index_leave_map.contains_key(&(k / 2));
 
