@@ -587,10 +587,11 @@ mod bitlist {
     fn test_bytes_round_trip(num_bits: usize) {
         for i in 0..num_bits {
             let mut bitfield = BitList1024::with_capacity(num_bits).expect("Test");
-            bitfield.set(i, true).expect("Test");
+            bitfield.set(i, true).expect("i is within the boundaries");
 
             let bytes = bitfield.clone().into_raw_bytes();
-            assert_eq!(bitfield, Bitfield::from_raw_bytes(bytes, num_bits).expect("Test"));
+            assert_eq!(bitfield, Bitfield::from_raw_bytes(bytes, num_bits)
+                .expect("Test"));
         }
     }
 
@@ -661,7 +662,9 @@ mod bitlist {
     #[test]
     fn highest_set_bit() {
         assert_eq!(
-            BitList1024::with_capacity(16).expect("Test").highest_set_bit(),
+            BitList1024::with_capacity(16)
+                .expect("Test")
+                .highest_set_bit(),
             None
         );
 
