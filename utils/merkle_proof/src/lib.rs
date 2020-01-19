@@ -78,7 +78,7 @@ const fn generalized_index_parent(index: usize) -> usize {
 fn get_branch_indices(tree_index: usize) -> Vec<usize> {
     let mut branch = vec![generalized_index_sibling(tree_index)];
     while branch.last() > Some(&1_usize) {
-        let index = branch.last().cloned().unwrap();
+        let index = branch.last().cloned().expect("Something is wrong");
         let mut next_index = vec![generalized_index_sibling(generalized_index_parent(index))];
         branch.append(&mut next_index);
     }
@@ -89,7 +89,7 @@ fn get_branch_indices(tree_index: usize) -> Vec<usize> {
 fn get_path_indices(tree_index: usize) -> Vec<usize> {
     let mut path = vec![tree_index];
     while path.last() > Some(&1_usize) {
-        let index = path.last().cloned().unwrap();
+        let index = path.last().cloned().expect("Something is wrong");
         path.append(&mut vec![generalized_index_parent(index)]);
     }
     path
@@ -216,7 +216,7 @@ fn calculate_multi_merkle_root(
 
     keys.sort();
     keys = reverse_vector(&keys);
-    let mut biggest: usize = *keys.get(0_usize).clone().unwrap();
+    let mut biggest: usize = *keys.get(0_usize).clone().expect("No keys");
 
     while biggest > 0 {
         if !keys.contains(&biggest) {
