@@ -1,5 +1,5 @@
 #![allow(clippy::cognitive_complexity)]
-#![allow(clippy::module-name-repetitions)]
+#![allow(clippy::module_name_repetitions)]
 #![allow(clippy::range_plus_one)]
 
 use super::tree_hash::bitfield_bytes_tree_hash_root;
@@ -355,13 +355,7 @@ impl<T: BitfieldBehaviour> Bitfield<T> {
             } else {
                 Err(Error::ExcessBits)
             }
-        } else if bytes.len() != bytes_for_bit_len(bit_len) {
-            // The number of bytes must be the minimum required to represent `bit_len`.
-            Err(Error::InvalidByteCount {
-                given: bytes.len(),
-                expected: bytes_for_bit_len(bit_len),
-            })
-        } else {
+        } else if bytes.len() == bytes_for_bit_len(bit_len) {
             // Ensure there are no bits higher than `bit_len` that are set to true.
             let (mask, _) = u8::max_value().overflowing_shr(8 - (bit_len as u32 % 8));
 
@@ -374,6 +368,12 @@ impl<T: BitfieldBehaviour> Bitfield<T> {
             } else {
                 Err(Error::ExcessBits)
             }
+        } else {
+            // The number of bytes must be the minimum required to represent `bit_len`.
+            Err(Error::InvalidByteCount {
+                given: bytes.len(),
+                expected: bytes_for_bit_len(bit_len),
+            })
         }
     }
 
