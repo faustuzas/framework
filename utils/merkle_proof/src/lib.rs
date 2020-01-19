@@ -34,24 +34,24 @@ fn hash_and_concat(h1: H256, h2: H256) -> H256 {
 //returns previous power of 2
 fn get_previous_power_of_two(x: usize) -> usize {
     if x <= 2 {
-        return x;
+        x
     } else {
-        return 2 * get_previous_power_of_two(x / 2);
+        2 * get_previous_power_of_two(x / 2)
     }
 }
 
 //returns next power of 2
 fn get_next_power_of_two(x: usize) -> usize {
     if x <= 2 {
-        return x;
+        x
     } else {
-        return 2 * get_next_power_of_two((x + 1) / 2);
+        2 * get_next_power_of_two((x + 1) / 2)
     }
 }
 
 // length of path
 fn get_generalized_index_length(index: usize) -> usize {
-    return log_of!(index, 2., usize);
+    log_of!(index, 2., usize)
 }
 
 fn get_generalized_index_bit(index: usize, position: usize) -> bool {
@@ -60,18 +60,18 @@ fn get_generalized_index_bit(index: usize, position: usize) -> bool {
 
 //get index sibling
 fn generalized_index_sibling(index: usize) -> usize {
-    return index ^ 1;
+    index ^ 1
 }
 
 // get index child
 fn generalized_index_child(index: usize, right_side: bool) -> usize {
     let is_right = if right_side { 1 } else { 0 };
-    return index * 2 + is_right;
+    index * 2 + is_right
 }
 
 //get index parent
 fn generalized_index_parent(index: usize) -> usize {
-    return index / 2;
+    index / 2
 }
 
 // get indices of sister chunks
@@ -82,7 +82,7 @@ fn get_branch_indices(tree_index: usize) -> Vec<usize> {
         let mut next_index = vec![generalized_index_sibling(generalized_index_parent(index))];
         branch.append(&mut next_index);
     }
-    return branch;
+    branch
 }
 
 // get path indices
@@ -92,7 +92,7 @@ fn get_path_indices(tree_index: usize) -> Vec<usize> {
         let index = path.last().cloned().unwrap();
         path.append(&mut vec![generalized_index_parent(index)]);
     }
-    return path;
+    path
 }
 
 //get all indices of all indices needed for the proof
@@ -115,12 +115,12 @@ fn get_helper_indices(indices: &[usize]) -> Vec<usize> {
     }
 
     vector_answer.sort();
-    return reverse_vector(vector_answer);
+    reverse_vector(vector_answer)
 }
 
 //reverts the vector
 fn reverse_vector(data: Vec<usize>) -> Vec<usize> {
-    return data.iter().rev().cloned().collect();
+    data.iter().rev().cloned().collect()
 }
 
 //vector to hashset
@@ -216,7 +216,7 @@ fn calculate_multi_merkle_root(
 
     keys.sort();
     keys = reverse_vector(keys);
-    let mut biggest: usize = *keys.get(0usize).clone().unwrap();
+    let mut biggest: usize = *keys.get(0_usize).clone().unwrap();
 
     while biggest > 0 {
         if !keys.contains(&biggest) {
@@ -228,7 +228,7 @@ fn calculate_multi_merkle_root(
     keys.sort();
     keys = reverse_vector(keys);
 
-    let mut position = 1usize;
+    let mut position = 1_usize;
 
     while position < keys.len() {
         // Safe because keys vector is filled above.
@@ -254,7 +254,7 @@ fn calculate_multi_merkle_root(
 
     // Safe because keys vector is full and value is inserted in those indeces.
     // index_leave_map.remove(&1usize);
-    return Ok(*index_leave_map.get(&1usize).unwrap());
+    Ok(*index_leave_map.get(&1_usize).unwrap())
 }
 
 #[cfg(test)]
@@ -282,7 +282,7 @@ mod tests {
 
     #[test]
     fn get_generalized_index_bit_test() {
-        assert_eq!(true, get_generalized_index_bit(2usize, 1usize));
+        assert_eq!(true, get_generalized_index_bit(2_usize, 1_usize));
         assert_eq!(false, get_generalized_index_bit(3, 2));
     }
 
@@ -299,34 +299,34 @@ mod tests {
 
     #[test]
     fn get_branch_indices_test() {
-        assert_eq!(get_branch_indices(5usize), vec!(4usize, 3usize, 0usize));
+        assert_eq!(get_branch_indices(5_usize), vec!(4_usize, 3_usize, 0_usize));
         assert_eq!(
-            get_branch_indices(9usize),
-            vec!(8usize, 5usize, 3usize, 0usize)
+            get_branch_indices(9_usize),
+            vec!(8_usize, 5_usize, 3_usize, 0_usize)
         );
     }
 
     #[test]
     fn get_path_indices_test() {
         assert_eq!(
-            get_path_indices(9usize),
-            vec!(9usize, 4usize, 2usize, 1usize)
+            get_path_indices(9_usize),
+            vec!(9_usize, 4_usize, 2_usize, 1_usize)
         );
         assert_eq!(
-            get_path_indices(10usize),
-            vec!(10usize, 5usize, 2usize, 1usize)
+            get_path_indices(10_usize),
+            vec!(10_usize, 5_usize, 2_usize, 1_usize)
         );
     }
 
     #[test]
     fn get_helper_indices_test() {
         assert_eq!(
-            get_helper_indices(&[9usize, 4usize, 2usize, 1usize]),
-            vec!(8usize, 5usize, 3usize, 0usize)
+            get_helper_indices(&[9_usize, 4_usize, 2_usize, 1_usize]),
+            vec!(8_usize, 5_usize, 3_usize, 0_usize)
         );
         assert_eq!(
-            get_helper_indices(&[10usize, 5usize, 2usize, 1usize]),
-            vec!(11usize, 4usize, 3usize, 0usize)
+            get_helper_indices(&[10_usize, 5_usize, 2_usize, 1_usize]),
+            vec!(11_usize, 4_usize, 3_usize, 0_usize)
         );
     }
 
@@ -580,8 +580,8 @@ mod tests {
         let root = hash_and_concat(node_b0xx, node_b1xx); //1
 
         assert_eq!(
-            get_path_indices(15usize),
-            vec!(15usize, 7usize, 3usize, 1usize)
+            get_path_indices(15_usize),
+            vec!(15_usize, 7_usize, 3_usize, 1_usize)
         );
 
         assert_eq!(
