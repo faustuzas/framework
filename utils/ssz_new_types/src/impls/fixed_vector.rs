@@ -15,7 +15,7 @@ impl<T: Encode, N: Unsigned> Encode for FixedVector<T, N> {
             for part in fixed_parts {
                 result.extend(part);
             }
-            
+
             result
         } else {
             let mut variable_parts = Vec::with_capacity(self.len());
