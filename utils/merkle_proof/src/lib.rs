@@ -369,52 +369,62 @@ mod tests {
         );
 
         assert_eq!(
-            verify_merkle_proof(leaf_b00, &[node_b1x, leaf_b01], 0, 4, root).expect("verification failed!"),
+            verify_merkle_proof(leaf_b00, &[node_b1x, leaf_b01], 0, 4, root)
+                .expect("verification failed!"),
             false
         );
 
         assert_eq!(
-            verify_merkle_proof(leaf_b01, &[leaf_b00, node_b1x], 0, 5, root).expect("verification failed!"),
+            verify_merkle_proof(leaf_b01, &[leaf_b00, node_b1x], 0, 5, root)
+                .expect("verification failed!"),
             true
         );
 
         assert_eq!(
-            verify_merkle_proof(leaf_b10, &[leaf_b11, node_b0x], 0, 6, root).expect("verification failed!"),
+            verify_merkle_proof(leaf_b10, &[leaf_b11, node_b0x], 0, 6, root)
+                .expect("verification failed!"),
             true
         );
 
         assert_eq!(
-            verify_merkle_proof(leaf_b11, &[leaf_b10, node_b0x], 0, 7, root).expect("verification failed!"),
+            verify_merkle_proof(leaf_b11, &[leaf_b10, node_b0x], 0, 7, root)
+                .expect("verification failed!"),
             true
         );
 
         assert_eq!(
-            verify_merkle_proof(leaf_b11, &[leaf_b10], 0, 3, node_b1x).expect("verification failed!"),
+            verify_merkle_proof(leaf_b11, &[leaf_b10], 0, 3, node_b1x)
+                .expect("verification failed!"),
             true
         );
 
         assert_eq!(
-            verify_merkle_proof(leaf_b01, &[], 0, 1, root).expect("verification failed!"),
+            verify_merkle_proof(leaf_b01, &[], 0, 1, root)
+                .expect("verification failed!"),
             false
         );
 
         assert_eq!(
-            verify_merkle_proof(leaf_b01, &[node_b1x, leaf_b00], 0, 5, root).expect("verification failed!"),
+            verify_merkle_proof(leaf_b01, &[node_b1x, leaf_b00], 0, 5, root)
+                .expect("verification failed!"),
             false
         );
 
         assert_eq!(
-            verify_merkle_proof(leaf_b01, &[leaf_b00], 0, 2, root).expect("verification failed!"),
+            verify_merkle_proof(leaf_b01, &[leaf_b00], 0, 2, root)
+                .expect("verification failed!"),
             false
         );
 
         assert_eq!(
-            verify_merkle_proof(leaf_b01, &[leaf_b00, node_b1x], 0, 4, root).expect("verification failed!"),
+            verify_merkle_proof(leaf_b01, &[leaf_b00, node_b1x], 0, 4, root)
+                .expect("verification failed!"),
             false
         );
 
         assert_eq!(
-            verify_merkle_proof(leaf_b01, &[leaf_b00, node_b1x], 0, 5, node_b1x).expect("verification failed!"),
+            verify_merkle_proof(leaf_b01, &[leaf_b00, node_b1x], 0, 5, node_b1x)
+                .expect("verification failed!"),
             false
         );
     }
@@ -438,7 +448,8 @@ mod tests {
                 &[leaf_b10, node_b1x],
                 &[4, 5, 7],
                 root
-            ).expect("verification of multiproof failed!"),
+            )
+            .expect("verification of multiproof failed!"),
             true
         );
 
@@ -448,7 +459,8 @@ mod tests {
                 &[],
                 &[4, 5, 6, 7],
                 root
-            ).expect("verification of multiproof failed!"),
+            )
+            .expect("verification of multiproof failed!"),
             true
         );
 
@@ -458,7 +470,8 @@ mod tests {
                 &[leaf_b10, node_b1x],
                 &[4, 5, 7],
                 root
-            ).expect("verification of multiproof failed!"),
+            )
+            .expect("verification of multiproof failed!"),
             false
         );
 
@@ -468,7 +481,8 @@ mod tests {
                 &[leaf_b11, node_b1x],
                 &[4, 5, 6],
                 root
-            ).expect("verification of multiproof failed!"),
+            )
+            .expect("verification of multiproof failed!"),
             false
         );
 
@@ -478,62 +492,74 @@ mod tests {
                 &[leaf_b11, node_b1x],
                 &[4, 5, 6],
                 root
-            ).expect("verification of multiproof failed!"),
+            )
+            .expect("verification of multiproof failed!"),
             true
         );
 
         assert_eq!(
-            verify_merkle_multiproof(&[leaf_b00, leaf_b01], &[node_b1x, node_b1x], &[4, 5], root).expect("verification of multiproof failed!"),
+            verify_merkle_multiproof(&[leaf_b00, leaf_b01], &[node_b1x, node_b1x], &[4, 5], root)
+                .expect("verification of multiproof failed!"),
             true
         );
 
         assert_eq!(
-            verify_merkle_multiproof(&[leaf_b00], &[leaf_b01, node_b1x], &[4], root).expect("verification of multiproof failed!"),
+            verify_merkle_multiproof(&[leaf_b00], &[leaf_b01, node_b1x], &[4], root)
+                .expect("verification of multiproof failed!"),
             true
         );
 
         assert_eq!(
-            verify_merkle_multiproof(&[leaf_b01], &[leaf_b00, node_b1x], &[5], root).expect("verification of multiproof failed!"),
+            verify_merkle_multiproof(&[leaf_b01], &[leaf_b00, node_b1x], &[5], root)
+                .expect("verification of multiproof failed!"),
             true
         );
 
         assert_eq!(
-            verify_merkle_multiproof(&[leaf_b10], &[leaf_b11, node_b0x], &[6], root).expect("verification of multiproof failed!"),
+            verify_merkle_multiproof(&[leaf_b10], &[leaf_b11, node_b0x], &[6], root)
+                .expect("verification of multiproof failed!"),
             true
         );
 
         assert_eq!(
-            verify_merkle_multiproof(&[leaf_b11], &[leaf_b10, node_b0x], &[7], root).expect("verification of multiproof failed!"),
+            verify_merkle_multiproof(&[leaf_b11], &[leaf_b10, node_b0x], &[7], root)
+                .expect("verification of multiproof failed!"),
             true
         );
 
         assert_eq!(
-            verify_merkle_multiproof(&[leaf_b11], &[leaf_b10], &[3], node_b1x).expect("verification of multiproof failed!"),
+            verify_merkle_multiproof(&[leaf_b11], &[leaf_b10], &[3], node_b1x)
+                .expect("verification of multiproof failed!"),
             true
         );
 
         assert_eq!(
-            verify_merkle_multiproof(&[leaf_b01], &[], &[1], root).expect("verification of multiproof failed!"),
+            verify_merkle_multiproof(&[leaf_b01], &[], &[1], root)
+                .expect("verification of multiproof failed!"),
             false
         );
 
         assert_eq!(
-            verify_merkle_multiproof(&[leaf_b01], &[node_b1x, leaf_b00], &[5], root).expect("verification of multiproof failed!"),
+            verify_merkle_multiproof(&[leaf_b01], &[node_b1x, leaf_b00], &[5], root)
+                .expect("verification of multiproof failed!"),
             false
         );
 
         assert_eq!(
-            verify_merkle_multiproof(&[leaf_b01], &[leaf_b00], &[2], root).expect("verification of multiproof failed!"),
+            verify_merkle_multiproof(&[leaf_b01], &[leaf_b00], &[2], root)
+                .expect("verification of multiproof failed!"),
             false
         );
 
         assert_eq!(
-            verify_merkle_multiproof(&[leaf_b01], &[leaf_b00, node_b1x], &[4], root).expect("verification of multiproof failed!"),
+            verify_merkle_multiproof(&[leaf_b01], &[leaf_b00, node_b1x], &[4], root)
+                .expect("verification of multiproof failed!"),
             false
         );
 
         assert_eq!(
-            verify_merkle_multiproof(&[leaf_b01], &[leaf_b00, node_b1x], &[5], node_b1x).expect("verification of multiproof failed!"),
+            verify_merkle_multiproof(&[leaf_b01], &[leaf_b00, node_b1x], &[5], node_b1x)
+                .expect("verification of multiproof failed!"),
             false
         );
 
