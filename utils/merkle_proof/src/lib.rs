@@ -54,12 +54,12 @@ fn get_generalized_index_length(index: usize) -> usize {
     log_of!(index, 2., usize)
 }
 
-fn get_generalized_index_bit(index: usize, position: usize) -> bool {
+const fn get_generalized_index_bit(index: usize, position: usize) -> bool {
     ((index >> position) & 0x01) > 0
 }
 
 //get index sibling
-fn generalized_index_sibling(index: usize) -> usize {
+const fn generalized_index_sibling(index: usize) -> usize {
     index ^ 1
 }
 
@@ -70,7 +70,7 @@ fn generalized_index_child(index: usize, right_side: bool) -> usize {
 }
 
 //get index parent
-fn generalized_index_parent(index: usize) -> usize {
+const fn generalized_index_parent(index: usize) -> usize {
     index / 2
 }
 
@@ -119,12 +119,12 @@ fn get_helper_indices(indices: &[usize]) -> Vec<usize> {
 }
 
 //reverts the vector
-fn reverse_vector(data: Vec<usize>) -> Vec<usize> {
+fn reverse_vector(data: &[usize]) -> Vec<usize> {
     data.iter().rev().cloned().collect()
 }
 
 //vector to hashset
-fn hashset(data: Vec<usize>) -> HashSet<usize> {
+fn hashset(data: &[usize]) -> HashSet<usize> {
     HashSet::from_iter(data.iter().cloned())
 }
 
@@ -210,7 +210,7 @@ fn calculate_multi_merkle_root(
 
     let mut keys: Vec<usize> = vec![];
 
-    for (key, _value) in index_leave_map.iter_mut() {
+    for (key, _value) in &mut index_leave_map {
         keys.push(key.clone());
     }
 
@@ -232,7 +232,7 @@ fn calculate_multi_merkle_root(
 
     while position < keys.len() {
         // Safe because keys vector is filled above.
-        let k = keys.get(position).unwrap();
+        let k = keys[position];
         let contains_itself: bool = index_leave_map.contains_key(k);
         let contains_sibling: bool = index_leave_map.contains_key(&(k ^ 1));
         let contains_parent: bool = index_leave_map.contains_key(&(k / 2));
@@ -244,8 +244,8 @@ fn calculate_multi_merkle_root(
             index_leave_map.insert(
                 k / 2,
                 hash_and_concat(
-                    *index_leave_map.get(&index_first).unwrap(),
-                    *index_leave_map.get(&index_second).unwrap(),
+                    index_leave_map[&index_first],
+                    index_leave_map[&index_second],
                 ),
             );
         }
@@ -254,7 +254,7 @@ fn calculate_multi_merkle_root(
 
     // Safe because keys vector is full and value is inserted in those indeces.
     // index_leave_map.remove(&1usize);
-    Ok(*index_leave_map.get(&1_usize).unwrap())
+    Ok(index_leave_map[&1_usize])
 }
 
 #[cfg(test)]
@@ -429,7 +429,7 @@ mod tests {
     }
 
     #[test]
-    fn verify_merkle_multiproof_test() {
+    fn verify_merkle_multiproof_first_test() {
         let leaf_b00 = H256::from([0xAA; 32]); //4
         let leaf_b01 = H256::from([0xBB; 32]); //5
         let leaf_b10 = H256::from([0xCC; 32]); //6
@@ -512,6 +512,20 @@ mod tests {
                 .expect("verification of multiproof failed!"),
             true
         );
+    }
+
+
+    #[test]
+    fn verify_merkle_multiproof_second_test() {
+        let leaf_b00 = H256::from([0xAA; 32]); //4
+        let leaf_b01 = H256::from([0xBB; 32]); //5
+        let leaf_b10 = H256::from([0xCC; 32]); //6
+        let leaf_b11 = H256::from([0xDD; 32]); //7
+
+        let node_b0x = hash_and_concat(leaf_b00, leaf_b01); // 3
+        let node_b1x = hash_and_concat(leaf_b10, leaf_b11); //2
+
+        let root = hash_and_concat(node_b0x, node_b1x); //1
 
         assert_eq!(
             verify_merkle_multiproof(&[leaf_b10], &[leaf_b11, node_b0x], &[6], root)
