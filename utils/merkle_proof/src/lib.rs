@@ -210,7 +210,7 @@ fn calculate_multi_merkle_root(
 
     let mut keys: Vec<usize> = vec![];
 
-    for (key, _value) in &mut index_leave_map {
+    for key in index_leave_map.keys() {
         keys.push(key.clone());
     }
 
