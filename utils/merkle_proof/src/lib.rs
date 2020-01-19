@@ -21,7 +21,7 @@ macro_rules! log_of {
 //concats 2 vectors
 fn concat(mut vec1: Vec<u8>, mut vec2: Vec<u8>) -> Vec<u8> {
     vec1.append(&mut vec2);
-    return vec1;
+    vec1
 }
 
 // concats and then hashes 2 vectors
@@ -77,7 +77,7 @@ fn generalized_index_parent(index: usize) -> usize {
 // get indices of sister chunks
 fn get_branch_indices(tree_index: usize) -> Vec<usize> {
     let mut branch = vec![generalized_index_sibling(tree_index)];
-    while branch.last() > Some(&1usize) {
+    while branch.last() > Some(&1_usize) {
         let index = branch.last().cloned().unwrap();
         let mut next_index = vec![generalized_index_sibling(generalized_index_parent(index))];
         branch.append(&mut next_index);
@@ -88,7 +88,7 @@ fn get_branch_indices(tree_index: usize) -> Vec<usize> {
 // get path indices
 fn get_path_indices(tree_index: usize) -> Vec<usize> {
     let mut path = vec![tree_index];
-    while path.last() > Some(&1usize) {
+    while path.last() > Some(&1_usize) {
         let index = path.last().cloned().unwrap();
         path.append(&mut vec![generalized_index_parent(index)]);
     }
