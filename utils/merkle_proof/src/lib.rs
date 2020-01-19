@@ -430,7 +430,6 @@ mod tests {
 
     #[test]
     fn verify_merkle_multiproof_test() {
-
         let leaf_b00 = H256::from([0xAA; 32]); //4
         let leaf_b01 = H256::from([0xBB; 32]); //5
         let leaf_b10 = H256::from([0xCC; 32]); //6
