@@ -400,8 +400,7 @@ mod tests {
         );
 
         assert_eq!(
-            verify_merkle_proof(leaf_b01, &[], 0, 1, root)
-                .expect("verification failed!"),
+            verify_merkle_proof(leaf_b01, &[], 0, 1, root).expect("verification failed!"),
             false
         );
 
