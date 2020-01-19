@@ -514,7 +514,6 @@ mod tests {
         );
     }
 
-
     #[test]
     fn verify_merkle_multiproof_second_test() {
         let leaf_b00 = H256::from([0xAA; 32]); //4
