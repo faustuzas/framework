@@ -436,7 +436,7 @@ impl<T: BitfieldBehaviour> Bitfield<T> {
             }
             // Zero the low bits
             for i in 0..n {
-                self.set(i, false).unwrap();
+                self.set(i, false).expect("i is in the limits of array");
             }
             Ok(())
         } else {
@@ -565,7 +565,7 @@ mod bitlist {
     }
 
     fn test_set_unset(num_bits: usize) {
-        let mut bitfield = BitList1024::with_capacity(num_bits).unwrap();
+        let mut bitfield = BitList1024::with_capacity(num_bits).expect("Test");
         for i in 0..num_bits + 1 {
             if i < num_bits {
                 // Starts as false
@@ -586,11 +586,11 @@ mod bitlist {
 
     fn test_bytes_round_trip(num_bits: usize) {
         for i in 0..num_bits {
-            let mut bitfield = BitList1024::with_capacity(num_bits).unwrap();
-            bitfield.set(i, true).unwrap();
+            let mut bitfield = BitList1024::with_capacity(num_bits).expect("Test");
+            bitfield.set(i, true).expect("Test");
 
             let bytes = bitfield.clone().into_raw_bytes();
-            assert_eq!(bitfield, Bitfield::from_raw_bytes(bytes, num_bits).unwrap());
+            assert_eq!(bitfield, Bitfield::from_raw_bytes(bytes, num_bits).expect("Test"));
         }
     }
 
@@ -610,48 +610,48 @@ mod bitlist {
 
     #[test]
     fn into_raw_bytes() {
-        let mut bitfield = BitList1024::with_capacity(9).unwrap();
-        bitfield.set(0, true).unwrap();
+        let mut bitfield = BitList1024::with_capacity(9).expect("Test");
+        bitfield.set(0, true).expect("Test");
         assert_eq!(
             bitfield.clone().into_raw_bytes(),
             vec![0b0000_0001, 0b0000_0000]
         );
-        bitfield.set(1, true).unwrap();
+        bitfield.set(1, true).expect("Test");
         assert_eq!(
             bitfield.clone().into_raw_bytes(),
             vec![0b0000_0011, 0b0000_0000]
         );
-        bitfield.set(2, true).unwrap();
+        bitfield.set(2, true).expect("Test");
         assert_eq!(
             bitfield.clone().into_raw_bytes(),
             vec![0b0000_0111, 0b0000_0000]
         );
-        bitfield.set(3, true).unwrap();
+        bitfield.set(3, true).expect("Test");
         assert_eq!(
             bitfield.clone().into_raw_bytes(),
             vec![0b0000_1111, 0b0000_0000]
         );
-        bitfield.set(4, true).unwrap();
+        bitfield.set(4, true).expect("Test");
         assert_eq!(
             bitfield.clone().into_raw_bytes(),
             vec![0b0001_1111, 0b0000_0000]
         );
-        bitfield.set(5, true).unwrap();
+        bitfield.set(5, true).expect("Test");
         assert_eq!(
             bitfield.clone().into_raw_bytes(),
             vec![0b0011_1111, 0b0000_0000]
         );
-        bitfield.set(6, true).unwrap();
+        bitfield.set(6, true).expect("Test");
         assert_eq!(
             bitfield.clone().into_raw_bytes(),
             vec![0b0111_1111, 0b0000_0000]
         );
-        bitfield.set(7, true).unwrap();
+        bitfield.set(7, true).expect("Test");
         assert_eq!(
             bitfield.clone().into_raw_bytes(),
             vec![0b1111_1111, 0b0000_0000]
         );
-        bitfield.set(8, true).unwrap();
+        bitfield.set(8, true).expect("Test");
         assert_eq!(
             bitfield.clone().into_raw_bytes(),
             vec![0b1111_1111, 0b0000_0001]
@@ -661,34 +661,34 @@ mod bitlist {
     #[test]
     fn highest_set_bit() {
         assert_eq!(
-            BitList1024::with_capacity(16).unwrap().highest_set_bit(),
+            BitList1024::with_capacity(16).expect("Test").highest_set_bit(),
             None
         );
 
         assert_eq!(
             BitList1024::from_raw_bytes(vec![0b0000_0001, 0b0000_0000], 16)
-                .unwrap()
+                .expect("Test")
                 .highest_set_bit(),
             Some(0)
         );
 
         assert_eq!(
             BitList1024::from_raw_bytes(vec![0b0000_0010, 0b0000_0000], 16)
-                .unwrap()
+                .expect("Test")
                 .highest_set_bit(),
             Some(1)
         );
 
         assert_eq!(
             BitList1024::from_raw_bytes(vec![0b0000_1000], 8)
-                .unwrap()
+                .expect("Test")
                 .highest_set_bit(),
             Some(3)
         );
 
         assert_eq!(
             BitList1024::from_raw_bytes(vec![0b0000_0000, 0b1000_0000], 16)
-                .unwrap()
+                .expect("Test")
                 .highest_set_bit(),
             Some(15)
         );
@@ -696,9 +696,9 @@ mod bitlist {
 
     #[test]
     fn intersection() {
-        let a = BitList1024::from_raw_bytes(vec![0b1100, 0b0001], 16).unwrap();
-        let b = BitList1024::from_raw_bytes(vec![0b1011, 0b1001], 16).unwrap();
-        let c = BitList1024::from_raw_bytes(vec![0b1000, 0b0001], 16).unwrap();
+        let a = BitList1024::from_raw_bytes(vec![0b1100, 0b0001], 16).expect("Test");
+        let b = BitList1024::from_raw_bytes(vec![0b1011, 0b1001], 16).expect("Test");
+        let c = BitList1024::from_raw_bytes(vec![0b1000, 0b0001], 16).expect("Test");
 
         assert_eq!(a.intersection(&b), c);
         assert_eq!(b.intersection(&a), c);
@@ -711,10 +711,10 @@ mod bitlist {
 
     #[test]
     fn intersection_diff_length() {
-        let a = BitList1024::from_bytes(vec![0b0010_1110, 0b0010_1011]).unwrap();
-        let b = BitList1024::from_bytes(vec![0b0010_1101, 0b0000_0001]).unwrap();
-        let c = BitList1024::from_bytes(vec![0b0010_1100, 0b0000_0001]).unwrap();
-        let d = BitList1024::from_bytes(vec![0b0010_1110, 0b1111_1111, 0b1111_1111]).unwrap();
+        let a = BitList1024::from_bytes(vec![0b0010_1110, 0b0010_1011]).expect("Test");
+        let b = BitList1024::from_bytes(vec![0b0010_1101, 0b0000_0001]).expect("Test");
+        let c = BitList1024::from_bytes(vec![0b0010_1100, 0b0000_0001]).expect("Test");
+        let d = BitList1024::from_bytes(vec![0b0010_1110, 0b1111_1111, 0b1111_1111]).expect("Test");
 
         assert_eq!(a.len(), 13);
         assert_eq!(b.len(), 8);
@@ -728,9 +728,9 @@ mod bitlist {
 
     #[test]
     fn union() {
-        let a = BitList1024::from_raw_bytes(vec![0b1100, 0b0001], 16).unwrap();
-        let b = BitList1024::from_raw_bytes(vec![0b1011, 0b1001], 16).unwrap();
-        let c = BitList1024::from_raw_bytes(vec![0b1111, 0b1001], 16).unwrap();
+        let a = BitList1024::from_raw_bytes(vec![0b1100, 0b0001], 16).expect("Test");
+        let b = BitList1024::from_raw_bytes(vec![0b1011, 0b1001], 16).expect("Test");
+        let c = BitList1024::from_raw_bytes(vec![0b1111, 0b1001], 16).expect("Test");
 
         assert_eq!(a.union(&b), c);
         assert_eq!(b.union(&a), c);
@@ -741,10 +741,10 @@ mod bitlist {
 
     #[test]
     fn union_diff_length() {
-        let a = BitList1024::from_bytes(vec![0b0010_1011, 0b0010_1110]).unwrap();
-        let b = BitList1024::from_bytes(vec![0b0000_0001, 0b0010_1101]).unwrap();
-        let c = BitList1024::from_bytes(vec![0b0010_1011, 0b0010_1111]).unwrap();
-        let d = BitList1024::from_bytes(vec![0b0010_1011, 0b1011_1110, 0b1000_1101]).unwrap();
+        let a = BitList1024::from_bytes(vec![0b0010_1011, 0b0010_1110]).expect("Test");
+        let b = BitList1024::from_bytes(vec![0b0000_0001, 0b0010_1101]).expect("Test");
+        let c = BitList1024::from_bytes(vec![0b0010_1011, 0b0010_1111]).expect("Test");
+        let d = BitList1024::from_bytes(vec![0b0010_1011, 0b1011_1110, 0b1000_1101]).expect("Test");
 
         assert_eq!(a.len(), c.len());
         assert_eq!(a.union(&b), c);
@@ -755,10 +755,10 @@ mod bitlist {
 
     #[test]
     fn difference() {
-        let a = BitList1024::from_raw_bytes(vec![0b1100, 0b0001], 16).unwrap();
-        let b = BitList1024::from_raw_bytes(vec![0b1011, 0b1001], 16).unwrap();
-        let a_b = BitList1024::from_raw_bytes(vec![0b0100, 0b0000], 16).unwrap();
-        let b_a = BitList1024::from_raw_bytes(vec![0b0011, 0b1000], 16).unwrap();
+        let a = BitList1024::from_raw_bytes(vec![0b1100, 0b0001], 16).expect("Test");
+        let b = BitList1024::from_raw_bytes(vec![0b1011, 0b1001], 16).expect("Test");
+        let a_b = BitList1024::from_raw_bytes(vec![0b0100, 0b0000], 16).expect("Test");
+        let b_a = BitList1024::from_raw_bytes(vec![0b0011, 0b1000], 16).expect("Test");
 
         assert_eq!(a.difference(&b), a_b);
         assert_eq!(b.difference(&a), b_a);
@@ -767,10 +767,10 @@ mod bitlist {
 
     #[test]
     fn difference_diff_length() {
-        let a = BitList1024::from_raw_bytes(vec![0b0110, 0b1100, 0b0011], 24).unwrap();
-        let b = BitList1024::from_raw_bytes(vec![0b1011, 0b1001], 16).unwrap();
-        let a_b = BitList1024::from_raw_bytes(vec![0b0100, 0b0100, 0b0011], 24).unwrap();
-        let b_a = BitList1024::from_raw_bytes(vec![0b1001, 0b0001], 16).unwrap();
+        let a = BitList1024::from_raw_bytes(vec![0b0110, 0b1100, 0b0011], 24).expect("Test");
+        let b = BitList1024::from_raw_bytes(vec![0b1011, 0b1001], 16).expect("Test");
+        let a_b = BitList1024::from_raw_bytes(vec![0b0100, 0b0100, 0b0011], 24).expect("Test");
+        let b_a = BitList1024::from_raw_bytes(vec![0b1001, 0b0001], 16).expect("Test");
 
         assert_eq!(a.difference(&b), a_b);
         assert_eq!(b.difference(&a), b_a);
@@ -778,23 +778,23 @@ mod bitlist {
 
     #[test]
     fn shift_up() {
-        let mut a = BitList1024::from_raw_bytes(vec![0b1100_1111, 0b1101_0110], 16).unwrap();
-        let mut b = BitList1024::from_raw_bytes(vec![0b1001_1110, 0b1010_1101], 16).unwrap();
+        let mut a = BitList1024::from_raw_bytes(vec![0b1100_1111, 0b1101_0110], 16).expect("Test");
+        let mut b = BitList1024::from_raw_bytes(vec![0b1001_1110, 0b1010_1101], 16).expect("Test");
 
-        a.shift_up(1).unwrap();
+        a.shift_up(1).expect("Test");
         assert_eq!(a, b);
-        a.shift_up(15).unwrap();
+        a.shift_up(15).expect("Test");
         assert!(a.is_zero());
 
-        b.shift_up(16).unwrap();
+        b.shift_up(16).expect("Test");
         assert!(b.is_zero());
         assert!(b.shift_up(17).is_err());
     }
 
     #[test]
     fn num_set_bits() {
-        let a = BitList1024::from_raw_bytes(vec![0b1100, 0b0001], 16).unwrap();
-        let b = BitList1024::from_raw_bytes(vec![0b1011, 0b1001], 16).unwrap();
+        let a = BitList1024::from_raw_bytes(vec![0b1100, 0b0001], 16).expect("Test");
+        let b = BitList1024::from_raw_bytes(vec![0b1011, 0b1001], 16).expect("Test");
 
         assert_eq!(a.num_set_bits(), 3);
         assert_eq!(b.num_set_bits(), 5);
@@ -802,9 +802,9 @@ mod bitlist {
 
     #[test]
     fn iter() {
-        let mut bitfield = BitList1024::with_capacity(9).unwrap();
-        bitfield.set(2, true).unwrap();
-        bitfield.set(8, true).unwrap();
+        let mut bitfield = BitList1024::with_capacity(9).expect("Test");
+        bitfield.set(2, true).expect("Test");
+        bitfield.set(8, true).expect("Test");
 
         assert_eq!(
             bitfield.iter().collect::<Vec<bool>>(),
