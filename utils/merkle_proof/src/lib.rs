@@ -343,7 +343,8 @@ mod tests {
         let root = hash_and_concat(node_b0x, node_b1x); //1
 
         assert_eq!(
-            verify_merkle_proof(leaf_b00, &[leaf_b01, node_b1x], 0, 4, root).expect("verification failed!"),
+            verify_merkle_proof(leaf_b00, &[leaf_b01, node_b1x], 0, 4, root)
+                .expect("verification failed!"),
             true
         );
 
