@@ -590,8 +590,10 @@ mod bitlist {
             bitfield.set(i, true).expect("i is within the boundaries");
 
             let bytes = bitfield.clone().into_raw_bytes();
-            assert_eq!(bitfield, Bitfield::from_raw_bytes(bytes, num_bits)
-                .expect("Test"));
+            assert_eq!(
+                bitfield,
+                Bitfield::from_raw_bytes(bytes, num_bits).expect("Test")
+            );
         }
     }
 
