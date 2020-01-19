@@ -406,8 +406,7 @@ mod tests {
         );
 
         assert_eq!(
-            verify_merkle_proof(leaf_b01, &[node_b1x, leaf_b00], 0, 5, root)
-                .expect("verification failed!"),
+            verify_merkle_proof(leaf_b01, &[node_b1x, leaf_b00], 0, 5, root).expect("verification failed!"),
             false
         );
 
@@ -424,8 +423,7 @@ mod tests {
         );
 
         assert_eq!(
-            verify_merkle_proof(leaf_b01, &[leaf_b00, node_b1x], 0, 5, node_b1x)
-                .expect("verification failed!"),
+            verify_merkle_proof(leaf_b01, &[leaf_b00, node_b1x], 0, 5, node_b1x).expect("verification failed!"),
             false
         );
     }
