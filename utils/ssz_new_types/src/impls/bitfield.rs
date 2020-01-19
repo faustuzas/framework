@@ -44,17 +44,17 @@ mod tests {
         fn serialize() {
             assert_eq!(
                 BitList0::with_capacity(0).unwrap().as_ssz_bytes(),
-                vec![0b0000_00001],
+                vec![0b0_0000_0001],
             );
 
             assert_eq!(
                 BitList1::with_capacity(0).unwrap().as_ssz_bytes(),
-                vec![0b0000_00001],
+                vec![0b0_0000_0001],
             );
 
             assert_eq!(
                 BitList1::with_capacity(1).unwrap().as_ssz_bytes(),
-                vec![0b0000_00010],
+                vec![0b0_0000_0010],
             );
 
             assert_eq!(

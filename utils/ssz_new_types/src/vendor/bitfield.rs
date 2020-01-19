@@ -1,4 +1,5 @@
 #![allow(clippy::cognitive_complexity)]
+#![allow(clippy::module-name-repetitions)]
 #![allow(clippy::range_plus_one)]
 
 use super::tree_hash::bitfield_bytes_tree_hash_root;
