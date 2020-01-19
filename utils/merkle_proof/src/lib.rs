@@ -421,7 +421,7 @@ mod tests {
 
     #[test]
     fn verify_merkle_multiproof_test() {
-        
+
         let leaf_b00 = H256::from([0xAA; 32]); //4
         let leaf_b01 = H256::from([0xBB; 32]); //5
         let leaf_b10 = H256::from([0xCC; 32]); //6
@@ -448,8 +448,7 @@ mod tests {
                 &[],
                 &[4, 5, 6, 7],
                 root
-            )
-            .unwrap(),
+            ).expect("verificatio of multiproof failed!"),
             true
         );
 
@@ -459,8 +458,7 @@ mod tests {
                 &[leaf_b10, node_b1x],
                 &[4, 5, 7],
                 root
-            )
-            .unwrap(),
+            ).expect("verificatio of multiproof failed!"),
             false
         );
 
@@ -470,8 +468,7 @@ mod tests {
                 &[leaf_b11, node_b1x],
                 &[4, 5, 6],
                 root
-            )
-            .unwrap(),
+            ).expect("verificatio of multiproof failed!"),
             false
         );
 
@@ -481,8 +478,7 @@ mod tests {
                 &[leaf_b11, node_b1x],
                 &[4, 5, 6],
                 root
-            )
-            .unwrap(),
+            ).expect("verificatio of multiproof failed!"),
             true
         );
 
