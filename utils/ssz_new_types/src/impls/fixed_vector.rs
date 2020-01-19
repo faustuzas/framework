@@ -2,7 +2,7 @@ use super::*;
 use ssz::*;
 
 impl<T: Encode, N: Unsigned> Encode for FixedVector<T, N> {
-    fn as_ssz_bytes(&self) -> Vec<u8>{
+    fn as_ssz_bytes(&self) -> Vec<u8> {
         if T::is_ssz_fixed_len() {
             let mut fixed_parts = Vec::with_capacity(self.len());
             for element in self.iter() {
@@ -143,16 +143,15 @@ mod test {
 
     mod deserialize {
         use super::*;
-        use Decode;
         use typenum::{U3, U5, U6};
+        use Decode;
 
         #[test]
         fn fixed() {
             let vec =
                 <FixedVector<u16, U3> as Decode>::from_ssz_bytes(&[5, 0, 2, 0, 3, 0]).unwrap();
             assert_eq!(vec.to_vec(), vec![5, 2, 3]);
-            let vec =
-                <FixedVector<u8, U6> as Decode>::from_ssz_bytes(&[5, 0, 2, 0, 3, 0]).unwrap();
+            let vec = <FixedVector<u8, U6> as Decode>::from_ssz_bytes(&[5, 0, 2, 0, 3, 0]).unwrap();
             assert_eq!(vec.to_vec(), vec![5, 0, 2, 0, 3, 0]);
         }
 
