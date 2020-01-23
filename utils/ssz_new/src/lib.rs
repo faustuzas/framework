@@ -3,11 +3,7 @@ mod encode;
 mod utils;
 
 pub use utils::{
-    deserialize_offset,
-    deserialize_variable_sized_items,
-    serialize_offset,
-    ssz_encode,
-    Decoder,
+    deserialize_offset, deserialize_variable_sized_items, serialize_offset, ssz_encode, Decoder
 };
 
 pub const BYTES_PER_LENGTH_OFFSET: usize = 4;
@@ -22,7 +18,7 @@ pub trait Encode {
     }
 
     fn ssz_fixed_len() -> usize {
-         BYTES_PER_LENGTH_OFFSET
+        BYTES_PER_LENGTH_OFFSET
     }
 
     fn as_ssz_bytes(&self) -> Vec<u8> {
@@ -39,7 +35,7 @@ pub trait Decode: Sized {
 
     fn is_ssz_fixed_len() -> bool;
 
-    fn ssz_fixed_len() -> usize {
+    fn ssz_fixed_len() -> usize
         BYTES_PER_LENGTH_OFFSET
     }
 }

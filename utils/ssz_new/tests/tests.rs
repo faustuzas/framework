@@ -158,7 +158,7 @@ mod deserialize_derive {
             stay_1: 20,
             stay_2: vec![1, 2, 3, 4, 5],
             skip_1: 42,
-            skip_2: vec![6, 7, 8, 9, 10]
+            skip_2: vec![6, 7, 8, 9, 10],
         };
 
         let serialized = skippable.as_ssz_bytes();

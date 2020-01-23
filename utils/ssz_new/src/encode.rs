@@ -28,7 +28,11 @@ macro_rules! encode_for_uintn {
 }
 
 encode_for_uintn!(
-    (u8, 8), (u16, 16), (u32, 32), (u64, 64), (usize, std::mem::size_of::<usize>() * 8)
+    (u8, 8),
+    (u16, 16),
+    (u32, 32),
+    (u64, 64),
+    (usize, std::mem::size_of::<usize>() * 8)
 );
 
 macro_rules! encode_for_u8_array {
@@ -47,7 +51,7 @@ macro_rules! encode_for_u8_array {
             }
 
             fn ssz_fixed_len() -> usize {
-                 $size
+                $size
             }
         }
     };

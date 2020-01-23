@@ -1,8 +1,8 @@
 #![allow(clippy::use_self)]
 
+use crate::*;
 use core::num::NonZeroUsize;
 use ethereum_types::{H256, U128, U256};
-use crate::*;
 
 macro_rules! decode_for_uintn {
     ( $(($type_ident: ty, $size_in_bits: expr)),* ) => { $(
@@ -32,7 +32,11 @@ macro_rules! decode_for_uintn {
 }
 
 decode_for_uintn!(
-    (u8, 8), (u16, 16), (u32, 32), (u64, 64), (usize, std::mem::size_of::<usize>() * 8)
+    (u8, 8),
+    (u16, 16),
+    (u32, 32),
+    (u64, 64),
+    (usize, std::mem::size_of::<usize>() * 8)
 );
 
 macro_rules! decode_for_u8_array {
@@ -44,7 +48,6 @@ macro_rules! decode_for_u8_array {
                     array.copy_from_slice(&bytes[..]);
 
                     Ok(array)
-
                 } else {
                     Err(DecodeError::InvalidByteLength {
                         len: bytes.len(),
