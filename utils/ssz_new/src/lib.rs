@@ -35,7 +35,7 @@ pub trait Decode: Sized {
 
     fn is_ssz_fixed_len() -> bool;
 
-    fn ssz_fixed_len() -> usize
+    fn ssz_fixed_len() -> usize {
         BYTES_PER_LENGTH_OFFSET
     }
 }
