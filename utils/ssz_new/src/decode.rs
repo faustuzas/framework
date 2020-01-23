@@ -485,6 +485,62 @@ mod tests {
     }
 
     #[test]
+    fn option() {
+        let none: Option<u16> = None;
+
+        assert_eq!(
+            <Option<u16>>::from_ssz_bytes(&[1, 0, 0, 0, 42, 0]).expect("Test"),
+            Some(42)
+        );
+        assert_eq!(<Option<u16>>::from_ssz_bytes(&[0; 4]).expect("Test"), none);
+
+        assert!(<Option<u16>>::from_ssz_bytes(&[1, 0, 0]).is_err());
+        assert!(<Option<u16>>::from_ssz_bytes(&[2, 0, 0, 0]).is_err());
+        assert!(<Option<u16>>::from_ssz_bytes(&[1, 0, 0, 0]).is_err());
+
+        assert!(!<Option<u16> as Decode>::is_ssz_fixed_len());
+    }
+
+    #[test]
+    fn h256() {
+        assert_eq!(H256::from_ssz_bytes(&[0; 32]).expect("Test"), H256::zero());
+
+        assert!(H256::from_ssz_bytes(&[0; 31]).is_err());
+        assert!(H256::from_ssz_bytes(&[0; 33]).is_err());
+
+        assert!(<H256 as Decode>::is_ssz_fixed_len());
+        assert_eq!(<H256 as Decode>::ssz_fixed_len(), 32)
+    }
+
+    #[test]
+    fn u256() {
+        assert_eq!(
+            U256::from_ssz_bytes(&[0; 32]).expect("Test"),
+            U256::from_dec_str("0").expect("Test")
+        );
+
+        assert!(U256::from_ssz_bytes(&[0; 31]).is_err());
+        assert!(U256::from_ssz_bytes(&[0; 33]).is_err());
+
+        assert!(<U256 as Decode>::is_ssz_fixed_len());
+        assert_eq!(<U256 as Decode>::ssz_fixed_len(), 32)
+    }
+
+    #[test]
+    fn u128() {
+        assert_eq!(
+            U128::from_ssz_bytes(&[0; 16]).expect("Test"),
+            U128::from_dec_str("0").expect("Test")
+        );
+
+        assert!(U128::from_ssz_bytes(&[0; 15]).is_err());
+        assert!(U128::from_ssz_bytes(&[0; 17]).is_err());
+
+        assert!(<U128 as Decode>::is_ssz_fixed_len());
+        assert_eq!(<U128 as Decode>::ssz_fixed_len(), 16)
+    }
+
+    #[test]
     fn vector() {
         assert!(<Vec<bool>>::from_ssz_bytes(&[0, 1, 2]).is_err());
         assert!(<Vec<u32>>::from_ssz_bytes(&[0, 1, 2, 4, 5]).is_err());
