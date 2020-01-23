@@ -422,7 +422,7 @@ mod test {
 
     #[test]
     fn option() {
-        let some = Some(u16::max_value())
+        let some = Some(u16::max_value());
         assert_eq!(some.as_ssz_bytes(), vec![1, 0, 0, 0, 255, 255]);
 
         let none: Option<u16> = None;
