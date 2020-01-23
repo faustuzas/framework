@@ -72,7 +72,7 @@ pub fn encode_derive(input: TokenStream) -> TokenStream {
                     #variable_parts_pushes
                 )*
 
-                ssz::encode_items_from_parts(buf, fixed_parts, variable_parts);
+                ssz::encode_items_from_parts(buf, &fixed_parts, &variable_parts);
             }
 
             fn is_ssz_fixed_len() -> bool {

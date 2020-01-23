@@ -99,7 +99,7 @@ impl<T: Encode> Encode for Vec<T> {
             });
         }
 
-        encode_items_from_parts(buf, fixed_parts, variable_parts);
+        encode_items_from_parts(buf, &fixed_parts, &variable_parts);
     }
 
     fn is_ssz_fixed_len() -> bool {
