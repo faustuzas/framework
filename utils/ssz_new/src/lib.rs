@@ -3,7 +3,8 @@ mod encode;
 mod utils;
 
 pub use utils::{
-    decode_offset, decode_variable_sized_items, encode_offset, encode_items_from_parts, ssz_encode, Decoder,
+    decode_offset, decode_variable_sized_items, encode_offset, encode_items_from_parts, ssz_encode,
+    Decoder,
 };
 
 pub const BYTES_PER_LENGTH_OFFSET: usize = 4;

@@ -11,7 +11,7 @@ pub fn encode_offset(offset: usize) -> Vec<u8> {
 pub fn encode_items_from_parts(
     buf: &mut Vec<u8>,
     fixed_parts: Vec<Option<Vec<u8>>>,
-    variable_parts: Vec<Vec<u8>>
+    variable_parts: Vec<Vec<u8>>,
 ) {
     let item_count = fixed_parts.len();
 
