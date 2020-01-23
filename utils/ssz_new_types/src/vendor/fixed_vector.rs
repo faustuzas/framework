@@ -1,6 +1,6 @@
 use super::tree_hash::vec_tree_hash_root;
 use super::Error;
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::marker::PhantomData;
 use std::ops::{Deref, Index, IndexMut};
 use std::slice::SliceIndex;
@@ -175,15 +175,15 @@ mod test {
     #[test]
     fn new() {
         let vec = vec![42; 5];
-        let fixed: Result<FixedVector<u64, U4>, _> = FixedVector::new(vec.clone());
+        let fixed: Result<FixedVector<u64, U4>, _> = FixedVector::new(vec);
         assert!(fixed.is_err());
 
         let vec = vec![42; 3];
-        let fixed: Result<FixedVector<u64, U4>, _> = FixedVector::new(vec.clone());
+        let fixed: Result<FixedVector<u64, U4>, _> = FixedVector::new(vec);
         assert!(fixed.is_err());
 
         let vec = vec![42; 4];
-        let fixed: Result<FixedVector<u64, U4>, _> = FixedVector::new(vec.clone());
+        let fixed: Result<FixedVector<u64, U4>, _> = FixedVector::new(vec);
         assert!(fixed.is_ok());
     }
 
@@ -213,7 +213,7 @@ mod test {
         assert_eq!(&fixed[..], &vec![42, 42, 42, 0][..]);
 
         let vec = vec![];
-        let fixed: FixedVector<u64, U4> = FixedVector::from(vec.clone());
+        let fixed: FixedVector<u64, U4> = FixedVector::from(vec);
         assert_eq!(&fixed[..], &vec![0, 0, 0, 0][..]);
     }
 

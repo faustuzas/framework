@@ -1,38 +1,31 @@
 use super::*;
-use ssz::{Deserialize, Error, Serialize};
+use ssz::*;
 
-impl<T: Serialize + Clone, N: Unsigned> ssz::Serialize for VariableList<T, N> {
-    fn serialize(&self) -> Result<Vec<u8>, Error> {
-        self.vec.serialize()
+impl<T: Encode + Clone, N: Unsigned> Encode for VariableList<T, N> {
+    fn as_ssz_bytes(&self) -> Vec<u8> {
+        self.to_vec().as_ssz_bytes()
     }
 
-    fn is_variable_size() -> bool {
-        <Vec<T>>::is_variable_size()
+    fn is_ssz_fixed_len() -> bool {
+        <Vec<T>>::is_ssz_fixed_len()
     }
 }
 
-impl<T: Deserialize, N: Unsigned> ssz::Deserialize for VariableList<T, N> {
-    fn deserialize(bytes: &[u8]) -> Result<Self, Error> {
-        let items = <Vec<T>>::deserialize(bytes)?;
+impl<T: Decode, N: Unsigned> Decode for VariableList<T, N> {
+    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
+        let items = <Vec<T>>::from_ssz_bytes(bytes)?;
 
-        if items.len() <= N::to_usize() {
-            Self::new(items).map_err(|e| {
-                ssz::Error::InvalidBytes(format!("Failed while creating VariableList: {:?}", e))
-            })
-        } else {
-            Err(ssz::Error::TooMuchElements {
-                got: items.len(),
-                max: N::to_usize(),
-            })
-        }
+        Self::new(items).map_err(|e| {
+            DecodeError::BytesInvalid(format!("Failed while creating VariableList: {:?}", e))
+        })
     }
 
-    fn is_variable_size() -> bool {
-        <Vec<T>>::is_variable_size()
+    fn is_ssz_fixed_len() -> bool {
+        <Vec<T>>::is_ssz_fixed_len()
     }
 
-    fn fixed_length() -> usize {
-        <Vec<T>>::fixed_length()
+    fn ssz_fixed_len() -> usize {
+        <Vec<T>>::ssz_fixed_len()
     }
 }
 
@@ -41,13 +34,23 @@ mod tests {
     use super::*;
     use typenum::*;
 
-    mod serialize {
-        use super::*;
+    #[test]
+    fn encode() {
+        let vec = <VariableList<u16, U4>>::new(vec![1, 2, 3, 4]).expect("Test");
+        assert_eq!(vec.as_ssz_bytes(), vec![1, 0, 2, 0, 3, 0, 4, 0]);
 
-        #[test]
-        fn fixed() {
-            let vec = <VariableList<u16, U4>>::new(vec![1, 2, 3, 4]).unwrap();
-            assert_eq!(vec.serialize().unwrap(), vec![1, 0, 2, 0, 3, 0, 4, 0]);
-        }
+        let vec = <VariableList<u16, U20>>::new(vec![1, 2]).expect("Test");
+        assert_eq!(vec.as_ssz_bytes(), vec![1, 0, 2, 0]);
+    }
+
+    #[test]
+    fn decode() {
+        let list = <VariableList<u16, U3>>::from_ssz_bytes(&[1, 0, 2, 0, 3, 0]).expect("Test");
+        assert_eq!(list.to_vec(), &vec![1_u16, 2_u16, 3_u16]);
+
+        let list = <VariableList<u16, U1024>>::from_ssz_bytes(&[1, 0, 2, 0, 3, 0]).expect("Test");
+        assert_eq!(list.to_vec(), &vec![1_u16, 2_u16, 3_u16]);
+
+        assert!(<VariableList<u8, U1>>::from_ssz_bytes(&[1, 2, 3]).is_err())
     }
 }

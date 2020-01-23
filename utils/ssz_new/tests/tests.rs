@@ -1,20 +1,20 @@
-use ssz::{Deserialize, Serialize};
-use ssz_derive::{SszDeserialize, SszSerialize};
+use ssz::{Decode, Encode};
+use ssz_derive::{Decode, Encode};
 
-#[derive(SszSerialize, SszDeserialize, PartialEq, Debug)]
+#[derive(Encode, Decode, PartialEq, Debug)]
 struct Fixed {
     a: u16,
     b: bool,
 }
 
-#[derive(SszSerialize, SszDeserialize, PartialEq, Debug)]
+#[derive(Encode, Decode, PartialEq, Debug)]
 struct Variable {
     a: u16,
     b: Vec<u8>,
     c: bool,
 }
 
-#[derive(SszSerialize, SszDeserialize, PartialEq, Debug)]
+#[derive(Encode, Decode, PartialEq, Debug)]
 struct Nested {
     fixed: Fixed,
     variable: Variable,
@@ -25,16 +25,16 @@ mod serialize_derive {
 
     #[test]
     fn is_fixed_size() {
-        assert!(<Nested as Serialize>::is_variable_size());
-        assert!(<Variable as Serialize>::is_variable_size());
-        assert!(!<Fixed as Serialize>::is_variable_size());
+        assert!(!<Nested as Encode>::is_ssz_fixed_len());
+        assert!(!<Variable as Encode>::is_ssz_fixed_len());
+        assert!(<Fixed as Encode>::is_ssz_fixed_len());
     }
 
     #[test]
     fn serialize_fixed_struct() {
         let fixed = Fixed { a: 22, b: true };
 
-        assert_eq!(fixed.serialize().unwrap(), vec![22, 0, 1])
+        assert_eq!(fixed.as_ssz_bytes(), vec![22, 0, 1])
     }
 
     #[test]
@@ -46,7 +46,7 @@ mod serialize_derive {
         };
 
         assert_eq!(
-            variable.serialize().unwrap(),
+            variable.as_ssz_bytes(),
             vec![
                 u8::max_value(),
                 u8::max_value(),
@@ -76,7 +76,7 @@ mod serialize_derive {
         };
 
         assert_eq!(
-            nested.serialize().unwrap(),
+            nested.as_ssz_bytes(),
             vec![5, 0, 0, 7, 0, 0, 0, 80, 0, 7, 0, 0, 0, 1, 1, 2, 3, 4]
         );
     }
@@ -89,7 +89,7 @@ mod deserialize_derive {
     fn deserialize_fixed_struct() {
         let fixed = Fixed { a: 22, b: true };
 
-        assert_eq!(Fixed::deserialize(&[22, 0, 1]).unwrap(), fixed);
+        assert_eq!(Fixed::from_ssz_bytes(&[22, 0, 1]).unwrap(), fixed);
     }
 
     #[test]
@@ -101,7 +101,7 @@ mod deserialize_derive {
         };
 
         assert_eq!(
-            Variable::deserialize(&[
+            Variable::from_ssz_bytes(&[
                 u8::max_value(),
                 u8::max_value(),
                 7,
@@ -132,7 +132,8 @@ mod deserialize_derive {
         };
 
         assert_eq!(
-            Nested::deserialize(&[5, 0, 0, 7, 0, 0, 0, 80, 0, 7, 0, 0, 0, 1, 1, 2, 3, 4]).unwrap(),
+            Nested::from_ssz_bytes(&[5, 0, 0, 7, 0, 0, 0, 80, 0, 7, 0, 0, 0, 1, 1, 2, 3, 4])
+                .unwrap(),
             nested
         );
     }

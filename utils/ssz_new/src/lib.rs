@@ -2,31 +2,34 @@ mod decode;
 mod encode;
 mod utils;
 
-pub use ssz_derive::{SszDeserialize, SszSerialize};
 pub use utils::{deserialize_offset, deserialize_variable_sized_items, serialize_offset, Decoder};
 
 pub const BYTES_PER_LENGTH_OFFSET: usize = 4;
 
-pub trait Serialize {
-    fn serialize(&self) -> Result<Vec<u8>, Error>;
+pub trait Encode {
+    fn as_ssz_bytes(&self) -> Vec<u8>;
 
-    fn is_variable_size() -> bool;
+    fn is_ssz_fixed_len() -> bool;
+
+    fn ssz_bytes_len(&self) -> usize {
+        self.as_ssz_bytes().len()
+    }
 }
 
-pub trait Deserialize: Sized {
-    fn deserialize(bytes: &[u8]) -> Result<Self, Error>;
+pub trait Decode: Sized {
+    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError>;
 
-    fn is_variable_size() -> bool;
+    fn is_ssz_fixed_len() -> bool;
 
-    fn fixed_length() -> usize;
+    fn ssz_fixed_len() -> usize {
+        BYTES_PER_LENGTH_OFFSET
+    }
 }
 
-#[derive(Debug)]
-pub enum Error {
-    TooBigOffset(usize),
-    InvalidByteLength { required: usize, got: usize },
-    BitsOverflow { bits_count: usize, max_bits: usize },
-    NoOffsetsLeft,
-    InvalidBytes(String),
-    TooMuchElements { got: usize, max: usize },
+#[derive(Debug, PartialEq)]
+pub enum DecodeError {
+    InvalidByteLength { len: usize, expected: usize },
+    InvalidLengthPrefix { len: usize, expected: usize },
+    OutOfBoundsByte { i: usize },
+    BytesInvalid(String),
 }

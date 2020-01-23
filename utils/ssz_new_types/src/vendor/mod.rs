@@ -11,5 +11,8 @@ mod bitfield;
 pub use bitfield::{BitList, BitVector, Bitfield};
 pub use bitfield::{Fixed, Variable};
 
+mod serde_hex;
+pub use serde_hex::{encode, HexVisitor, PrefixedHexVisitor};
+
 mod error;
 pub use error::Error;
