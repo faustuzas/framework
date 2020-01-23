@@ -1,7 +1,6 @@
 [package]
-#name = "ssz_types"
 name = "eth2_ssz_types"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Faustas <faustas.butkus@gmail.com>"]
 edition = "2018"
 
@@ -13,7 +12,6 @@ tree_hash = "0.1"
 tree_hash_derive = "0.2"
 serde = { version = '1.0', features = ['derive']}
 eth2_ssz = { path = "../ssz_new" }
-#ssz = { path = "../ssz_new" }
 typenum = "1.10"
 hex = "0.3"
 

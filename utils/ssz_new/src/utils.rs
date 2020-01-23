@@ -1,5 +1,9 @@
 use crate::*;
 
+pub fn ssz_encode<T: Encode>(val: &T) -> Vec<u8> {
+    val.as_ssz_bytes()
+}
+
 pub fn serialize_offset(offset: usize) -> Vec<u8> {
     offset.to_le_bytes()[..BYTES_PER_LENGTH_OFFSET].to_vec()
 }

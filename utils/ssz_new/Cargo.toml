@@ -1,7 +1,6 @@
 [package]
-#name = "ssz"
 name = "eth2_ssz"
-version = "0.1.0"
+version = "0.1.2"
 authors = ["Faustas <faustas.butkus@gmail.com>"]
 edition = "2018"
 
@@ -11,6 +10,5 @@ name = "ssz"
 
 [dependencies]
 typenum = "1.10"
-ethereum-types = "0.6"
-#ssz_derive = { path = "../ssz_new_derive" }
+ethereum-types = "0.8"
 eth2_ssz_derive = { path = "../ssz_new_derive" }

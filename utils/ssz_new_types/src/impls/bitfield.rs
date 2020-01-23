@@ -4,12 +4,16 @@ use serde::ser::{Serialize, Serializer};
 use ssz::*;
 
 impl<N: Unsigned + Clone> Encode for Bitfield<length::Variable<N>> {
-    fn as_ssz_bytes(&self) -> Vec<u8> {
-        self.clone().into_bytes()
+    fn ssz_append(&self, buf: &mut Vec<u8>) {
+        buf.append(&mut self.clone().into_bytes())
     }
 
     fn is_ssz_fixed_len() -> bool {
         false
+    }
+
+    fn ssz_bytes_len(&self) -> usize {
+        self.len()
     }
 }
 
@@ -23,19 +27,19 @@ impl<N: Unsigned + Clone> Decode for Bitfield<length::Variable<N>> {
     fn is_ssz_fixed_len() -> bool {
         false
     }
-
-    fn ssz_fixed_len() -> usize {
-        bit_len_in_bytes_len(N::to_usize())
-    }
 }
 
 impl<N: Unsigned + Clone> Encode for Bitfield<length::Fixed<N>> {
-    fn as_ssz_bytes(&self) -> Vec<u8> {
-        self.clone().into_bytes()
+    fn ssz_append(&self, buf: &mut Vec<u8>) {
+        buf.append(&mut self.clone().into_bytes())
     }
 
     fn is_ssz_fixed_len() -> bool {
         true
+    }
+
+    fn ssz_fixed_len() -> usize {
+        bit_len_in_bytes_len(N::to_usize())
     }
 }
 
@@ -56,14 +60,12 @@ impl<N: Unsigned + Clone> Decode for Bitfield<length::Fixed<N>> {
 }
 
 impl<N: Unsigned + Clone> Serialize for Bitfield<length::Variable<N>> {
-    /// Serde serialization is compliant with the Ethereum YAML test format.
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         serializer.serialize_str(&serde_hex::encode(self.as_ssz_bytes()))
     }
 }
 
 impl<'de, N: Unsigned + Clone> Deserialize<'de> for Bitfield<length::Variable<N>> {
-    /// Serde serialization is compliant with the Ethereum YAML test format.
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let bytes = deserializer.deserialize_str(serde_hex::PrefixedHexVisitor)?;
         Self::from_ssz_bytes(&bytes)
@@ -72,14 +74,12 @@ impl<'de, N: Unsigned + Clone> Deserialize<'de> for Bitfield<length::Variable<N>
 }
 
 impl<N: Unsigned + Clone> Serialize for Bitfield<length::Fixed<N>> {
-    /// Serde serialization is compliant with the Ethereum YAML test format.
     fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         serializer.serialize_str(&serde_hex::encode(self.as_ssz_bytes()))
     }
 }
 
 impl<'de, N: Unsigned + Clone> Deserialize<'de> for Bitfield<length::Fixed<N>> {
-    /// Serde serialization is compliant with the Ethereum YAML test format.
     fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
         let bytes = deserializer.deserialize_str(serde_hex::PrefixedHexVisitor)?;
         Self::from_ssz_bytes(&bytes)

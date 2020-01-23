@@ -2,12 +2,12 @@ use super::*;
 use ssz::*;
 
 impl<T: Encode + Clone, N: Unsigned> Encode for VariableList<T, N> {
-    fn as_ssz_bytes(&self) -> Vec<u8> {
-        self.to_vec().as_ssz_bytes()
+    fn ssz_append(&self, buf: &mut Vec<u8>) {
+        buf.append(&mut self.to_vec().as_ssz_bytes())
     }
 
     fn is_ssz_fixed_len() -> bool {
-        <Vec<T>>::is_ssz_fixed_len()
+        T::is_ssz_fixed_len()
     }
 }
 

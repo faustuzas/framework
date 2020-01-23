@@ -4,7 +4,7 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{Data, DeriveInput, Field};
+use syn::{Data, DeriveInput, Field, Fields};
 
 #[proc_macro_derive(Encode, attributes(ssz))]
 pub fn encode_derive(input: TokenStream) -> TokenStream {
@@ -19,6 +19,8 @@ pub fn encode_derive(input: TokenStream) -> TokenStream {
     let mut fixed_parts_pushes = Vec::with_capacity(fields_count);
     let mut variable_parts_pushes = Vec::with_capacity(fields_count);
     let mut is_fixed_lens = Vec::with_capacity(fields_count);
+    let mut ssz_bytes_lens = Vec::with_capacity(fields_count);
+    let mut ssz_fixed_lens = Vec::with_capacity(fields_count);
     for field in fields {
         let field_type = &field.ty;
         let field_name = match &field.ident {
@@ -45,11 +47,20 @@ pub fn encode_derive(input: TokenStream) -> TokenStream {
         is_fixed_lens.push(quote! {
             <#field_type as ssz::Encode>::is_ssz_fixed_len()
         });
+
+        // TODO
+        ssz_bytes_lens.push(quote! {
+            self.#field_name.ssz_bytes_len()
+        });
+
+        ssz_fixed_lens.push(quote! {
+            <#field_type as ssz::Encode>::ssz_fixed_len()
+        });
     }
 
     let generated = quote! {
         impl #impl_generics ssz::Encode for #name #ty_generics #where_clause {
-            fn as_ssz_bytes(&self) -> Vec<u8> {
+            fn ssz_append(&self, buf: &mut Vec<u8>) {
                 let fields_count = #fields_count;
 
                 let mut fixed_parts = Vec::with_capacity(fields_count);
@@ -86,19 +97,13 @@ pub fn encode_derive(input: TokenStream) -> TokenStream {
                         None => &variable_offsets[i]
                     }).collect();
 
-                let variable_lengths_sum: usize = variable_lengths.iter().sum();
-                let total_bytes = fixed_length + variable_lengths_sum;
-                let mut result = Vec::with_capacity(total_bytes);
-
                 for part in fixed_parts {
-                    result.extend(part);
+                    buf.extend(part);
                 }
 
                 for part in variable_parts {
-                    result.extend(part);
+                    buf.extend(part);
                 }
-
-                result
             }
 
             fn is_ssz_fixed_len() -> bool {
@@ -106,6 +111,20 @@ pub fn encode_derive(input: TokenStream) -> TokenStream {
                     #is_fixed_lens &&
                 )*
                     true
+            }
+
+            fn ssz_bytes_len(&self) -> usize {
+                #(
+                    #ssz_bytes_lens +
+                )*
+                    0
+            }
+
+            fn ssz_fixed_len() -> usize {
+                #(
+                    #ssz_fixed_lens +
+                )*
+                    0
             }
         }
     };
@@ -119,7 +138,7 @@ pub fn decode_derive(input: TokenStream) -> TokenStream {
 
     let name = &ast.ident;
     let (impl_generics, ty_generics, where_clause) = &ast.generics.split_for_impl();
-    let fields = get_serializable_fields(&ast.data);
+    let fields = get_deserializable_fields(&ast.data);
 
     let fields_count = fields.iter().len();
 
@@ -193,15 +212,14 @@ pub fn decode_derive(input: TokenStream) -> TokenStream {
 }
 
 fn get_serializable_fields(data: &Data) -> Vec<&Field> {
-    let fields = match data {
-        syn::Data::Struct(struct_data) => &struct_data.fields,
-        _ => panic!("Serialization only available for structs"),
-    };
-
-    fields
+    extract_fields(data)
         .iter()
         .filter(|f| !should_ship_serialization(f))
         .collect()
+}
+
+fn get_deserializable_fields(data: &Data) -> Vec<&Field> {
+    extract_fields(data).iter().collect()
 }
 
 fn should_ship_serialization(field: &Field) -> bool {
@@ -209,8 +227,16 @@ fn should_ship_serialization(field: &Field) -> bool {
         attr.path.is_ident("ssz") && attr.tts.to_string().replace(" ", "") == "(skip_serializing)"
     })
 }
+
 fn should_ship_deserialization(field: &Field) -> bool {
     field.attrs.iter().any(|attr| {
         attr.path.is_ident("ssz") && attr.tts.to_string().replace(" ", "") == "(skip_deserializing)"
     })
+}
+
+fn extract_fields(data: &Data) -> &Fields {
+    match data {
+        syn::Data::Struct(struct_data) => &struct_data.fields,
+        _ => panic!("Serialization only available for structs"),
+    }
 }

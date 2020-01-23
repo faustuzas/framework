@@ -10,10 +10,8 @@ edition = "2018"
 ring = "0.16.9"
 typenum = '1.11.2'
 types = { path = '../../types' }
-#ssz_types = { path = "../../utils/ssz_new_types" }
 eth2_ssz_types = { path = "../../utils/ssz_new_types" }
 bls = { git = 'https://github.com/sigp/lighthouse' }
-#ssz = { path = "../../utils/ssz_new" }
 eth2_ssz = { path = "../../utils/ssz_new" }
 mockall = "0.5.2"
 ethereum-types = "0.6"

@@ -2,21 +2,11 @@ use super::*;
 use ssz::*;
 
 impl<T: Encode, N: Unsigned> Encode for FixedVector<T, N> {
-    fn as_ssz_bytes(&self) -> Vec<u8> {
+    fn ssz_append(&self, buf: &mut Vec<u8>) {
         if T::is_ssz_fixed_len() {
-            let mut fixed_parts = Vec::with_capacity(self.len());
             for element in self.iter() {
-                fixed_parts.push(element.as_ssz_bytes());
+                buf.append(&mut element.as_ssz_bytes());
             }
-
-            let len = fixed_parts.iter().map(std::vec::Vec::len).sum();
-
-            let mut result = Vec::with_capacity(len);
-            for part in fixed_parts {
-                result.extend(part);
-            }
-
-            result
         } else {
             let mut variable_parts = Vec::with_capacity(self.len());
             for element in self.iter() {
@@ -34,23 +24,26 @@ impl<T: Encode, N: Unsigned> Encode for FixedVector<T, N> {
                 variable_offsets.push(serialize_offset(offset));
             }
 
-            let variable_len: usize = variable_lengths.iter().sum();
-            let total_len = fixed_length + variable_len;
-            let mut result = Vec::with_capacity(total_len);
             for offset in variable_offsets {
-                result.extend(offset);
+                buf.extend(offset);
             }
 
             for part in variable_parts {
-                result.extend(part);
+                buf.extend(part);
             }
-
-            result
         }
     }
 
     fn is_ssz_fixed_len() -> bool {
         <T as Encode>::is_ssz_fixed_len()
+    }
+
+    fn ssz_fixed_len() -> usize {
+        if <Self as Encode>::is_ssz_fixed_len() {
+            N::to_usize() * T::ssz_fixed_len()
+        } else {
+            BYTES_PER_LENGTH_OFFSET
+        }
     }
 }
 
@@ -97,8 +90,8 @@ impl<T: Decode + Default, N: Unsigned> Decode for FixedVector<T, N> {
     }
 
     fn ssz_fixed_len() -> usize {
-        if <T as Decode>::is_ssz_fixed_len() {
-            N::to_usize() * <T as Decode>::ssz_fixed_len()
+        if <Self as Decode>::is_ssz_fixed_len() {
+            N::to_usize() * T::ssz_fixed_len()
         } else {
             BYTES_PER_LENGTH_OFFSET
         }

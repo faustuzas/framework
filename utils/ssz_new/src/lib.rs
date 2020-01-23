@@ -2,17 +2,35 @@ mod decode;
 mod encode;
 mod utils;
 
-pub use utils::{deserialize_offset, deserialize_variable_sized_items, serialize_offset, Decoder};
+pub use utils::{
+    deserialize_offset,
+    deserialize_variable_sized_items,
+    serialize_offset,
+    ssz_encode,
+    Decoder,
+};
 
 pub const BYTES_PER_LENGTH_OFFSET: usize = 4;
 
 pub trait Encode {
-    fn as_ssz_bytes(&self) -> Vec<u8>;
+    fn ssz_append(&self, buf: &mut Vec<u8>);
 
     fn is_ssz_fixed_len() -> bool;
 
     fn ssz_bytes_len(&self) -> usize {
         self.as_ssz_bytes().len()
+    }
+
+    fn ssz_fixed_len() -> usize {
+         BYTES_PER_LENGTH_OFFSET
+    }
+
+    fn as_ssz_bytes(&self) -> Vec<u8> {
+        let mut buf = vec![];
+
+        self.ssz_append(&mut buf);
+
+        buf
     }
 }
 
@@ -26,7 +44,7 @@ pub trait Decode: Sized {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum DecodeError {
     InvalidByteLength { len: usize, expected: usize },
     InvalidLengthPrefix { len: usize, expected: usize },

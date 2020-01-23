@@ -35,6 +35,38 @@ decode_for_uintn!(
     (u8, 8), (u16, 16), (u32, 32), (u64, 64), (usize, std::mem::size_of::<usize>() * 8)
 );
 
+macro_rules! decode_for_u8_array {
+    ($size: expr) => {
+        impl Decode for [u8; $size] {
+            fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
+                if bytes.len() == <Self as Decode>::ssz_fixed_len() {
+                    let mut array: [u8; $size] = [0; $size];
+                    array.copy_from_slice(&bytes[..]);
+
+                    Ok(array)
+
+                } else {
+                    Err(DecodeError::InvalidByteLength {
+                        len: bytes.len(),
+                        expected: <Self as Decode>::ssz_fixed_len(),
+                    })
+                }
+            }
+
+            fn is_ssz_fixed_len() -> bool {
+                true
+            }
+
+            fn ssz_fixed_len() -> usize {
+                $size
+            }
+        }
+    };
+}
+
+decode_for_u8_array!(4);
+decode_for_u8_array!(32);
+
 impl Decode for bool {
     fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
         if bytes.len() == <Self as Decode>::ssz_fixed_len() {
@@ -94,16 +126,14 @@ impl<T: Decode> Decode for Vec<T> {
 
 impl Decode for NonZeroUsize {
     fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
-        let x = usize::from_ssz_bytes(bytes)?;
+        let val = usize::from_ssz_bytes(bytes)?;
 
-        if x == 0 {
+        if val == 0 {
             Err(DecodeError::BytesInvalid(
                 "NonZeroUsize cannot be zero.".to_string(),
             ))
         } else {
-            // `unwrap` is safe here as `NonZeroUsize::new()` succeeds if `x > 0` and this path
-            // never executes when `x == 0`.
-            Ok(NonZeroUsize::new(x).unwrap())
+            Ok(NonZeroUsize::new(val).expect("0 check is done above"))
         }
     }
 
@@ -207,37 +237,6 @@ impl Decode for U128 {
         16
     }
 }
-
-macro_rules! impl_decodable_for_u8_array {
-    ($len: expr) => {
-        impl Decode for [u8; $len] {
-            fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
-                let len = bytes.len();
-                let expected = <Self as Decode>::ssz_fixed_len();
-
-                if len != expected {
-                    Err(DecodeError::InvalidByteLength { len, expected })
-                } else {
-                    let mut array: [u8; $len] = [0; $len];
-                    array.copy_from_slice(&bytes[..]);
-
-                    Ok(array)
-                }
-            }
-
-            fn is_ssz_fixed_len() -> bool {
-                true
-            }
-
-            fn ssz_fixed_len() -> usize {
-                $len
-            }
-        }
-    };
-}
-
-impl_decodable_for_u8_array!(4);
-impl_decodable_for_u8_array!(32);
 
 #[cfg(test)]
 mod tests {
