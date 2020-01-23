@@ -3,7 +3,7 @@ mod encode;
 mod utils;
 
 pub use utils::{
-    deserialize_offset, deserialize_variable_sized_items, serialize_offset, ssz_encode, Decoder
+    deserialize_offset, deserialize_variable_sized_items, serialize_offset, ssz_encode, Decoder,
 };
 
 pub const BYTES_PER_LENGTH_OFFSET: usize = 4;

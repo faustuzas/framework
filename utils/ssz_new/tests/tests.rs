@@ -31,7 +31,7 @@ struct Skippable {
 
     #[ssz(skip_serializing)]
     #[ssz(skip_deserializing)]
-    skip_2: Vec<u8>
+    skip_2: Vec<u8>,
 }
 
 mod serialize_derive {

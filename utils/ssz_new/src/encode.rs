@@ -1,9 +1,9 @@
 #![allow(clippy::use_self)]
 
-use core::num::NonZeroUsize;
-use ethereum_types::{H256, U128, U256};
 use crate::utils::serialize_offset;
 use crate::*;
+use core::num::NonZeroUsize;
+use ethereum_types::{H256, U128, U256};
 
 macro_rules! encode_for_uintn {
     ( $(($type_ident: ty, $size_in_bits: expr)),* ) => { $(
