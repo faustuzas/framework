@@ -419,7 +419,7 @@ mod test {
 
     #[test]
     fn option_u16() {
-        assert_eq!(Some(65535_u16).as_ssz_bytes(), vec![1, 0, 0, 0, 255, 255]);
+        assert_eq!(Some(0xFFFF_u16).as_ssz_bytes(), vec![1, 0, 0, 0, 255, 255]);
 
         let none: Option<u16> = None;
         assert_eq!(none.as_ssz_bytes(), vec![0, 0, 0, 0]);
