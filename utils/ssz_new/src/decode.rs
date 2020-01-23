@@ -436,7 +436,9 @@ mod tests {
         let usize_size = std::mem::size_of::<usize>();
 
         assert_eq!(
-            NonZeroUsize::from_ssz_bytes(&vec![0b1111_1111; usize_size]).expect("Test").get(),
+            NonZeroUsize::from_ssz_bytes(&vec![0b1111_1111; usize_size])
+                .expect("Test")
+                .get(),
             usize::max_value()
         );
 
