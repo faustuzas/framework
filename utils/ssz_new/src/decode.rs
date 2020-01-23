@@ -549,6 +549,7 @@ mod tests {
         assert!(<Vec<u32>>::from_ssz_bytes(&[0, 1, 2, 4, 5]).is_err());
 
         assert!(!<Vec<u32> as Decode>::is_ssz_fixed_len());
+        assert_eq!(<U256 as Decode>::ssz_fixed_len(), BYTES_PER_LENGTH_OFFSET);
     }
 
     #[test]

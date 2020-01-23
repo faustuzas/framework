@@ -192,6 +192,12 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_ssz_encode() {
+        assert_eq!(ssz_encode(&0_u64), vec![0; 8]);
+        assert_eq!(ssz_encode(&vec![1_u8, 2_u8, 3_u8, 4_u8]), vec![ 1, 2, 3, 4]);
+    }
+
+    #[test]
     fn test_serialize_offset() {
         assert_eq!(encode_offset(0), vec![0; BYTES_PER_LENGTH_OFFSET]);
         assert_eq!(encode_offset(5), vec![5, 0, 0, 0]);
@@ -259,6 +265,30 @@ mod tests {
                 decoder.deserialize_next::<Vec<u16>>().expect("Test"),
                 vec![1, 2, 3]
             );
+        }
+
+        #[test]
+        fn errors() {
+            let mut decoder = Decoder::for_bytes(&[1]);
+            assert!(decoder.deserialize_next::<u8>().is_ok());
+            assert!(decoder.deserialize_next::<u8>().is_err());
+
+            let mut decoder = Decoder::for_bytes(&[1]);
+            assert!(decoder.deserialize_next::<Vec<u8>>().is_err());
+
+            let mut decoder = Decoder::for_bytes(&[8, 0, 0, 0, 255, 0, 0, 0]);
+            decoder.next_type::<Vec<u8>>().expect("Test");
+            decoder.next_type::<Vec<u8>>().expect("Test");
+            assert!(decoder.deserialize_next::<Vec<u8>>().is_err());
+            assert!(decoder.deserialize_next::<Vec<u8>>().is_err());
+
+            let mut decoder = Decoder::for_bytes(&[12, 0, 0, 0, 12, 0, 0, 0, 255, 0, 0, 0]);
+            decoder.next_type::<Vec<u8>>().expect("Test");
+            decoder.next_type::<Vec<u8>>().expect("Test");
+            decoder.next_type::<Vec<u8>>().expect("Test");
+            assert!(decoder.deserialize_next::<Vec<u8>>().is_ok());
+            assert!(decoder.deserialize_next::<Vec<u8>>().is_err());
+            assert!(decoder.deserialize_next::<Vec<u8>>().is_err());
         }
     }
 

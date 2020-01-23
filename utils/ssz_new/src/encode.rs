@@ -424,6 +424,7 @@ mod test {
         let vec: Vec<u64> = vec![u64::max_value(); 100];
         assert_eq!(vec.as_ssz_bytes(), vec![u8::max_value(); 800]);
         assert!(!<Vec<u64> as Encode>::is_ssz_fixed_len());
+        assert_eq!(<U256 as Encode>::ssz_fixed_len(), BYTES_PER_LENGTH_OFFSET);
     }
 
     #[test]
