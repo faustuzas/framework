@@ -431,6 +431,9 @@ mod test {
         assert_eq!(none.ssz_bytes_len(), 4);
         assert_eq!(some.ssz_bytes_len(), 6);
 
-        assert_eq!(<Option<u16> as Encode>::ssz_fixed_len(), BYTES_PER_LENGTH_OFFSET);
+        assert_eq!(
+            <Option<u16> as Encode>::ssz_fixed_len(),
+            BYTES_PER_LENGTH_OFFSET
+        );
     }
 }
