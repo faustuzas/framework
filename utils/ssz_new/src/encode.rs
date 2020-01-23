@@ -322,11 +322,11 @@ mod test {
 
         let encoded = 1_usize.as_ssz_bytes();
         assert_eq!(encoded.len(), usize_size);
-        for i in 0..usize_size {
+        for (i, byte) in encoded.iter().enumerate() {
             if i == 0 {
-                assert_eq!(encoded[i], 1)
+                assert_eq!(byte, 1)
             } else {
-                assert_eq!(encoded[i], 0)
+                assert_eq!(byte, 0)
             }
         }
 
