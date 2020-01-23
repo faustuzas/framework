@@ -470,6 +470,9 @@ mod tests {
 
         assert_eq!(<[u8; 4] as Decode>::ssz_fixed_len(), 4);
         assert_eq!(<[u8; 32] as Decode>::ssz_fixed_len(), 32);
+
+        assert!(<bool as [u8; 4]>::is_ssz_fixed_len());
+        assert!(<bool as [u8; 32]>::is_ssz_fixed_len());
     }
 
     #[test]
@@ -481,7 +484,7 @@ mod tests {
         assert!(bool::from_ssz_bytes(&[0_u8, 0_u8]).is_err());
 
         assert!(<bool as Decode>::is_ssz_fixed_len());
-        assert_eq!(<bool as Decode>::ssz_fixed_len(), 1)
+        assert_eq!(<bool as Decode>::ssz_fixed_len(), 1);
     }
 
     #[test]
