@@ -209,6 +209,9 @@ mod test {
         assert_eq!(u8::max_value().as_ssz_bytes(), vec![0b1111_1111]);
         assert_eq!(1_u8.as_ssz_bytes(), vec![0b0000_0001]);
         assert_eq!(128_u8.as_ssz_bytes(), vec![0b1000_0000]);
+
+        assert_eq!(1_u8.ssz_bytes_len(), 1);
+        assert_eq!(<u8 as Encode>::ssz_fixed_len(), 1);
     }
 
     #[test]
@@ -221,6 +224,9 @@ mod test {
             vec![0b1111_1111, 0b1111_1111]
         );
         assert_eq!(0x8000_u16.as_ssz_bytes(), vec![0b0000_0000, 0b1000_0000]);
+
+        assert_eq!(1_u16.ssz_bytes_len(), 2);
+        assert_eq!(<u16 as Encode>::ssz_fixed_len(), 2);
     }
 
     #[test]
@@ -243,6 +249,9 @@ mod test {
             0x8000_0000_u32.as_ssz_bytes(),
             vec![0b0000_0000, 0b0000_0000, 0b0000_0000, 0b1000_0000]
         );
+
+        assert_eq!(1_u32.ssz_bytes_len(), 4);
+        assert_eq!(<u32 as Encode>::ssz_fixed_len(), 4);
     }
 
     #[test]
@@ -314,6 +323,9 @@ mod test {
                 0b1000_0000
             ]
         );
+
+        assert_eq!(1_u64.ssz_bytes_len(), 8);
+        assert_eq!(<u64 as Encode>::ssz_fixed_len(), 8);
     }
 
     #[test]
@@ -331,12 +343,18 @@ mod test {
         }
 
         assert_eq!(usize::max_value().as_ssz_bytes(), vec![255; usize_size]);
+
+        assert_eq!(1_usize.ssz_bytes_len(), usize_size);
+        assert_eq!(<usize as Encode>::ssz_fixed_len(), usize_size);
     }
 
     #[test]
     fn bool() {
         assert_eq!(true.as_ssz_bytes(), vec![0b0000_0001]);
         assert_eq!(false.as_ssz_bytes(), vec![0b0000_0000]);
+
+        assert_eq!(true.ssz_bytes_len(), 1);
+        assert_eq!(<bool as Encode>::ssz_fixed_len(), 1);
     }
 
     #[test]
@@ -403,21 +421,16 @@ mod test {
     }
 
     #[test]
-    fn option_u16() {
-        assert_eq!(Some(0xFFFF_u16).as_ssz_bytes(), vec![1, 0, 0, 0, 255, 255]);
+    fn option() {
+        let some = Some(u16::max_value())
+        assert_eq!(some.as_ssz_bytes(), vec![1, 0, 0, 0, 255, 255]);
 
         let none: Option<u16> = None;
         assert_eq!(none.as_ssz_bytes(), vec![0, 0, 0, 0]);
-    }
 
-    #[test]
-    fn option_vec_u16() {
-        assert_eq!(
-            Some(vec![0_u16, 1]).as_ssz_bytes(),
-            vec![1, 0, 0, 0, 0, 0, 1, 0]
-        );
+        assert_eq!(none.ssz_bytes_len(), 4);
+        assert_eq!(some.ssz_bytes_len(), 6);
 
-        let none: Option<Vec<u16>> = None;
-        assert_eq!(none.as_ssz_bytes(), vec![0, 0, 0, 0]);
+        assert_eq!(<Option<u16> as Encode>::ssz_fixed_len(), BYTES_PER_LENGTH_OFFSET);
     }
 }
