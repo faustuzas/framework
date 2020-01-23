@@ -161,9 +161,10 @@ impl Encode for H256 {
 
 impl Encode for U256 {
     fn ssz_append(&self, buf: &mut Vec<u8>) {
-        let mut vec = Vec::with_capacity(32);
-        self.to_little_endian(&mut vec);
-        buf.append(&mut vec)
+        let current_len = buf.len();
+
+        buf.resize(current_len + 32, 0);
+        self.to_little_endian(&mut buf[current_len..]);
     }
 
     fn is_ssz_fixed_len() -> bool {
@@ -181,9 +182,10 @@ impl Encode for U256 {
 
 impl Encode for U128 {
     fn ssz_append(&self, buf: &mut Vec<u8>) {
-        let mut vec = Vec::with_capacity(16);
-        self.to_little_endian(&mut vec);
-        buf.append(&mut vec)
+        let current_len = buf.len();
+
+        buf.resize(current_len + 16, 0);
+        self.to_little_endian(&mut buf[current_len..]);
     }
 
     fn is_ssz_fixed_len() -> bool {
@@ -349,6 +351,17 @@ mod test {
     }
 
     #[test]
+    fn non_zero_usize() {
+        let usize_size = std::mem::size_of::<usize>();
+
+        let nzusize = NonZeroUsize::new(usize::max_value()).expect("Test");
+        assert_eq!(nzusize.as_ssz_bytes(), vec![255; usize_size]);
+
+        assert_eq!(nzusize.ssz_bytes_len(), usize_size);
+        assert_eq!(<NonZeroUsize as Encode>::ssz_fixed_len(), usize_size);
+    }
+
+    #[test]
     fn bool() {
         assert_eq!(true.as_ssz_bytes(), vec![0b0000_0001]);
         assert_eq!(false.as_ssz_bytes(), vec![0b0000_0000]);
@@ -435,5 +448,43 @@ mod test {
             <Option<u16> as Encode>::ssz_fixed_len(),
             BYTES_PER_LENGTH_OFFSET
         );
+    }
+
+    #[test]
+    fn u8_array() {
+        assert_eq!([1; 4].as_ssz_bytes(), vec![1; 4]);
+        assert_eq!([1; 32].as_ssz_bytes(), vec![1; 32]);
+
+        assert_eq!([1; 4].ssz_bytes_len(), 4);
+        assert_eq!([1; 32].ssz_bytes_len(), 32);
+
+        assert_eq!(<[u8; 4] as Encode>::ssz_fixed_len(), 4);
+        assert_eq!(<[u8; 32] as Encode>::ssz_fixed_len(), 32);
+    }
+
+    #[test]
+    fn h256() {
+        assert_eq!(H256::zero().as_ssz_bytes(), vec![0; 32]);
+
+        assert_eq!(H256::zero().ssz_bytes_len(), 32);
+        assert_eq!(<H256 as Encode>::ssz_fixed_len(), 32);
+    }
+
+    #[test]
+    fn u256() {
+        let u = U256::from_dec_str("0").expect("Test");
+        assert_eq!(u.as_ssz_bytes(), vec![0; 32]);
+
+        assert_eq!(u.ssz_bytes_len(), 32);
+        assert_eq!(<U256 as Encode>::ssz_fixed_len(), 32);
+    }
+
+    #[test]
+    fn u128() {
+        let u = U128::from_dec_str("0").expect("Test");
+        assert_eq!(u.as_ssz_bytes(), vec![0; 16]);
+
+        assert_eq!(u.ssz_bytes_len(), 16);
+        assert_eq!(<U128 as Encode>::ssz_fixed_len(), 16);
     }
 }
