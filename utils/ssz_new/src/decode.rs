@@ -415,7 +415,10 @@ mod tests {
     fn usize() {
         let usize_size = std::mem::size_of::<usize>();
 
-        assert_eq!(usize::from_ssz_bytes(&vec![0b0000_0000; usize_size]).expect("Test"), 0);
+        assert_eq!(
+            usize::from_ssz_bytes(&vec![0b0000_0000; usize_size]).expect("Test"),
+            0
+        );
         assert_eq!(
             usize::from_ssz_bytes(&vec![0b1111_1111; usize_size]).expect("Test"),
             usize::max_value()

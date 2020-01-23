@@ -330,10 +330,7 @@ mod test {
             }
         }
 
-        assert_eq!(
-            usize::max_value().as_ssz_bytes(),
-            vec![255; usize_size]
-        );
+        assert_eq!(usize::max_value().as_ssz_bytes(), vec![255; usize_size]);
     }
 
     #[test]
