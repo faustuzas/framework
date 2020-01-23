@@ -324,9 +324,9 @@ mod test {
         assert_eq!(encoded.len(), usize_size);
         for (i, byte) in encoded.iter().enumerate() {
             if i == 0 {
-                assert_eq!(byte, 1)
+                assert_eq!(*byte, 1)
             } else {
-                assert_eq!(byte, 0)
+                assert_eq!(*byte, 0)
             }
         }
 
