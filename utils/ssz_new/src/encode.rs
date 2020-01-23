@@ -214,6 +214,7 @@ mod test {
 
         assert_eq!(1_u8.ssz_bytes_len(), 1);
         assert_eq!(<u8 as Encode>::ssz_fixed_len(), 1);
+        assert!(<u8 as Encode>::is_ssz_fixed_len());
     }
 
     #[test]
@@ -229,6 +230,7 @@ mod test {
 
         assert_eq!(1_u16.ssz_bytes_len(), 2);
         assert_eq!(<u16 as Encode>::ssz_fixed_len(), 2);
+        assert!(<u16 as Encode>::is_ssz_fixed_len());
     }
 
     #[test]
@@ -254,6 +256,7 @@ mod test {
 
         assert_eq!(1_u32.ssz_bytes_len(), 4);
         assert_eq!(<u32 as Encode>::ssz_fixed_len(), 4);
+        assert!(<u32 as Encode>::is_ssz_fixed_len());
     }
 
     #[test]
@@ -328,6 +331,7 @@ mod test {
 
         assert_eq!(1_u64.ssz_bytes_len(), 8);
         assert_eq!(<u64 as Encode>::ssz_fixed_len(), 8);
+        assert!(<u64 as Encode>::is_ssz_fixed_len());
     }
 
     #[test]
@@ -348,6 +352,7 @@ mod test {
 
         assert_eq!(1_usize.ssz_bytes_len(), usize_size);
         assert_eq!(<usize as Encode>::ssz_fixed_len(), usize_size);
+        assert!(<usize as Encode>::is_ssz_fixed_len());
     }
 
     #[test]
@@ -359,6 +364,7 @@ mod test {
 
         assert_eq!(nzusize.ssz_bytes_len(), usize_size);
         assert_eq!(<NonZeroUsize as Encode>::ssz_fixed_len(), usize_size);
+        assert!(<NonZeroUsize as Encode>::is_ssz_fixed_len());
     }
 
     #[test]
@@ -368,6 +374,7 @@ mod test {
 
         assert_eq!(true.ssz_bytes_len(), 1);
         assert_eq!(<bool as Encode>::ssz_fixed_len(), 1);
+        assert!(<bool as Encode>::is_ssz_fixed_len());
     }
 
     #[test]
@@ -416,6 +423,7 @@ mod test {
 
         let vec: Vec<u64> = vec![u64::max_value(); 100];
         assert_eq!(vec.as_ssz_bytes(), vec![u8::max_value(); 800]);
+        assert!(!<Vec<u64> as Encode>::is_ssz_fixed_len());
     }
 
     #[test]
@@ -448,6 +456,7 @@ mod test {
             <Option<u16> as Encode>::ssz_fixed_len(),
             BYTES_PER_LENGTH_OFFSET
         );
+        assert!(!<Option<u16> as Encode>::is_ssz_fixed_len());
     }
 
     #[test]
@@ -460,6 +469,9 @@ mod test {
 
         assert_eq!(<[u8; 4] as Encode>::ssz_fixed_len(), 4);
         assert_eq!(<[u8; 32] as Encode>::ssz_fixed_len(), 32);
+
+        assert!(<[u8; 4] as Encode>::is_ssz_fixed_len());
+        assert!(<[u8; 32] as Encode>::is_ssz_fixed_len());
     }
 
     #[test]
@@ -468,6 +480,7 @@ mod test {
 
         assert_eq!(H256::zero().ssz_bytes_len(), 32);
         assert_eq!(<H256 as Encode>::ssz_fixed_len(), 32);
+        assert!(<H256 as Encode>::is_ssz_fixed_len());
     }
 
     #[test]
@@ -477,6 +490,7 @@ mod test {
 
         assert_eq!(u.ssz_bytes_len(), 32);
         assert_eq!(<U256 as Encode>::ssz_fixed_len(), 32);
+        assert!(<U256 as Encode>::is_ssz_fixed_len());
     }
 
     #[test]
@@ -486,5 +500,6 @@ mod test {
 
         assert_eq!(u.ssz_bytes_len(), 16);
         assert_eq!(<U128 as Encode>::ssz_fixed_len(), 16);
+        assert!(<U128 as Encode>::is_ssz_fixed_len());
     }
 }
