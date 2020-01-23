@@ -4,11 +4,53 @@ pub fn ssz_encode<T: Encode>(val: &T) -> Vec<u8> {
     val.as_ssz_bytes()
 }
 
-pub fn serialize_offset(offset: usize) -> Vec<u8> {
+pub fn encode_offset(offset: usize) -> Vec<u8> {
     offset.to_le_bytes()[..BYTES_PER_LENGTH_OFFSET].to_vec()
 }
 
-pub fn deserialize_offset(bytes: &[u8]) -> Result<usize, DecodeError> {
+pub fn encode_items_from_parts(
+    buf: &mut Vec<u8>,
+    fixed_parts: Vec<Option<Vec<u8>>>,
+    variable_parts: Vec<Vec<u8>>
+) {
+    let item_count = fixed_parts.len();
+
+    let fixed_length: usize = fixed_parts
+        .iter()
+        .map(|part| match part {
+            Some(bytes) => bytes.len(),
+            None => BYTES_PER_LENGTH_OFFSET,
+        })
+        .sum();
+
+    let variable_lengths: Vec<usize> = variable_parts.iter().map(std::vec::Vec::len).collect();
+
+    let mut variable_offsets = Vec::with_capacity(item_count);
+    for i in 0..item_count {
+        let variable_length_sum: usize = variable_lengths[..i].iter().sum();
+        let offset = fixed_length + variable_length_sum;
+        variable_offsets.push(encode_offset(offset));
+    }
+
+    let fixed_parts: Vec<&Vec<u8>> = fixed_parts
+        .iter()
+        .enumerate()
+        .map(|(i, part)| match part {
+            Some(bytes) => bytes,
+            None => &variable_offsets[i],
+        })
+        .collect();
+
+    for part in fixed_parts {
+        buf.extend(part);
+    }
+
+    for part in variable_parts {
+        buf.extend(part);
+    }
+}
+
+pub fn decode_offset(bytes: &[u8]) -> Result<usize, DecodeError> {
     if bytes.len() == BYTES_PER_LENGTH_OFFSET {
         let mut arr = [0; BYTES_PER_LENGTH_OFFSET];
         arr.clone_from_slice(bytes);
@@ -21,10 +63,10 @@ pub fn deserialize_offset(bytes: &[u8]) -> Result<usize, DecodeError> {
     }
 }
 
-pub fn deserialize_variable_sized_items<T: Decode>(bytes: &[u8]) -> Result<Vec<T>, DecodeError> {
+pub fn decode_variable_sized_items<T: Decode>(bytes: &[u8]) -> Result<Vec<T>, DecodeError> {
     let first_offset_bytes = bytes.get(0..BYTES_PER_LENGTH_OFFSET);
     let first_offset = match first_offset_bytes {
-        Some(bytes) => deserialize_offset(bytes),
+        Some(bytes) => decode_offset(bytes),
         _ => Err(DecodeError::InvalidByteLength {
             len: bytes.len(),
             expected: BYTES_PER_LENGTH_OFFSET,
@@ -40,7 +82,7 @@ pub fn deserialize_variable_sized_items<T: Decode>(bytes: &[u8]) -> Result<Vec<T
             bytes.len()
         } else {
             match bytes.get(i * BYTES_PER_LENGTH_OFFSET..(i + 1) * BYTES_PER_LENGTH_OFFSET) {
-                Some(bytes) => deserialize_offset(bytes),
+                Some(bytes) => decode_offset(bytes),
                 _ => Err(DecodeError::InvalidByteLength {
                     len: bytes.len(),
                     expected: (i + 1) * BYTES_PER_LENGTH_OFFSET,
@@ -87,7 +129,7 @@ impl<'a> Decoder<'a> {
                 .bytes
                 .get(self.registration_offset..self.registration_offset + BYTES_PER_LENGTH_OFFSET)
             {
-                Some(bytes) => deserialize_offset(bytes),
+                Some(bytes) => decode_offset(bytes),
                 _ => Err(DecodeError::InvalidByteLength {
                     len: self.bytes.len(),
                     expected: self.registration_offset + BYTES_PER_LENGTH_OFFSET,
@@ -151,22 +193,22 @@ mod tests {
 
     #[test]
     fn test_serialize_offset() {
-        assert_eq!(serialize_offset(0), vec![0; BYTES_PER_LENGTH_OFFSET]);
-        assert_eq!(serialize_offset(5), vec![5, 0, 0, 0]);
+        assert_eq!(encode_offset(0), vec![0; BYTES_PER_LENGTH_OFFSET]);
+        assert_eq!(encode_offset(5), vec![5, 0, 0, 0]);
     }
 
     #[test]
     fn test_deserialize_offset() {
         assert_eq!(
-            deserialize_offset(&[0; BYTES_PER_LENGTH_OFFSET]).expect("Test"),
+            decode_offset(&[0; BYTES_PER_LENGTH_OFFSET]).expect("Test"),
             0
         );
-        assert_eq!(deserialize_offset(&[5, 0, 0, 0]).expect("Test"), 5);
+        assert_eq!(decode_offset(&[5, 0, 0, 0]).expect("Test"), 5);
     }
 
     #[test]
     fn test_deserialize_offset_error() {
-        assert!(deserialize_offset(&[0; BYTES_PER_LENGTH_OFFSET + 1]).is_err());
+        assert!(decode_offset(&[0; BYTES_PER_LENGTH_OFFSET + 1]).is_err());
     }
 
     mod decoder {
@@ -220,12 +262,12 @@ mod tests {
         }
     }
 
-    mod deserialize_variable_sized_items {
+    mod decode_variable_sized_items {
         use super::*;
 
         #[test]
         fn happy_path() {
-            let items: Vec<Vec<u8>> = deserialize_variable_sized_items(&[
+            let items: Vec<Vec<u8>> = decode_variable_sized_items(&[
                 12, 0, 0, 0, 16, 0, 0, 0, 22, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
             ])
             .expect("Test");
@@ -238,28 +280,28 @@ mod tests {
 
         #[test]
         fn empty_bytes() {
-            let result: Result<Vec<Vec<u8>>, _> = deserialize_variable_sized_items(&[]);
+            let result: Result<Vec<Vec<u8>>, _> = decode_variable_sized_items(&[]);
             assert!(result.is_err())
         }
 
         #[test]
         fn bad_first_offset() {
             let result: Result<Vec<Vec<u16>>, _> =
-                deserialize_variable_sized_items(&[88, 0, 0, 0, 1, 2, 3]);
+                decode_variable_sized_items(&[88, 0, 0, 0, 1, 2, 3]);
             assert!(result.is_err())
         }
 
         #[test]
         fn bad_next_offsets() {
             let result: Result<Vec<Vec<u16>>, _> =
-                deserialize_variable_sized_items(&[8, 0, 0, 0, 100, 0, 0, 0, 1, 2, 3]);
+                decode_variable_sized_items(&[8, 0, 0, 0, 100, 0, 0, 0, 1, 2, 3]);
             assert!(result.is_err())
         }
 
         #[test]
         fn bad_element_data() {
             let result: Result<Vec<Vec<u16>>, _> =
-                deserialize_variable_sized_items(&[8, 0, 0, 0, 9, 0, 0, 0, 1]);
+                decode_variable_sized_items(&[8, 0, 0, 0, 9, 0, 0, 0, 1]);
             assert!(result.is_err())
         }
     }

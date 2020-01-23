@@ -21,7 +21,7 @@ impl<T: Encode, N: Unsigned> Encode for FixedVector<T, N> {
             for i in 0..self.len() {
                 let variable_length_sum: usize = variable_lengths[..i].iter().sum();
                 let offset = fixed_length + variable_length_sum;
-                variable_offsets.push(serialize_offset(offset));
+                variable_offsets.push(encode_offset(offset));
             }
 
             for offset in variable_offsets {
@@ -72,7 +72,7 @@ impl<T: Decode + Default, N: Unsigned> Decode for FixedVector<T, N> {
                 })
             }
         } else {
-            let items = deserialize_variable_sized_items(bytes)?;
+            let items = decode_variable_sized_items(bytes)?;
 
             if items_count == items.len() {
                 Ok(items.into())

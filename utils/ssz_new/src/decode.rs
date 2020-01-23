@@ -106,7 +106,7 @@ impl<T: Decode> Decode for Vec<T> {
         if bytes.is_empty() {
             Ok(vec![])
         } else if !T::is_ssz_fixed_len() {
-            deserialize_variable_sized_items(bytes)
+            decode_variable_sized_items(bytes)
         } else if bytes_len % fixed_len == 0 {
             let mut result = Vec::with_capacity(bytes.len() / fixed_len);
             for chunk in bytes.chunks(fixed_len) {
@@ -160,7 +160,7 @@ impl<T: Decode> Decode for Option<T> {
 
         let (index_bytes, value_bytes) = bytes.split_at(BYTES_PER_LENGTH_OFFSET);
 
-        let index = deserialize_offset(index_bytes)?;
+        let index = decode_offset(index_bytes)?;
         if index == 0 {
             Ok(None)
         } else if index == 1 {

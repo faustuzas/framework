@@ -1,6 +1,6 @@
 #![allow(clippy::use_self)]
 
-use crate::utils::serialize_offset;
+use crate::utils::*;
 use crate::*;
 use core::num::NonZeroUsize;
 use ethereum_types::{H256, U128, U256};
@@ -99,39 +99,7 @@ impl<T: Encode> Encode for Vec<T> {
             });
         }
 
-        let fixed_length: usize = fixed_parts
-            .iter()
-            .map(|part| match part {
-                Some(bytes) => bytes.len(),
-                None => BYTES_PER_LENGTH_OFFSET,
-            })
-            .sum();
-
-        let variable_lengths: Vec<usize> = variable_parts.iter().map(std::vec::Vec::len).collect();
-
-        let mut variable_offsets = Vec::with_capacity(self.len());
-        for i in 0..self.len() {
-            let variable_length_sum: usize = variable_lengths[..i].iter().sum();
-            let offset = fixed_length + variable_length_sum;
-            variable_offsets.push(serialize_offset(offset));
-        }
-
-        let fixed_parts: Vec<&Vec<u8>> = fixed_parts
-            .iter()
-            .enumerate()
-            .map(|(i, part)| match part {
-                Some(bytes) => bytes,
-                None => &variable_offsets[i],
-            })
-            .collect();
-
-        for part in fixed_parts {
-            buf.extend(part);
-        }
-
-        for part in variable_parts {
-            buf.extend(part);
-        }
+        encode_items_from_parts(buf, fixed_parts, variable_parts);
     }
 
     fn is_ssz_fixed_len() -> bool {
@@ -142,9 +110,9 @@ impl<T: Encode> Encode for Vec<T> {
 impl<T: Encode> Encode for Option<T> {
     fn ssz_append(&self, buf: &mut Vec<u8>) {
         match self {
-            None => buf.append(&mut serialize_offset(0)),
+            None => buf.append(&mut encode_offset(0)),
             Some(t) => {
-                buf.append(&mut serialize_offset(1));
+                buf.append(&mut encode_offset(1));
                 buf.append(&mut t.as_ssz_bytes());
             }
         }

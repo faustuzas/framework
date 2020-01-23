@@ -48,7 +48,6 @@ pub fn encode_derive(input: TokenStream) -> TokenStream {
             <#field_type as ssz::Encode>::is_ssz_fixed_len()
         });
 
-        // TODO
         ssz_bytes_lens.push(quote! {
             self.#field_name.ssz_bytes_len()
         });
@@ -73,37 +72,7 @@ pub fn encode_derive(input: TokenStream) -> TokenStream {
                     #variable_parts_pushes
                 )*
 
-                let fixed_length: usize = fixed_parts.iter()
-                    .map(|part| match part {
-                        Some(bytes) => bytes.len(),
-                        None => ssz::BYTES_PER_LENGTH_OFFSET
-                    }).sum();
-
-                let variable_lengths: Vec<usize> = variable_parts.iter()
-                    .map(|part| part.len())
-                    .collect();
-
-                let mut variable_offsets = Vec::with_capacity(fields_count);
-                for i in 0..fields_count {
-                    let variable_length_sum: usize = variable_lengths[..i].iter().sum();
-                    let offset = fixed_length + variable_length_sum;
-                    variable_offsets.push(ssz::serialize_offset(offset));
-                }
-
-                let fixed_parts: Vec<&Vec<u8>> = fixed_parts.iter()
-                    .enumerate()
-                    .map(|(i, part)| match part {
-                        Some(bytes) => bytes,
-                        None => &variable_offsets[i]
-                    }).collect();
-
-                for part in fixed_parts {
-                    buf.extend(part);
-                }
-
-                for part in variable_parts {
-                    buf.extend(part);
-                }
+                ssz::encode_items_from_parts(buf, fixed_parts, variable_parts);
             }
 
             fn is_ssz_fixed_len() -> bool {
@@ -114,17 +83,25 @@ pub fn encode_derive(input: TokenStream) -> TokenStream {
             }
 
             fn ssz_bytes_len(&self) -> usize {
-                #(
-                    #ssz_bytes_lens +
-                )*
-                    0
+                if <Self as ssz::Encode>::is_ssz_fixed_len() {
+                    <Self as ssz::Encode>::ssz_fixed_len()
+                } else {
+                    #(
+                        #ssz_bytes_lens +
+                    )*
+                        ssz::BYTES_PER_LENGTH_OFFSET
+                }
             }
 
             fn ssz_fixed_len() -> usize {
-                #(
-                    #ssz_fixed_lens +
-                )*
-                    0
+                if <Self as ssz::Encode>::is_ssz_fixed_len() {
+                    #(
+                        #ssz_fixed_lens +
+                    )*
+                        0
+                } else {
+                    ssz::BYTES_PER_LENGTH_OFFSET
+                }
             }
         }
     };
