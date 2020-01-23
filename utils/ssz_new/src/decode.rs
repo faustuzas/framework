@@ -254,6 +254,11 @@ mod tests {
         );
         assert_eq!(u8::from_ssz_bytes(&[0b0000_0001]).expect("Test"), 1);
         assert_eq!(u8::from_ssz_bytes(&[0b1000_0000]).expect("Test"), 128);
+
+        assert!(u8::from_ssz_bytes(&[]).is_err());
+        assert!(u8::from_ssz_bytes(&[0; 2]).is_err());
+
+        assert_eq!(<u8 as Decode>::ssz_fixed_len(), 1);
     }
 
     #[test]
@@ -278,6 +283,12 @@ mod tests {
             u16::from_ssz_bytes(&[0b0000_0000, 0b1000_0000]).expect("Test"),
             0x8000
         );
+
+        assert!(u16::from_ssz_bytes(&[]).is_err());
+        assert!(u16::from_ssz_bytes(&[0; 1]).is_err());
+        assert!(u16::from_ssz_bytes(&[0; 3]).is_err());
+
+        assert_eq!(<u16 as Decode>::ssz_fixed_len(), 2);
     }
 
     #[test]
@@ -307,6 +318,12 @@ mod tests {
                 .expect("Test"),
             0x8000_0000
         );
+
+        assert!(u32::from_ssz_bytes(&[]).is_err());
+        assert!(u32::from_ssz_bytes(&[0; 2]).is_err());
+        assert!(u32::from_ssz_bytes(&[0; 5]).is_err());
+
+        assert_eq!(<u32 as Decode>::ssz_fixed_len(), 4);
     }
 
     #[test]
@@ -386,6 +403,49 @@ mod tests {
             .expect("Test"),
             0x8000_0000_0000_0000
         );
+
+        assert!(u64::from_ssz_bytes(&[]).is_err());
+        assert!(u64::from_ssz_bytes(&[0; 2]).is_err());
+        assert!(u64::from_ssz_bytes(&[0; 9]).is_err());
+
+        assert_eq!(<u64 as Decode>::ssz_fixed_len(), 8);
+    }
+
+    #[test]
+    fn usize() {
+        let usize_size = std::mem::size_of::<usize>();
+
+        assert_eq!(usize::from_ssz_bytes(&vec![0b0000_0000; usize_size]).expect("Test"), 0);
+        assert_eq!(
+            usize::from_ssz_bytes(&vec![0b1111_1111; usize_size]).expect("Test"),
+            usize::max_value()
+        );
+
+        assert!(usize::from_ssz_bytes(&[]).is_err());
+        assert!(usize::from_ssz_bytes(&[0; 2]).is_err());
+        assert!(usize::from_ssz_bytes(&[0; 9]).is_err());
+
+        assert_eq!(<usize as Decode>::ssz_fixed_len(), usize_size)
+    }
+
+    #[test]
+    fn u8_array() {
+        assert_eq!(<[u8; 4]>::from_ssz_bytes(&[0; 4]).expect("Test"), [0; 4]);
+        assert_eq!(<[u8; 32]>::from_ssz_bytes(&[0; 32]).expect("Test"), [0; 32]);
+        assert_eq!(
+            <[u8; 4]>::from_ssz_bytes(&[u8::max_value(); 4]).expect("Test"),
+            [u8::max_value(); 4]
+        );
+        assert_eq!(
+            <[u8; 32]>::from_ssz_bytes(&[u8::max_value(); 32]).expect("Test"),
+            [u8::max_value(); 32]
+        );
+
+        assert!(<[u8; 4]>::from_ssz_bytes(&[0; 5]).is_err());
+        assert!(<[u8; 32]>::from_ssz_bytes(&[0; 34]).is_err());
+
+        assert_eq!(<[u8; 4] as Decode>::ssz_fixed_len(), 4);
+        assert_eq!(<[u8; 32] as Decode>::ssz_fixed_len(), 32);
     }
 
     #[test]

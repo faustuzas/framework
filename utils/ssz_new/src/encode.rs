@@ -317,6 +317,26 @@ mod test {
     }
 
     #[test]
+    fn usize() {
+        let usize_size = std::mem::size_of::<usize>();
+
+        let encoded = 1_usize.as_ssz_bytes();
+        assert_eq!(encoded.len(), usize_size);
+        for i in 0..usize_size {
+            if i == 0 {
+                assert_eq!(encoded[i], 1)
+            } else {
+                assert_eq!(encoded[i], 0)
+            }
+        }
+
+        assert_eq!(
+            usize::max_value().as_ssz_bytes(),
+            vec![255; usize_size]
+        );
+    }
+
+    #[test]
     fn bool() {
         assert_eq!(true.as_ssz_bytes(), vec![0b0000_0001]);
         assert_eq!(false.as_ssz_bytes(), vec![0b0000_0000]);

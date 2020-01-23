@@ -22,8 +22,7 @@ struct Nested {
 
 #[derive(Encode, Decode, PartialEq, Debug)]
 struct Skippable {
-    stay_1: u8,
-    stay_2: Vec<u8>,
+    stay_1: [u8; 4],
 
     #[ssz(skip_serializing)]
     #[ssz(skip_deserializing)]
@@ -32,6 +31,8 @@ struct Skippable {
     #[ssz(skip_serializing)]
     #[ssz(skip_deserializing)]
     skip_2: Vec<u8>,
+
+    stay_2: Vec<u8>,
 }
 
 mod serialize_derive {
@@ -155,14 +156,14 @@ mod deserialize_derive {
     #[test]
     fn skip_fields() {
         let skippable = Skippable {
-            stay_1: 20,
+            stay_1: [1, 2, 3, 4],
             stay_2: vec![1, 2, 3, 4, 5],
             skip_1: 42,
             skip_2: vec![6, 7, 8, 9, 10],
         };
 
         let serialized = skippable.as_ssz_bytes();
-        assert_eq!(serialized, vec![20, 5, 0, 0, 0, 1, 2, 3, 4, 5]);
+        assert_eq!(serialized, vec![1, 2, 3, 4, 8, 0, 0, 0, 1, 2, 3, 4, 5]);
 
         let skippable = Skippable::from_ssz_bytes(serialized.as_slice()).expect("Test");
         assert_eq!(skippable.skip_1, <u8>::default());
