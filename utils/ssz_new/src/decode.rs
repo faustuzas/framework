@@ -471,8 +471,8 @@ mod tests {
         assert_eq!(<[u8; 4] as Decode>::ssz_fixed_len(), 4);
         assert_eq!(<[u8; 32] as Decode>::ssz_fixed_len(), 32);
 
-        assert!(<bool as [u8; 4]>::is_ssz_fixed_len());
-        assert!(<bool as [u8; 32]>::is_ssz_fixed_len());
+        assert!(<[u8; 4] as Decode>::is_ssz_fixed_len());
+        assert!(<[u8; 32] as Decode>::is_ssz_fixed_len());
     }
 
     #[test]
