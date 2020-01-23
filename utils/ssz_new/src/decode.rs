@@ -183,10 +183,10 @@ impl Decode for H256 {
         let len = bytes.len();
         let expected = <Self as Decode>::ssz_fixed_len();
 
-        if len != expected {
-            Err(DecodeError::InvalidByteLength { len, expected })
-        } else {
+        if len == expected {
             Ok(H256::from_slice(bytes))
+        } else {
+            Err(DecodeError::InvalidByteLength { len, expected })
         }
     }
 
@@ -205,9 +205,9 @@ impl Decode for U256 {
         let expected = <Self as Decode>::ssz_fixed_len();
 
         if len != expected {
-            Err(DecodeError::InvalidByteLength { len, expected })
-        } else {
             Ok(U256::from_little_endian(bytes))
+        } else {
+            Err(DecodeError::InvalidByteLength { len, expected })
         }
     }
 
@@ -226,9 +226,9 @@ impl Decode for U128 {
         let expected = <Self as Decode>::ssz_fixed_len();
 
         if len != expected {
-            Err(DecodeError::InvalidByteLength { len, expected })
-        } else {
             Ok(U128::from_little_endian(bytes))
+        } else {
+            Err(DecodeError::InvalidByteLength { len, expected })
         }
     }
 
