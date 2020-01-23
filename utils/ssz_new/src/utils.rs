@@ -194,7 +194,7 @@ mod tests {
     #[test]
     fn test_ssz_encode() {
         assert_eq!(ssz_encode(&0_u64), vec![0; 8]);
-        assert_eq!(ssz_encode(&vec![1_u8, 2_u8, 3_u8, 4_u8]), vec![ 1, 2, 3, 4]);
+        assert_eq!(ssz_encode(&vec![1_u8, 2_u8, 3_u8, 4_u8]), vec![1, 2, 3, 4]);
     }
 
     #[test]
