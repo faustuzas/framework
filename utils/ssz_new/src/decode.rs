@@ -204,7 +204,7 @@ impl Decode for U256 {
         let len = bytes.len();
         let expected = <Self as Decode>::ssz_fixed_len();
 
-        if len != expected {
+        if len == expected {
             Ok(U256::from_little_endian(bytes))
         } else {
             Err(DecodeError::InvalidByteLength { len, expected })
@@ -225,7 +225,7 @@ impl Decode for U128 {
         let len = bytes.len();
         let expected = <Self as Decode>::ssz_fixed_len();
 
-        if len != expected {
+        if len == expected {
             Ok(U128::from_little_endian(bytes))
         } else {
             Err(DecodeError::InvalidByteLength { len, expected })
