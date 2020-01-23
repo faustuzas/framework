@@ -432,6 +432,25 @@ mod tests {
     }
 
     #[test]
+    fn non_zero_usize() {
+        let usize_size = std::mem::size_of::<usize>();
+
+        assert_eq!(
+            NonZeroUsize::from_ssz_bytes(&vec![0b1111_1111; usize_size]).expect("Test").get(),
+            usize::max_value()
+        );
+
+        assert!(NonZeroUsize::from_ssz_bytes(&[0; 8]).is_err());
+
+        assert!(NonZeroUsize::from_ssz_bytes(&[]).is_err());
+        assert!(NonZeroUsize::from_ssz_bytes(&[0; 2]).is_err());
+        assert!(NonZeroUsize::from_ssz_bytes(&[0; 9]).is_err());
+
+        assert_eq!(<NonZeroUsize as Decode>::ssz_fixed_len(), usize_size);
+        assert!(<NonZeroUsize as Decode>::is_ssz_fixed_len());
+    }
+
+    #[test]
     fn u8_array() {
         assert_eq!(<[u8; 4]>::from_ssz_bytes(&[0; 4]).expect("Test"), [0; 4]);
         assert_eq!(<[u8; 32]>::from_ssz_bytes(&[0; 32]).expect("Test"), [0; 32]);
@@ -455,8 +474,20 @@ mod tests {
     fn bool() {
         assert_eq!(bool::from_ssz_bytes(&[0_u8]).expect("Test"), false);
         assert_eq!(bool::from_ssz_bytes(&[1_u8]).expect("Test"), true);
+
         assert!(bool::from_ssz_bytes(&[2_u8]).is_err());
         assert!(bool::from_ssz_bytes(&[0_u8, 0_u8]).is_err());
+
+        assert!(<bool as Decode>::is_ssz_fixed_len());
+        assert_eq!(<bool as Decode>::ssz_fixed_len(), 1)
+    }
+
+    #[test]
+    fn vector() {
+        assert!(<Vec<bool>>::from_ssz_bytes(&[0, 1, 2]).is_err());
+        assert!(<Vec<u32>>::from_ssz_bytes(&[0, 1, 2, 4, 5]).is_err());
+
+        assert!(!<Vec<u32> as Decode>::is_ssz_fixed_len());
     }
 
     #[test]
@@ -505,15 +536,6 @@ mod tests {
             <Vec<u64>>::from_ssz_bytes(&[u8::max_value(); 800]).expect("Test"),
             vec![u64::max_value(); 100]
         );
-    }
-
-    #[test]
-    fn vector_fixed_error() {
-        // wrong values provided
-        assert!(<Vec<bool>>::from_ssz_bytes(&[0, 1, 2]).is_err());
-
-        // incorrect length of bytes
-        assert!(<Vec<u32>>::from_ssz_bytes(&[0, 1, 2, 4, 5]).is_err());
     }
 
     #[test]
