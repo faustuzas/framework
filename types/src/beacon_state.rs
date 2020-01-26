@@ -3,7 +3,7 @@ use crate::{
 };
 use ethereum_types::H256 as Hash256;
 use serde::{Deserialize, Serialize};
-use ssz_derive::{Decode, Encode};
+use ssz_new_derive::{SszDecode, SszEncode};
 use ssz_types::{BitVector, Error as SzzError, FixedVector, VariableList};
 use tree_hash::TreeHash;
 use tree_hash_derive::TreeHash;
@@ -54,7 +54,7 @@ impl From<HelperError> for Error {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, Encode, Decode, TreeHash, Default)]
+#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, SszEncode, SszDecode, TreeHash, Default)]
 pub struct BeaconState<C: Config> {
     pub genesis_time: u64,
     pub slot: Slot,

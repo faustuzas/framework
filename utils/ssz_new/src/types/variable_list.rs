@@ -1,7 +1,6 @@
 use super::*;
-use ssz::*;
 
-impl<T: Encode + Clone, N: Unsigned> Encode for VariableList<T, N> {
+impl<T: SszEncode + Clone, N: Unsigned> SszEncode for VariableList<T, N> {
     fn ssz_append(&self, buf: &mut Vec<u8>) {
         buf.append(&mut self.to_vec().as_ssz_bytes())
     }
@@ -11,12 +10,12 @@ impl<T: Encode + Clone, N: Unsigned> Encode for VariableList<T, N> {
     }
 }
 
-impl<T: Decode, N: Unsigned> Decode for VariableList<T, N> {
-    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
+impl<T: SszDecode, N: Unsigned> SszDecode for VariableList<T, N> {
+    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, SszDecodeError> {
         let items = <Vec<T>>::from_ssz_bytes(bytes)?;
 
         Self::new(items).map_err(|e| {
-            DecodeError::BytesInvalid(format!("Failed while creating VariableList: {:?}", e))
+            SszDecodeError::BytesInvalid(format!("Failed while creating VariableList: {:?}", e))
         })
     }
 
@@ -46,10 +45,10 @@ mod tests {
     #[test]
     fn decode() {
         let list = <VariableList<u16, U3>>::from_ssz_bytes(&[1, 0, 2, 0, 3, 0]).expect("Test");
-        assert_eq!(list.to_vec(), &vec![1_u16, 2_u16, 3_u16]);
+        assert_eq!(list.to_vec(), vec![1_u16, 2_u16, 3_u16]);
 
         let list = <VariableList<u16, U1024>>::from_ssz_bytes(&[1, 0, 2, 0, 3, 0]).expect("Test");
-        assert_eq!(list.to_vec(), &vec![1_u16, 2_u16, 3_u16]);
+        assert_eq!(list.to_vec(), vec![1_u16, 2_u16, 3_u16]);
 
         assert!(<VariableList<u8, U1>>::from_ssz_bytes(&[1, 2, 3]).is_err())
     }

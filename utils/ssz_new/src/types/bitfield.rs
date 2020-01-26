@@ -1,9 +1,6 @@
 use super::*;
-use serde::de::{Deserialize, Deserializer};
-use serde::ser::{Serialize, Serializer};
-use ssz::*;
 
-impl<N: Unsigned + Clone> Encode for Bitfield<length::Variable<N>> {
+impl<N: Unsigned + Clone> SszEncode for Bitfield<length::Variable<N>> {
     fn ssz_append(&self, buf: &mut Vec<u8>) {
         buf.append(&mut self.clone().into_bytes())
     }
@@ -11,16 +8,12 @@ impl<N: Unsigned + Clone> Encode for Bitfield<length::Variable<N>> {
     fn is_ssz_fixed_len() -> bool {
         false
     }
-
-    fn ssz_bytes_len(&self) -> usize {
-        self.len()
-    }
 }
 
-impl<N: Unsigned + Clone> Decode for Bitfield<length::Variable<N>> {
-    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
+impl<N: Unsigned + Clone> SszDecode for Bitfield<length::Variable<N>> {
+    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, SszDecodeError> {
         Self::from_bytes(bytes.to_vec()).map_err(|e| {
-            DecodeError::BytesInvalid(format!("Failed while creating BitList: {:?}", e))
+            SszDecodeError::BytesInvalid(format!("Failed while creating BitList: {:?}", e))
         })
     }
 
@@ -29,7 +22,7 @@ impl<N: Unsigned + Clone> Decode for Bitfield<length::Variable<N>> {
     }
 }
 
-impl<N: Unsigned + Clone> Encode for Bitfield<length::Fixed<N>> {
+impl<N: Unsigned + Clone> SszEncode for Bitfield<length::Fixed<N>> {
     fn ssz_append(&self, buf: &mut Vec<u8>) {
         buf.append(&mut self.clone().into_bytes())
     }
@@ -43,10 +36,10 @@ impl<N: Unsigned + Clone> Encode for Bitfield<length::Fixed<N>> {
     }
 }
 
-impl<N: Unsigned + Clone> Decode for Bitfield<length::Fixed<N>> {
-    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
+impl<N: Unsigned + Clone> SszDecode for Bitfield<length::Fixed<N>> {
+    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, SszDecodeError> {
         Self::from_bytes(bytes.to_vec()).map_err(|e| {
-            DecodeError::BytesInvalid(format!("Failed while creating BitVector: {:?}", e))
+            SszDecodeError::BytesInvalid(format!("Failed while creating BitVector: {:?}", e))
         })
     }
 
@@ -56,34 +49,6 @@ impl<N: Unsigned + Clone> Decode for Bitfield<length::Fixed<N>> {
 
     fn ssz_fixed_len() -> usize {
         bit_len_in_bytes_len(N::to_usize())
-    }
-}
-
-impl<N: Unsigned + Clone> Serialize for Bitfield<length::Variable<N>> {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&serde_hex::encode(self.as_ssz_bytes()))
-    }
-}
-
-impl<'de, N: Unsigned + Clone> Deserialize<'de> for Bitfield<length::Variable<N>> {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        let bytes = deserializer.deserialize_str(serde_hex::PrefixedHexVisitor)?;
-        Self::from_ssz_bytes(&bytes)
-            .map_err(|e| serde::de::Error::custom(format!("BitList {:?}", e)))
-    }
-}
-
-impl<N: Unsigned + Clone> Serialize for Bitfield<length::Fixed<N>> {
-    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
-        serializer.serialize_str(&serde_hex::encode(self.as_ssz_bytes()))
-    }
-}
-
-impl<'de, N: Unsigned + Clone> Deserialize<'de> for Bitfield<length::Fixed<N>> {
-    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        let bytes = deserializer.deserialize_str(serde_hex::PrefixedHexVisitor)?;
-        Self::from_ssz_bytes(&bytes)
-            .map_err(|e| serde::de::Error::custom(format!("BitVector {:?}", e)))
     }
 }
 
@@ -344,7 +309,7 @@ mod tests {
         }
     }
 
-    fn assert_round_trip<T: Encode + Decode + PartialEq + std::fmt::Debug>(t: &T) {
+    fn assert_round_trip<T: SszEncode + SszDecode + PartialEq + std::fmt::Debug>(t: &T) {
         assert_eq!(&T::from_ssz_bytes(&t.as_ssz_bytes()).expect("Test"), t);
     }
 }

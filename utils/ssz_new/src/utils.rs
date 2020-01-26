@@ -1,6 +1,6 @@
 use crate::*;
 
-pub fn ssz_encode<T: Encode>(val: &T) -> Vec<u8> {
+pub fn ssz_encode<T: SszEncode>(val: &T) -> Vec<u8> {
     val.as_ssz_bytes()
 }
 
@@ -50,24 +50,24 @@ pub fn encode_items_from_parts(
     }
 }
 
-pub fn decode_offset(bytes: &[u8]) -> Result<usize, DecodeError> {
+pub fn decode_offset(bytes: &[u8]) -> Result<usize, SszDecodeError> {
     if bytes.len() == BYTES_PER_LENGTH_OFFSET {
         let mut arr = [0; BYTES_PER_LENGTH_OFFSET];
         arr.clone_from_slice(bytes);
         Ok(u32::from_le_bytes(arr) as usize)
     } else {
-        Err(DecodeError::InvalidByteLength {
+        Err(SszDecodeError::InvalidByteLength {
             len: bytes.len(),
             expected: BYTES_PER_LENGTH_OFFSET,
         })
     }
 }
 
-pub fn decode_variable_sized_items<T: Decode>(bytes: &[u8]) -> Result<Vec<T>, DecodeError> {
+pub fn decode_variable_sized_items<T: SszDecode>(bytes: &[u8]) -> Result<Vec<T>, SszDecodeError> {
     let first_offset_bytes = bytes.get(0..BYTES_PER_LENGTH_OFFSET);
     let first_offset = match first_offset_bytes {
         Some(bytes) => decode_offset(bytes),
-        _ => Err(DecodeError::InvalidByteLength {
+        _ => Err(SszDecodeError::InvalidByteLength {
             len: bytes.len(),
             expected: BYTES_PER_LENGTH_OFFSET,
         }),
@@ -83,7 +83,7 @@ pub fn decode_variable_sized_items<T: Decode>(bytes: &[u8]) -> Result<Vec<T>, De
         } else {
             match bytes.get(i * BYTES_PER_LENGTH_OFFSET..(i + 1) * BYTES_PER_LENGTH_OFFSET) {
                 Some(bytes) => decode_offset(bytes),
-                _ => Err(DecodeError::InvalidByteLength {
+                _ => Err(SszDecodeError::InvalidByteLength {
                     len: bytes.len(),
                     expected: (i + 1) * BYTES_PER_LENGTH_OFFSET,
                 }),
@@ -92,7 +92,7 @@ pub fn decode_variable_sized_items<T: Decode>(bytes: &[u8]) -> Result<Vec<T>, De
 
         let element = match bytes.get(previous_offset..next_offset) {
             Some(bytes) => T::from_ssz_bytes(bytes),
-            _ => Err(DecodeError::InvalidByteLength {
+            _ => Err(SszDecodeError::InvalidByteLength {
                 len: bytes.len(),
                 expected: next_offset,
             }),
@@ -123,14 +123,14 @@ impl<'a> Decoder<'a> {
         }
     }
 
-    pub fn next_type<T: Decode>(&mut self) -> Result<(), DecodeError> {
+    pub fn next_type<T: SszDecode>(&mut self) -> Result<(), SszDecodeError> {
         if !T::is_ssz_fixed_len() {
             let offset = match self
                 .bytes
                 .get(self.registration_offset..self.registration_offset + BYTES_PER_LENGTH_OFFSET)
             {
                 Some(bytes) => decode_offset(bytes),
-                _ => Err(DecodeError::InvalidByteLength {
+                _ => Err(SszDecodeError::InvalidByteLength {
                     len: self.bytes.len(),
                     expected: self.registration_offset + BYTES_PER_LENGTH_OFFSET,
                 }),
@@ -141,14 +141,14 @@ impl<'a> Decoder<'a> {
         Ok(())
     }
 
-    pub fn deserialize_next<T: Decode>(&mut self) -> Result<T, DecodeError> {
+    pub fn deserialize_next<T: SszDecode>(&mut self) -> Result<T, SszDecodeError> {
         let result = if T::is_ssz_fixed_len() {
             match self
                 .bytes
                 .get(self.fixed_part_offset..self.fixed_part_offset + T::ssz_fixed_len())
             {
                 Some(bytes) => T::from_ssz_bytes(bytes),
-                _ => Err(DecodeError::InvalidByteLength {
+                _ => Err(SszDecodeError::InvalidByteLength {
                     len: self.bytes.len(),
                     expected: self.fixed_part_offset + T::ssz_fixed_len(),
                 }),
@@ -156,7 +156,7 @@ impl<'a> Decoder<'a> {
         } else {
             let current_offset = match self.offsets.get(self.current_offset_index) {
                 Some(offset) => Ok(*offset),
-                _ => Err(DecodeError::InvalidByteLength {
+                _ => Err(SszDecodeError::InvalidByteLength {
                     len: self.bytes.len(),
                     expected: self.current_offset_index,
                 }),
@@ -169,7 +169,7 @@ impl<'a> Decoder<'a> {
 
             match self.bytes.get(current_offset..next_offset) {
                 Some(bytes) => T::from_ssz_bytes(bytes),
-                _ => Err(DecodeError::InvalidByteLength {
+                _ => Err(SszDecodeError::InvalidByteLength {
                     len: self.bytes.len(),
                     expected: next_offset,
                 }),

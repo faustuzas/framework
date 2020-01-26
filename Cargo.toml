@@ -10,7 +10,7 @@ members = [
     'helper_functions/helper_functions_2',
     'utils/ssz_new',
     'utils/ssz_new_derive',
-    'utils/ssz_new_types'
+    'utils/bls'
 ]
 
 [profile.release]
@@ -20,12 +20,7 @@ overflow-checks = true
 [patch.crates-io]
 tree_hash = { git = "https://github.com/sigp/lighthouse" }
 tree_hash_derive = { git = "https://github.com/sigp/lighthouse" }
-eth2_ssz = { path = "./utils/ssz_new" }
-eth2_ssz_derive = { path = "./utils/ssz_new_derive" }
-eth2_ssz_types = { path = "./utils/ssz_new_types" }
+eth2_ssz = { git = "https://github.com/sigp/lighthouse" }
+eth2_ssz_derive = { git = "https://github.com/sigp/lighthouse" }
+eth2_ssz_types = { git = "https://github.com/sigp/lighthouse" }
 eth2_hashing = { git = "https://github.com/sigp/lighthouse" }
-
-[patch.'https://github.com/sigp/lighthouse']
-eth2_ssz = { path = "./utils/ssz_new" }
-eth2_ssz_derive = { path = "./utils/ssz_new_derive" }
-eth2_ssz_types = { path = "./utils/ssz_new_types" }

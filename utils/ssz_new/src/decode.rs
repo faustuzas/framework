@@ -6,16 +6,16 @@ use ethereum_types::{H256, U128, U256};
 
 macro_rules! decode_for_uintn {
     ( $(($type_ident: ty, $size_in_bits: expr)),* ) => { $(
-        impl Decode for $type_ident {
-            fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
-                if bytes.len() == <Self as Decode>::ssz_fixed_len() {
+        impl SszDecode for $type_ident {
+            fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, SszDecodeError> {
+                if bytes.len() == <Self as SszDecode>::ssz_fixed_len() {
                     let mut arr = [0; $size_in_bits / 8];
                     arr.clone_from_slice(bytes);
                     Ok(<$type_ident>::from_le_bytes(arr))
                 } else {
-                    Err(DecodeError::InvalidByteLength {
+                    Err(SszDecodeError::InvalidByteLength {
                         len: bytes.len(),
-                        expected: <Self as Decode>::ssz_fixed_len(),
+                        expected: <Self as SszDecode>::ssz_fixed_len(),
                     })
                 }
             }
@@ -41,17 +41,17 @@ decode_for_uintn!(
 
 macro_rules! decode_for_u8_array {
     ($size: expr) => {
-        impl Decode for [u8; $size] {
-            fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
-                if bytes.len() == <Self as Decode>::ssz_fixed_len() {
+        impl SszDecode for [u8; $size] {
+            fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, SszDecodeError> {
+                if bytes.len() == <Self as SszDecode>::ssz_fixed_len() {
                     let mut array: [u8; $size] = [0; $size];
                     array.copy_from_slice(&bytes[..]);
 
                     Ok(array)
                 } else {
-                    Err(DecodeError::InvalidByteLength {
+                    Err(SszDecodeError::InvalidByteLength {
                         len: bytes.len(),
-                        expected: <Self as Decode>::ssz_fixed_len(),
+                        expected: <Self as SszDecode>::ssz_fixed_len(),
                     })
                 }
             }
@@ -70,21 +70,21 @@ macro_rules! decode_for_u8_array {
 decode_for_u8_array!(4);
 decode_for_u8_array!(32);
 
-impl Decode for bool {
-    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
-        if bytes.len() == <Self as Decode>::ssz_fixed_len() {
+impl SszDecode for bool {
+    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, SszDecodeError> {
+        if bytes.len() == <Self as SszDecode>::ssz_fixed_len() {
             match bytes[0] {
                 0 => Ok(false),
                 1 => Ok(true),
-                _ => Err(DecodeError::BytesInvalid(format!(
+                _ => Err(SszDecodeError::BytesInvalid(format!(
                     "Cannot deserialize bool from {}",
                     bytes[0]
                 ))),
             }
         } else {
-            Err(DecodeError::InvalidByteLength {
+            Err(SszDecodeError::InvalidByteLength {
                 len: bytes.len(),
-                expected: <Self as Decode>::ssz_fixed_len(),
+                expected: <Self as SszDecode>::ssz_fixed_len(),
             })
         }
     }
@@ -98,10 +98,10 @@ impl Decode for bool {
     }
 }
 
-impl<T: Decode> Decode for Vec<T> {
-    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
+impl<T: SszDecode> SszDecode for Vec<T> {
+    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, SszDecodeError> {
         let bytes_len = bytes.len();
-        let fixed_len = <T as Decode>::ssz_fixed_len();
+        let fixed_len = <T as SszDecode>::ssz_fixed_len();
 
         if bytes.is_empty() {
             Ok(vec![])
@@ -115,9 +115,9 @@ impl<T: Decode> Decode for Vec<T> {
 
             Ok(result)
         } else {
-            Err(DecodeError::InvalidByteLength {
+            Err(SszDecodeError::InvalidByteLength {
                 len: bytes_len,
-                expected: bytes.len() / <T as Decode>::ssz_fixed_len() + 1,
+                expected: bytes.len() / <T as SszDecode>::ssz_fixed_len() + 1,
             })
         }
     }
@@ -127,12 +127,12 @@ impl<T: Decode> Decode for Vec<T> {
     }
 }
 
-impl Decode for NonZeroUsize {
-    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
+impl SszDecode for NonZeroUsize {
+    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, SszDecodeError> {
         let val = usize::from_ssz_bytes(bytes)?;
 
         if val == 0 {
-            Err(DecodeError::BytesInvalid(
+            Err(SszDecodeError::BytesInvalid(
                 "NonZeroUsize cannot be zero.".to_string(),
             ))
         } else {
@@ -141,18 +141,18 @@ impl Decode for NonZeroUsize {
     }
 
     fn is_ssz_fixed_len() -> bool {
-        <usize as Decode>::is_ssz_fixed_len()
+        <usize as SszDecode>::is_ssz_fixed_len()
     }
 
     fn ssz_fixed_len() -> usize {
-        <usize as Decode>::ssz_fixed_len()
+        <usize as SszDecode>::ssz_fixed_len()
     }
 }
 
-impl<T: Decode> Decode for Option<T> {
-    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
+impl<T: SszDecode> SszDecode for Option<T> {
+    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, SszDecodeError> {
         if bytes.len() < BYTES_PER_LENGTH_OFFSET {
-            return Err(DecodeError::InvalidByteLength {
+            return Err(SszDecodeError::InvalidByteLength {
                 len: bytes.len(),
                 expected: BYTES_PER_LENGTH_OFFSET,
             });
@@ -166,7 +166,7 @@ impl<T: Decode> Decode for Option<T> {
         } else if index == 1 {
             Ok(Some(T::from_ssz_bytes(value_bytes)?))
         } else {
-            Err(DecodeError::BytesInvalid(format!(
+            Err(SszDecodeError::BytesInvalid(format!(
                 "{} is not a valid union index for Option<T>",
                 index
             )))
@@ -178,15 +178,15 @@ impl<T: Decode> Decode for Option<T> {
     }
 }
 
-impl Decode for H256 {
-    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
+impl SszDecode for H256 {
+    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, SszDecodeError> {
         let len = bytes.len();
-        let expected = <Self as Decode>::ssz_fixed_len();
+        let expected = <Self as SszDecode>::ssz_fixed_len();
 
         if len == expected {
             Ok(H256::from_slice(bytes))
         } else {
-            Err(DecodeError::InvalidByteLength { len, expected })
+            Err(SszDecodeError::InvalidByteLength { len, expected })
         }
     }
 
@@ -199,15 +199,15 @@ impl Decode for H256 {
     }
 }
 
-impl Decode for U256 {
-    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
+impl SszDecode for U256 {
+    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, SszDecodeError> {
         let len = bytes.len();
-        let expected = <Self as Decode>::ssz_fixed_len();
+        let expected = <Self as SszDecode>::ssz_fixed_len();
 
         if len == expected {
             Ok(U256::from_little_endian(bytes))
         } else {
-            Err(DecodeError::InvalidByteLength { len, expected })
+            Err(SszDecodeError::InvalidByteLength { len, expected })
         }
     }
 
@@ -220,15 +220,15 @@ impl Decode for U256 {
     }
 }
 
-impl Decode for U128 {
-    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
+impl SszDecode for U128 {
+    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, SszDecodeError> {
         let len = bytes.len();
-        let expected = <Self as Decode>::ssz_fixed_len();
+        let expected = <Self as SszDecode>::ssz_fixed_len();
 
         if len == expected {
             Ok(U128::from_little_endian(bytes))
         } else {
-            Err(DecodeError::InvalidByteLength { len, expected })
+            Err(SszDecodeError::InvalidByteLength { len, expected })
         }
     }
 
@@ -258,7 +258,7 @@ mod tests {
         assert!(u8::from_ssz_bytes(&[]).is_err());
         assert!(u8::from_ssz_bytes(&[0; 2]).is_err());
 
-        assert_eq!(<u8 as Decode>::ssz_fixed_len(), 1);
+        assert_eq!(<u8 as SszDecode>::ssz_fixed_len(), 1);
     }
 
     #[test]
@@ -288,7 +288,7 @@ mod tests {
         assert!(u16::from_ssz_bytes(&[0; 1]).is_err());
         assert!(u16::from_ssz_bytes(&[0; 3]).is_err());
 
-        assert_eq!(<u16 as Decode>::ssz_fixed_len(), 2);
+        assert_eq!(<u16 as SszDecode>::ssz_fixed_len(), 2);
     }
 
     #[test]
@@ -323,7 +323,7 @@ mod tests {
         assert!(u32::from_ssz_bytes(&[0; 2]).is_err());
         assert!(u32::from_ssz_bytes(&[0; 5]).is_err());
 
-        assert_eq!(<u32 as Decode>::ssz_fixed_len(), 4);
+        assert_eq!(<u32 as SszDecode>::ssz_fixed_len(), 4);
     }
 
     #[test]
@@ -408,7 +408,7 @@ mod tests {
         assert!(u64::from_ssz_bytes(&[0; 2]).is_err());
         assert!(u64::from_ssz_bytes(&[0; 9]).is_err());
 
-        assert_eq!(<u64 as Decode>::ssz_fixed_len(), 8);
+        assert_eq!(<u64 as SszDecode>::ssz_fixed_len(), 8);
     }
 
     #[test]
@@ -428,7 +428,7 @@ mod tests {
         assert!(usize::from_ssz_bytes(&[0; 2]).is_err());
         assert!(usize::from_ssz_bytes(&[0; 9]).is_err());
 
-        assert_eq!(<usize as Decode>::ssz_fixed_len(), usize_size)
+        assert_eq!(<usize as SszDecode>::ssz_fixed_len(), usize_size)
     }
 
     #[test]
@@ -448,8 +448,8 @@ mod tests {
         assert!(NonZeroUsize::from_ssz_bytes(&[0; 2]).is_err());
         assert!(NonZeroUsize::from_ssz_bytes(&[0; 9]).is_err());
 
-        assert_eq!(<NonZeroUsize as Decode>::ssz_fixed_len(), usize_size);
-        assert!(<NonZeroUsize as Decode>::is_ssz_fixed_len());
+        assert_eq!(<NonZeroUsize as SszDecode>::ssz_fixed_len(), usize_size);
+        assert!(<NonZeroUsize as SszDecode>::is_ssz_fixed_len());
     }
 
     #[test]
@@ -468,11 +468,11 @@ mod tests {
         assert!(<[u8; 4]>::from_ssz_bytes(&[0; 5]).is_err());
         assert!(<[u8; 32]>::from_ssz_bytes(&[0; 34]).is_err());
 
-        assert_eq!(<[u8; 4] as Decode>::ssz_fixed_len(), 4);
-        assert_eq!(<[u8; 32] as Decode>::ssz_fixed_len(), 32);
+        assert_eq!(<[u8; 4] as SszDecode>::ssz_fixed_len(), 4);
+        assert_eq!(<[u8; 32] as SszDecode>::ssz_fixed_len(), 32);
 
-        assert!(<[u8; 4] as Decode>::is_ssz_fixed_len());
-        assert!(<[u8; 32] as Decode>::is_ssz_fixed_len());
+        assert!(<[u8; 4] as SszDecode>::is_ssz_fixed_len());
+        assert!(<[u8; 32] as SszDecode>::is_ssz_fixed_len());
     }
 
     #[test]
@@ -483,8 +483,8 @@ mod tests {
         assert!(bool::from_ssz_bytes(&[2_u8]).is_err());
         assert!(bool::from_ssz_bytes(&[0_u8, 0_u8]).is_err());
 
-        assert!(<bool as Decode>::is_ssz_fixed_len());
-        assert_eq!(<bool as Decode>::ssz_fixed_len(), 1);
+        assert!(<bool as SszDecode>::is_ssz_fixed_len());
+        assert_eq!(<bool as SszDecode>::ssz_fixed_len(), 1);
     }
 
     #[test]
@@ -501,7 +501,7 @@ mod tests {
         assert!(<Option<u16>>::from_ssz_bytes(&[2, 0, 0, 0]).is_err());
         assert!(<Option<u16>>::from_ssz_bytes(&[1, 0, 0, 0]).is_err());
 
-        assert!(!<Option<u16> as Decode>::is_ssz_fixed_len());
+        assert!(!<Option<u16> as SszDecode>::is_ssz_fixed_len());
     }
 
     #[test]
@@ -511,8 +511,8 @@ mod tests {
         assert!(H256::from_ssz_bytes(&[0; 31]).is_err());
         assert!(H256::from_ssz_bytes(&[0; 33]).is_err());
 
-        assert!(<H256 as Decode>::is_ssz_fixed_len());
-        assert_eq!(<H256 as Decode>::ssz_fixed_len(), 32)
+        assert!(<H256 as SszDecode>::is_ssz_fixed_len());
+        assert_eq!(<H256 as SszDecode>::ssz_fixed_len(), 32)
     }
 
     #[test]
@@ -525,8 +525,8 @@ mod tests {
         assert!(U256::from_ssz_bytes(&[0; 31]).is_err());
         assert!(U256::from_ssz_bytes(&[0; 33]).is_err());
 
-        assert!(<U256 as Decode>::is_ssz_fixed_len());
-        assert_eq!(<U256 as Decode>::ssz_fixed_len(), 32)
+        assert!(<U256 as SszDecode>::is_ssz_fixed_len());
+        assert_eq!(<U256 as SszDecode>::ssz_fixed_len(), 32)
     }
 
     #[test]
@@ -539,8 +539,8 @@ mod tests {
         assert!(U128::from_ssz_bytes(&[0; 15]).is_err());
         assert!(U128::from_ssz_bytes(&[0; 17]).is_err());
 
-        assert!(<U128 as Decode>::is_ssz_fixed_len());
-        assert_eq!(<U128 as Decode>::ssz_fixed_len(), 16)
+        assert!(<U128 as SszDecode>::is_ssz_fixed_len());
+        assert_eq!(<U128 as SszDecode>::ssz_fixed_len(), 16)
     }
 
     #[test]
@@ -548,8 +548,7 @@ mod tests {
         assert!(<Vec<bool>>::from_ssz_bytes(&[0, 1, 2]).is_err());
         assert!(<Vec<u32>>::from_ssz_bytes(&[0, 1, 2, 4, 5]).is_err());
 
-        assert!(!<Vec<u32> as Decode>::is_ssz_fixed_len());
-        assert_eq!(<U256 as Decode>::ssz_fixed_len(), BYTES_PER_LENGTH_OFFSET);
+        assert!(!<Vec<u32> as SszDecode>::is_ssz_fixed_len());
     }
 
     #[test]

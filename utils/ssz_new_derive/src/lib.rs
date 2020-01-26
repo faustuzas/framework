@@ -6,7 +6,7 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{Data, DeriveInput, Field, Fields};
 
-#[proc_macro_derive(Encode, attributes(ssz))]
+#[proc_macro_derive(SszEncode, attributes(ssz))]
 pub fn encode_derive(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input).expect("AST should be correct");
 
@@ -19,7 +19,6 @@ pub fn encode_derive(input: TokenStream) -> TokenStream {
     let mut fixed_parts_pushes = Vec::with_capacity(fields_count);
     let mut variable_parts_pushes = Vec::with_capacity(fields_count);
     let mut is_fixed_lens = Vec::with_capacity(fields_count);
-    let mut ssz_bytes_lens = Vec::with_capacity(fields_count);
     let mut ssz_fixed_lens = Vec::with_capacity(fields_count);
     for field in fields {
         let field_type = &field.ty;
@@ -29,7 +28,7 @@ pub fn encode_derive(input: TokenStream) -> TokenStream {
         };
 
         fixed_parts_pushes.push(quote! {
-            fixed_parts.push(if <#field_type as ssz::Encode>::is_ssz_fixed_len() {
+            fixed_parts.push(if <#field_type as ssz_new::SszEncode>::is_ssz_fixed_len() {
                 Some(self.#field_name.as_ssz_bytes())
             } else {
                 None
@@ -37,7 +36,7 @@ pub fn encode_derive(input: TokenStream) -> TokenStream {
         });
 
         variable_parts_pushes.push(quote! {
-            variable_parts.push(if <#field_type as ssz::Encode>::is_ssz_fixed_len() {
+            variable_parts.push(if <#field_type as ssz_new::SszEncode>::is_ssz_fixed_len() {
                 vec![]
             } else {
                 self.#field_name.as_ssz_bytes()
@@ -45,20 +44,16 @@ pub fn encode_derive(input: TokenStream) -> TokenStream {
         });
 
         is_fixed_lens.push(quote! {
-            <#field_type as ssz::Encode>::is_ssz_fixed_len()
-        });
-
-        ssz_bytes_lens.push(quote! {
-            self.#field_name.ssz_bytes_len()
+            <#field_type as ssz_new::SszEncode>::is_ssz_fixed_len()
         });
 
         ssz_fixed_lens.push(quote! {
-            <#field_type as ssz::Encode>::ssz_fixed_len()
+            <#field_type as ssz_new::SszEncode>::ssz_fixed_len()
         });
     }
 
     let generated = quote! {
-        impl #impl_generics ssz::Encode for #name #ty_generics #where_clause {
+        impl #impl_generics ssz_new::SszEncode for #name #ty_generics #where_clause {
             fn ssz_append(&self, buf: &mut Vec<u8>) {
                 let fields_count = #fields_count;
 
@@ -72,7 +67,7 @@ pub fn encode_derive(input: TokenStream) -> TokenStream {
                     #variable_parts_pushes
                 )*
 
-                ssz::encode_items_from_parts(buf, &fixed_parts, &variable_parts);
+                ssz_new::encode_items_from_parts(buf, &fixed_parts, &variable_parts);
             }
 
             fn is_ssz_fixed_len() -> bool {
@@ -82,25 +77,14 @@ pub fn encode_derive(input: TokenStream) -> TokenStream {
                     true
             }
 
-            fn ssz_bytes_len(&self) -> usize {
-                if <Self as ssz::Encode>::is_ssz_fixed_len() {
-                    <Self as ssz::Encode>::ssz_fixed_len()
-                } else {
-                    #(
-                        #ssz_bytes_lens +
-                    )*
-                        ssz::BYTES_PER_LENGTH_OFFSET
-                }
-            }
-
             fn ssz_fixed_len() -> usize {
-                if <Self as ssz::Encode>::is_ssz_fixed_len() {
+                if <Self as ssz_new::SszEncode>::is_ssz_fixed_len() {
                     #(
                         #ssz_fixed_lens +
                     )*
                         0
                 } else {
-                    ssz::BYTES_PER_LENGTH_OFFSET
+                    ssz_new::BYTES_PER_LENGTH_OFFSET
                 }
             }
         }
@@ -109,7 +93,7 @@ pub fn encode_derive(input: TokenStream) -> TokenStream {
     generated.into()
 }
 
-#[proc_macro_derive(Decode, attributes(ssz))]
+#[proc_macro_derive(SszDecode, attributes(ssz))]
 pub fn decode_derive(input: TokenStream) -> TokenStream {
     let ast: DeriveInput = syn::parse(input).expect("AST should be correct");
 
@@ -144,19 +128,19 @@ pub fn decode_derive(input: TokenStream) -> TokenStream {
             });
 
             is_fixed_lens.push(quote! {
-                <#field_type as ssz::Decode>::is_ssz_fixed_len()
+                <#field_type as ssz_new::SszDecode>::is_ssz_fixed_len()
             });
 
             fixed_lengths.push(quote! {
-               <#field_type as ssz::Decode>::ssz_fixed_len()
+               <#field_type as ssz_new::SszDecode>::ssz_fixed_len()
             });
         }
     }
 
     let generated = quote! {
-        impl #impl_generics ssz::Decode for #name #ty_generics #where_clause {
-            fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, ssz::DecodeError> {
-                let mut decoder = ssz::Decoder::for_bytes(bytes);
+        impl #impl_generics ssz_new::SszDecode for #name #ty_generics #where_clause {
+            fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, ssz_new::SszDecodeError> {
+                let mut decoder = ssz_new::Decoder::for_bytes(bytes);
 
                 #(
                     #next_types;

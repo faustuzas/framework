@@ -1,26 +1,26 @@
-use ssz::{Decode, Encode};
-use ssz_derive::{Decode, Encode};
+use ssz_new::{SszDecode, SszEncode};
+use ssz_new_derive::{SszDecode, SszEncode};
 
-#[derive(Encode, Decode, PartialEq, Debug)]
+#[derive(SszEncode, SszDecode, PartialEq, Debug)]
 struct Fixed {
     a: u16,
     b: bool,
 }
 
-#[derive(Encode, Decode, PartialEq, Debug)]
+#[derive(SszEncode, SszDecode, PartialEq, Debug)]
 struct Variable {
     a: u16,
     b: Vec<u8>,
     c: bool,
 }
 
-#[derive(Encode, Decode, PartialEq, Debug)]
+#[derive(SszEncode, SszDecode, PartialEq, Debug)]
 struct Nested {
     fixed: Fixed,
     variable: Variable,
 }
 
-#[derive(Encode, Decode, PartialEq, Debug)]
+#[derive(SszEncode, SszDecode, PartialEq, Debug)]
 struct Skippable {
     stay_1: [u8; 4],
 
@@ -40,9 +40,9 @@ mod serialize_derive {
 
     #[test]
     fn is_fixed_size() {
-        assert!(!<Nested as Encode>::is_ssz_fixed_len());
-        assert!(!<Variable as Encode>::is_ssz_fixed_len());
-        assert!(<Fixed as Encode>::is_ssz_fixed_len());
+        assert!(!<Nested as SszEncode>::is_ssz_fixed_len());
+        assert!(!<Variable as SszEncode>::is_ssz_fixed_len());
+        assert!(<Fixed as SszEncode>::is_ssz_fixed_len());
     }
 
     #[test]

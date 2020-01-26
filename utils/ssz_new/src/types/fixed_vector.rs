@@ -1,7 +1,6 @@
 use super::*;
-use ssz::*;
 
-impl<T: Encode, N: Unsigned> Encode for FixedVector<T, N> {
+impl<T: SszEncode, N: Unsigned> SszEncode for FixedVector<T, N> {
     fn ssz_append(&self, buf: &mut Vec<u8>) {
         if T::is_ssz_fixed_len() {
             for element in self.iter() {
@@ -35,11 +34,11 @@ impl<T: Encode, N: Unsigned> Encode for FixedVector<T, N> {
     }
 
     fn is_ssz_fixed_len() -> bool {
-        <T as Encode>::is_ssz_fixed_len()
+        <T as SszEncode>::is_ssz_fixed_len()
     }
 
     fn ssz_fixed_len() -> usize {
-        if <Self as Encode>::is_ssz_fixed_len() {
+        if <Self as SszEncode>::is_ssz_fixed_len() {
             N::to_usize() * T::ssz_fixed_len()
         } else {
             BYTES_PER_LENGTH_OFFSET
@@ -47,17 +46,17 @@ impl<T: Encode, N: Unsigned> Encode for FixedVector<T, N> {
     }
 }
 
-impl<T: Decode + Default, N: Unsigned> Decode for FixedVector<T, N> {
-    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
+impl<T: SszDecode + Default, N: Unsigned> SszDecode for FixedVector<T, N> {
+    fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, SszDecodeError> {
         if bytes.is_empty() {
-            return Err(DecodeError::InvalidByteLength {
+            return Err(SszDecodeError::InvalidByteLength {
                 len: 0,
                 expected: T::ssz_fixed_len(),
             });
         }
 
         let items_count = N::to_usize();
-        if <T as Decode>::is_ssz_fixed_len() {
+        if <T as SszDecode>::is_ssz_fixed_len() {
             if bytes.len() % items_count == 0 {
                 let mut result = Vec::with_capacity(items_count);
                 for chunk in bytes.chunks(T::ssz_fixed_len()) {
@@ -66,7 +65,7 @@ impl<T: Decode + Default, N: Unsigned> Decode for FixedVector<T, N> {
 
                 Ok(result.into())
             } else {
-                Err(DecodeError::InvalidByteLength {
+                Err(SszDecodeError::InvalidByteLength {
                     len: bytes.len(),
                     expected: bytes.len() / T::ssz_fixed_len() + 1,
                 })
@@ -77,7 +76,7 @@ impl<T: Decode + Default, N: Unsigned> Decode for FixedVector<T, N> {
             if items_count == items.len() {
                 Ok(items.into())
             } else {
-                Err(DecodeError::BytesInvalid(format!(
+                Err(SszDecodeError::BytesInvalid(format!(
                     "Cannot parse FixedVector[{}] from bytes",
                     items_count
                 )))
@@ -86,11 +85,11 @@ impl<T: Decode + Default, N: Unsigned> Decode for FixedVector<T, N> {
     }
 
     fn is_ssz_fixed_len() -> bool {
-        <T as Decode>::is_ssz_fixed_len()
+        <T as SszDecode>::is_ssz_fixed_len()
     }
 
     fn ssz_fixed_len() -> usize {
-        if <Self as Decode>::is_ssz_fixed_len() {
+        if <Self as SszDecode>::is_ssz_fixed_len() {
             N::to_usize() * T::ssz_fixed_len()
         } else {
             BYTES_PER_LENGTH_OFFSET
@@ -101,7 +100,6 @@ impl<T: Decode + Default, N: Unsigned> Decode for FixedVector<T, N> {
 #[cfg(test)]
 mod test {
     use super::*;
-    use Encode;
 
     mod serialize {
         use super::*;
@@ -137,28 +135,28 @@ mod test {
     mod deserialize {
         use super::*;
         use typenum::{U3, U5, U6};
-        use Decode;
+        use SszDecode;
 
         #[test]
         fn fixed() {
-            let vec = <FixedVector<u16, U3> as Decode>::from_ssz_bytes(&[5, 0, 2, 0, 3, 0])
+            let vec = <FixedVector<u16, U3> as SszDecode>::from_ssz_bytes(&[5, 0, 2, 0, 3, 0])
                 .expect("Test");
             assert_eq!(vec.to_vec(), vec![5, 2, 3]);
             let vec =
-                <FixedVector<u8, U6> as Decode>::from_ssz_bytes(&[5, 0, 2, 0, 3, 0]).expect("Test");
+                <FixedVector<u8, U6> as SszDecode>::from_ssz_bytes(&[5, 0, 2, 0, 3, 0]).expect("Test");
             assert_eq!(vec.to_vec(), vec![5, 0, 2, 0, 3, 0]);
         }
 
         #[test]
         fn variable() {
-            let vec = <FixedVector<Vec<u8>, U3> as Decode>::from_ssz_bytes(&[
+            let vec = <FixedVector<Vec<u8>, U3> as SszDecode>::from_ssz_bytes(&[
                 12, 0, 0, 0, 14, 0, 0, 0, 14, 0, 0, 0, 1, 2, 3,
             ])
             .expect("Test");
 
             assert_eq!(vec.to_vec(), vec![vec![1, 2], vec![], vec![3]]);
 
-            let vec = <FixedVector<Vec<u8>, U5> as Decode>::from_ssz_bytes(&[
+            let vec = <FixedVector<Vec<u8>, U5> as SszDecode>::from_ssz_bytes(&[
                 20, 0, 0, 0, 22, 0, 0, 0, 22, 0, 0, 0, 25, 0, 0, 0, 25, 0, 0, 0, 1, 2, 3, 4, 5,
             ])
             .expect("Test");
@@ -173,10 +171,10 @@ mod test {
 
             #[test]
             fn wrong_size() {
-                let result = <FixedVector<u8, U6> as Decode>::from_ssz_bytes(&[1, 2, 3, 4]);
+                let result = <FixedVector<u8, U6> as SszDecode>::from_ssz_bytes(&[1, 2, 3, 4]);
                 assert!(result.is_err());
 
-                let result = <FixedVector<Vec<u8>, U6> as Decode>::from_ssz_bytes(&[
+                let result = <FixedVector<Vec<u8>, U6> as SszDecode>::from_ssz_bytes(&[
                     12, 0, 0, 0, 14, 0, 0, 0, 14, 0, 0, 0, 1, 2, 3,
                 ]);
                 assert!(result.is_err());
