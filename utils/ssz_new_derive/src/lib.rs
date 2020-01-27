@@ -54,7 +54,7 @@ pub fn encode_derive(input: TokenStream) -> TokenStream {
 
     let generated = quote! {
         impl #impl_generics ssz_new::SszEncode for #name #ty_generics #where_clause {
-            fn ssz_append(&self, buf: &mut Vec<u8>) {
+            fn as_ssz_bytes(&self) -> Vec<u8> {
                 let fields_count = #fields_count;
 
                 let mut fixed_parts = Vec::with_capacity(fields_count);
@@ -67,7 +67,7 @@ pub fn encode_derive(input: TokenStream) -> TokenStream {
                     #variable_parts_pushes
                 )*
 
-                ssz_new::encode_items_from_parts(buf, &fixed_parts, &variable_parts);
+                ssz_new::encode_items_from_parts(&fixed_parts, &variable_parts)
             }
 
             fn is_ssz_fixed_len() -> bool {
@@ -75,17 +75,6 @@ pub fn encode_derive(input: TokenStream) -> TokenStream {
                     #is_fixed_lens &&
                 )*
                     true
-            }
-
-            fn ssz_fixed_len() -> usize {
-                if <Self as ssz_new::SszEncode>::is_ssz_fixed_len() {
-                    #(
-                        #ssz_fixed_lens +
-                    )*
-                        0
-                } else {
-                    ssz_new::BYTES_PER_LENGTH_OFFSET
-                }
             }
         }
     };

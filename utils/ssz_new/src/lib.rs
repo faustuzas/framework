@@ -11,21 +11,9 @@ pub use utils::{
 pub const BYTES_PER_LENGTH_OFFSET: usize = 4;
 
 pub trait SszEncode {
-    fn ssz_append(&self, buf: &mut Vec<u8>);
+    fn as_ssz_bytes(&self) -> Vec<u8>;
 
     fn is_ssz_fixed_len() -> bool;
-
-    fn ssz_fixed_len() -> usize {
-        BYTES_PER_LENGTH_OFFSET
-    }
-
-    fn as_ssz_bytes(&self) -> Vec<u8> {
-        let mut buf = vec![];
-
-        self.ssz_append(&mut buf);
-
-        buf
-    }
 }
 
 pub trait SszDecode: Sized {

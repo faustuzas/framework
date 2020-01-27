@@ -8,16 +8,12 @@ use ethereum_types::{H256, U128, U256};
 macro_rules! encode_for_uintn {
     ( $(($type_ident: ty, $size_in_bits: expr)),* ) => { $(
         impl SszEncode for $type_ident {
-            fn ssz_append(&self, buf: &mut Vec<u8>) {
-                buf.extend_from_slice(&self.to_le_bytes());
+            fn as_ssz_bytes(&self) -> Vec<u8> {
+                self.to_le_bytes().to_vec()
             }
 
             fn is_ssz_fixed_len() -> bool {
                 true
-            }
-
-            fn ssz_fixed_len() -> usize {
-                 $size_in_bits / 8
             }
         }
     )* };
@@ -34,16 +30,12 @@ encode_for_uintn!(
 macro_rules! encode_for_u8_array {
     ($size: expr) => {
         impl SszEncode for [u8; $size] {
-            fn ssz_append(&self, buf: &mut Vec<u8>) {
-                buf.extend_from_slice(&self[..]);
+            fn as_ssz_bytes(&self) -> Vec<u8> {
+                self.to_vec()
             }
 
             fn is_ssz_fixed_len() -> bool {
                 true
-            }
-
-            fn ssz_fixed_len() -> usize {
-                $size
             }
         }
     };
@@ -53,22 +45,18 @@ encode_for_u8_array!(4);
 encode_for_u8_array!(32);
 
 impl SszEncode for bool {
-    fn ssz_append(&self, buf: &mut Vec<u8>) {
+    fn as_ssz_bytes(&self) -> Vec<u8> {
         let byte = if *self { 0b0000_0001 } else { 0b0000_0000 };
-        buf.push(byte);
+        vec![byte]
     }
 
     fn is_ssz_fixed_len() -> bool {
         true
     }
-
-    fn ssz_fixed_len() -> usize {
-        1
-    }
 }
 
 impl<T: SszEncode> SszEncode for Vec<T> {
-    fn ssz_append(&self, buf: &mut Vec<u8>) {
+    fn as_ssz_bytes(&self) -> Vec<u8> {
         let mut fixed_parts = Vec::with_capacity(self.len());
         for element in self {
             fixed_parts.push(if T::is_ssz_fixed_len() {
@@ -87,7 +75,7 @@ impl<T: SszEncode> SszEncode for Vec<T> {
             });
         }
 
-        encode_items_from_parts(buf, &fixed_parts, &variable_parts);
+        encode_items_from_parts(&fixed_parts, &variable_parts)
     }
 
     fn is_ssz_fixed_len() -> bool {
@@ -96,12 +84,14 @@ impl<T: SszEncode> SszEncode for Vec<T> {
 }
 
 impl<T: SszEncode> SszEncode for Option<T> {
-    fn ssz_append(&self, buf: &mut Vec<u8>) {
+    fn as_ssz_bytes(&self) -> Vec<u8> {
         match self {
-            None => buf.append(&mut encode_offset(0)),
+            None => encode_offset(0),
             Some(t) => {
-                buf.append(&mut encode_offset(1));
-                buf.append(&mut t.as_ssz_bytes());
+                let mut result = encode_offset(1);
+                result.append(&mut t.as_ssz_bytes());
+
+                result
             }
         }
     }
@@ -112,64 +102,46 @@ impl<T: SszEncode> SszEncode for Option<T> {
 }
 
 impl SszEncode for NonZeroUsize {
-    fn ssz_append(&self, buf: &mut Vec<u8>) {
-        buf.append(&mut self.get().as_ssz_bytes());
+    fn as_ssz_bytes(&self) -> Vec<u8> {
+        self.get().as_ssz_bytes()
     }
 
     fn is_ssz_fixed_len() -> bool {
         <usize as SszEncode>::is_ssz_fixed_len()
     }
-
-    fn ssz_fixed_len() -> usize {
-        <usize as SszEncode>::ssz_fixed_len()
-    }
 }
 
 impl SszEncode for H256 {
-    fn ssz_append(&self, buf: &mut Vec<u8>) {
-        buf.extend_from_slice(self.as_bytes())
+    fn as_ssz_bytes(&self) -> Vec<u8> {
+        self.as_bytes().to_vec()
     }
 
     fn is_ssz_fixed_len() -> bool {
         true
-    }
-
-    fn ssz_fixed_len() -> usize {
-        32
     }
 }
 
 impl SszEncode for U256 {
-    fn ssz_append(&self, buf: &mut Vec<u8>) {
-        let current_len = buf.len();
-
-        buf.resize(current_len + 32, 0);
-        self.to_little_endian(&mut buf[current_len..]);
+    fn as_ssz_bytes(&self) -> Vec<u8> {
+        let mut result = vec![0; 32];
+        self.to_little_endian(&mut result);
+        result
     }
 
     fn is_ssz_fixed_len() -> bool {
         true
-    }
-
-    fn ssz_fixed_len() -> usize {
-        32
     }
 }
 
 impl SszEncode for U128 {
-    fn ssz_append(&self, buf: &mut Vec<u8>) {
-        let current_len = buf.len();
-
-        buf.resize(current_len + 16, 0);
-        self.to_little_endian(&mut buf[current_len..]);
+    fn as_ssz_bytes(&self) -> Vec<u8> {
+        let mut result = vec![0; 16];
+        self.to_little_endian(&mut result);
+        result
     }
 
     fn is_ssz_fixed_len() -> bool {
         true
-    }
-
-    fn ssz_fixed_len() -> usize {
-        16
     }
 }
 
@@ -184,7 +156,6 @@ mod test {
         assert_eq!(1_u8.as_ssz_bytes(), vec![0b0000_0001]);
         assert_eq!(128_u8.as_ssz_bytes(), vec![0b1000_0000]);
 
-        assert_eq!(<u8 as SszEncode>::ssz_fixed_len(), 1);
         assert!(<u8 as SszEncode>::is_ssz_fixed_len());
     }
 
@@ -199,7 +170,6 @@ mod test {
         );
         assert_eq!(0x8000_u16.as_ssz_bytes(), vec![0b0000_0000, 0b1000_0000]);
 
-        assert_eq!(<u16 as SszEncode>::ssz_fixed_len(), 2);
         assert!(<u16 as SszEncode>::is_ssz_fixed_len());
     }
 
@@ -224,7 +194,6 @@ mod test {
             vec![0b0000_0000, 0b0000_0000, 0b0000_0000, 0b1000_0000]
         );
 
-        assert_eq!(<u32 as SszEncode>::ssz_fixed_len(), 4);
         assert!(<u32 as SszEncode>::is_ssz_fixed_len());
     }
 
@@ -298,7 +267,6 @@ mod test {
             ]
         );
 
-        assert_eq!(<u64 as SszEncode>::ssz_fixed_len(), 8);
         assert!(<u64 as SszEncode>::is_ssz_fixed_len());
     }
 
@@ -318,7 +286,6 @@ mod test {
 
         assert_eq!(usize::max_value().as_ssz_bytes(), vec![255; usize_size]);
 
-        assert_eq!(<usize as SszEncode>::ssz_fixed_len(), usize_size);
         assert!(<usize as SszEncode>::is_ssz_fixed_len());
     }
 
@@ -329,7 +296,6 @@ mod test {
         let nzusize = NonZeroUsize::new(usize::max_value()).expect("Test");
         assert_eq!(nzusize.as_ssz_bytes(), vec![255; usize_size]);
 
-        assert_eq!(<NonZeroUsize as SszEncode>::ssz_fixed_len(), usize_size);
         assert!(<NonZeroUsize as SszEncode>::is_ssz_fixed_len());
     }
 
@@ -338,7 +304,6 @@ mod test {
         assert_eq!(true.as_ssz_bytes(), vec![0b0000_0001]);
         assert_eq!(false.as_ssz_bytes(), vec![0b0000_0000]);
 
-        assert_eq!(<bool as SszEncode>::ssz_fixed_len(), 1);
         assert!(<bool as SszEncode>::is_ssz_fixed_len());
     }
 
@@ -413,11 +378,6 @@ mod test {
 
         let none: Option<u16> = None;
         assert_eq!(none.as_ssz_bytes(), vec![0, 0, 0, 0]);
-
-        assert_eq!(
-            <Option<u16> as SszEncode>::ssz_fixed_len(),
-            BYTES_PER_LENGTH_OFFSET
-        );
         assert!(!<Option<u16> as SszEncode>::is_ssz_fixed_len());
     }
 
@@ -425,9 +385,6 @@ mod test {
     fn u8_array() {
         assert_eq!([1; 4].as_ssz_bytes(), vec![1; 4]);
         assert_eq!([1; 32].as_ssz_bytes(), vec![1; 32]);
-
-        assert_eq!(<[u8; 4] as SszEncode>::ssz_fixed_len(), 4);
-        assert_eq!(<[u8; 32] as SszEncode>::ssz_fixed_len(), 32);
 
         assert!(<[u8; 4] as SszEncode>::is_ssz_fixed_len());
         assert!(<[u8; 32] as SszEncode>::is_ssz_fixed_len());
@@ -437,7 +394,6 @@ mod test {
     fn h256() {
         assert_eq!(H256::zero().as_ssz_bytes(), vec![0; 32]);
 
-        assert_eq!(<H256 as SszEncode>::ssz_fixed_len(), 32);
         assert!(<H256 as SszEncode>::is_ssz_fixed_len());
     }
 
@@ -446,7 +402,6 @@ mod test {
         let u = U256::from_dec_str("0").expect("Test");
         assert_eq!(u.as_ssz_bytes(), vec![0; 32]);
 
-        assert_eq!(<U256 as SszEncode>::ssz_fixed_len(), 32);
         assert!(<U256 as SszEncode>::is_ssz_fixed_len());
     }
 
@@ -455,7 +410,6 @@ mod test {
         let u = U128::from_dec_str("0").expect("Test");
         assert_eq!(u.as_ssz_bytes(), vec![0; 16]);
 
-        assert_eq!(<U128 as SszEncode>::ssz_fixed_len(), 16);
         assert!(<U128 as SszEncode>::is_ssz_fixed_len());
     }
 }

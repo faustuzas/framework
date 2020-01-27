@@ -9,10 +9,9 @@ pub fn encode_offset(offset: usize) -> Vec<u8> {
 }
 
 pub fn encode_items_from_parts(
-    buf: &mut Vec<u8>,
     fixed_parts: &[Option<Vec<u8>>],
     variable_parts: &[Vec<u8>],
-) {
+) -> Vec<u8> {
     let item_count = fixed_parts.len();
 
     let fixed_length: usize = fixed_parts
@@ -41,13 +40,19 @@ pub fn encode_items_from_parts(
         })
         .collect();
 
+    let variable_lengths_sum: usize = variable_lengths.iter().sum();
+    let total_bytes = fixed_length + variable_lengths_sum;
+    let mut result = Vec::with_capacity(total_bytes);
+
     for part in fixed_parts {
-        buf.extend(part);
+        result.extend(part);
     }
 
     for part in variable_parts {
-        buf.extend(part);
+        result.extend(part);
     }
+
+    result
 }
 
 pub fn decode_offset(bytes: &[u8]) -> Result<usize, SszDecodeError> {

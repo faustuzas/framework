@@ -1,8 +1,8 @@
 use super::*;
 
 impl<N: Unsigned + Clone> SszEncode for Bitfield<length::Variable<N>> {
-    fn ssz_append(&self, buf: &mut Vec<u8>) {
-        buf.append(&mut self.clone().into_bytes())
+    fn as_ssz_bytes(&self) -> Vec<u8> {
+        self.clone().into_bytes()
     }
 
     fn is_ssz_fixed_len() -> bool {
@@ -23,16 +23,12 @@ impl<N: Unsigned + Clone> SszDecode for Bitfield<length::Variable<N>> {
 }
 
 impl<N: Unsigned + Clone> SszEncode for Bitfield<length::Fixed<N>> {
-    fn ssz_append(&self, buf: &mut Vec<u8>) {
-        buf.append(&mut self.clone().into_bytes())
+    fn as_ssz_bytes(&self) -> Vec<u8> {
+        self.clone().into_bytes()
     }
 
     fn is_ssz_fixed_len() -> bool {
         true
-    }
-
-    fn ssz_fixed_len() -> usize {
-        bit_len_in_bytes_len(N::to_usize())
     }
 }
 

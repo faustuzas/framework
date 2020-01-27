@@ -201,7 +201,7 @@ macro_rules! impl_ssz {
                 <u64 as SszEncode>::ssz_fixed_len()
             }
 
-            fn ssz_append(&self, buf: &mut Vec<u8>) {
+            fn as_ssz_bytes(&self) -> Vec<u8> {
                 self.0.ssz_append(buf)
             }
         }

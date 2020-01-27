@@ -1,8 +1,8 @@
 use super::*;
 
 impl<T: SszEncode + Clone, N: Unsigned> SszEncode for VariableList<T, N> {
-    fn ssz_append(&self, buf: &mut Vec<u8>) {
-        buf.append(&mut self.to_vec().as_ssz_bytes())
+    fn as_ssz_bytes(&self) -> Vec<u8> {
+        self.to_vec().as_ssz_bytes()
     }
 
     fn is_ssz_fixed_len() -> bool {

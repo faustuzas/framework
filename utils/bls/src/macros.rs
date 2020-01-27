@@ -1,16 +1,12 @@
 macro_rules! impl_ssz {
     ($type: ident, $byte_size: expr, $item_str: expr) => {
         impl ssz::SszEncode for $type {
+            fn as_ssz_bytes(&self) -> Vec<u8> {
+                self.as_bytes()
+            }
+
             fn is_ssz_fixed_len() -> bool {
                 true
-            }
-
-            fn ssz_fixed_len() -> usize {
-                $byte_size
-            }
-
-            fn ssz_append(&self, buf: &mut Vec<u8>) {
-                buf.append(&mut self.as_bytes())
             }
         }
 

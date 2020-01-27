@@ -1,10 +1,12 @@
 use super::*;
 
 impl<T: SszEncode, N: Unsigned> SszEncode for FixedVector<T, N> {
-    fn ssz_append(&self, buf: &mut Vec<u8>) {
+    fn as_ssz_bytes(&self) -> Vec<u8> {
+        let mut result = vec![];
+
         if T::is_ssz_fixed_len() {
             for element in self.iter() {
-                buf.append(&mut element.as_ssz_bytes());
+                result.append(&mut element.as_ssz_bytes());
             }
         } else {
             let mut variable_parts = Vec::with_capacity(self.len());
@@ -24,25 +26,19 @@ impl<T: SszEncode, N: Unsigned> SszEncode for FixedVector<T, N> {
             }
 
             for offset in variable_offsets {
-                buf.extend(offset);
+                result.extend(offset);
             }
 
             for part in variable_parts {
-                buf.extend(part);
+                result.extend(part);
             }
         }
+
+        result
     }
 
     fn is_ssz_fixed_len() -> bool {
         <T as SszEncode>::is_ssz_fixed_len()
-    }
-
-    fn ssz_fixed_len() -> usize {
-        if <Self as SszEncode>::is_ssz_fixed_len() {
-            N::to_usize() * T::ssz_fixed_len()
-        } else {
-            BYTES_PER_LENGTH_OFFSET
-        }
     }
 }
 
