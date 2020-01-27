@@ -19,10 +19,10 @@ mod tests {
         let original = Signature::new(&[42, 42], 0, &keypair.sk);
 
         let bytes = ssz_encode(&original);
-        let signature_bytes = SignatureBytes::from_bytes(&bytes).unwrap();
+        let signature_bytes = SignatureBytes::from_bytes(&bytes).expect("Test");
         let signature: Result<Signature, _> = (&signature_bytes).try_into();
         assert!(signature.is_ok());
-        assert_eq!(original, signature.unwrap());
+        assert_eq!(original, signature.expect("Test"));
     }
 
     #[test]
@@ -33,7 +33,7 @@ mod tests {
         let signature_bytes = SignatureBytes::from_bytes(&signature_bytes[..]);
         assert!(signature_bytes.is_ok());
 
-        let signature: Result<Signature, _> = signature_bytes.as_ref().unwrap().try_into();
+        let signature: Result<Signature, _> = signature_bytes.as_ref().expect("Test").try_into();
         assert!(signature.is_err());
     }
 }

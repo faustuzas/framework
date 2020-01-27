@@ -54,7 +54,9 @@ impl From<HelperError> for Error {
     }
 }
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize, SszEncode, SszDecode, TreeHash, Default)]
+#[derive(
+    Debug, PartialEq, Clone, Serialize, Deserialize, SszDecode, SszEncode, TreeHash, Default,
+)]
 pub struct BeaconState<C: Config> {
     pub genesis_time: u64,
     pub slot: Slot,

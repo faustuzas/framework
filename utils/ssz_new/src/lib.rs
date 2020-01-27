@@ -1,7 +1,7 @@
 mod decode;
 mod encode;
-mod utils;
 mod types;
+mod utils;
 
 pub use utils::{
     decode_offset, decode_variable_sized_items, encode_items_from_parts, encode_offset, ssz_encode,

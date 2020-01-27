@@ -138,8 +138,8 @@ mod test {
             let vec = <FixedVector<u16, U3> as SszDecode>::from_ssz_bytes(&[5, 0, 2, 0, 3, 0])
                 .expect("Test");
             assert_eq!(vec.to_vec(), vec![5, 2, 3]);
-            let vec =
-                <FixedVector<u8, U6> as SszDecode>::from_ssz_bytes(&[5, 0, 2, 0, 3, 0]).expect("Test");
+            let vec = <FixedVector<u8, U6> as SszDecode>::from_ssz_bytes(&[5, 0, 2, 0, 3, 0])
+                .expect("Test");
             assert_eq!(vec.to_vec(), vec![5, 0, 2, 0, 3, 0]);
         }
 

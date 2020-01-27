@@ -127,7 +127,7 @@ mod tests {
         let original = FakeSignature::new(&[42, 42], 0, &keypair.sk);
 
         let bytes = ssz_encode(&original);
-        let decoded = FakeSignature::from_ssz_bytes(&bytes).unwrap();
+        let decoded = FakeSignature::from_ssz_bytes(&bytes).expect("Test");
 
         assert_eq!(original, decoded);
     }

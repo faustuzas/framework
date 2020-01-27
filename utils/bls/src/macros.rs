@@ -1,6 +1,6 @@
 macro_rules! impl_ssz {
     ($type: ident, $byte_size: expr, $item_str: expr) => {
-        impl ssz::SszEncode for $type {
+        impl SszEncode for $type {
             fn as_ssz_bytes(&self) -> Vec<u8> {
                 self.as_bytes()
             }
@@ -10,7 +10,7 @@ macro_rules! impl_ssz {
             }
         }
 
-        impl ssz::SszDecode for $type {
+        impl SszDecode for $type {
             fn is_ssz_fixed_len() -> bool {
                 true
             }
@@ -21,12 +21,12 @@ macro_rules! impl_ssz {
 
             fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, SszDecodeError> {
                 let len = bytes.len();
-                let expected = <Self as ssz::SszDecode>::ssz_fixed_len();
+                let expected = <Self as SszDecode>::ssz_fixed_len();
 
-                if len != expected {
-                    Err(ssz::SszDecodeError::InvalidByteLength { len, expected })
+                if len == expected {
+                    Self::from_bytes(bytes)
                 } else {
-                    $type::from_bytes(bytes)
+                    Err(SszDecodeError::InvalidByteLength { len, expected })
                 }
             }
         }
@@ -85,14 +85,14 @@ macro_rules! bytes_struct {
                       stringify!($byte_size));
 
         impl $name {
-            pub fn from_bytes(bytes: &[u8]) -> Result<Self, ssz::SszDecodeError> {
+            pub fn from_bytes(bytes: &[u8]) -> Result<Self, SszDecodeError> {
                 Ok(Self {
                     bytes: Self::get_bytes(bytes)?,
                     decompressed: None
                 })
             }
 
-            pub fn empty() -> Self {
+            pub const fn empty() -> Self {
                 Self {
                     bytes: [0; $byte_size],
                     decompressed: None
@@ -103,25 +103,25 @@ macro_rules! bytes_struct {
                 self.bytes.to_vec()
             }
 
-            fn get_bytes(bytes: &[u8]) -> Result<[u8; $byte_size], ssz::SszDecodeError> {
+            fn get_bytes(bytes: &[u8]) -> Result<[u8; $byte_size], SszDecodeError> {
                 let mut result = [0; $byte_size];
-                if bytes.len() != $byte_size {
-                    Err(ssz::SszDecodeError::InvalidByteLength {
+                if bytes.len() == $byte_size {
+                    result[..].copy_from_slice(bytes);
+                    Ok(result)
+                } else {
+                    Err(SszDecodeError::InvalidByteLength {
                         len: bytes.len(),
                         expected: $byte_size,
                     })
-                } else {
-                    result[..].copy_from_slice(bytes);
-                    Ok(result)
                 }
             }
 
-            pub fn decompress(&mut self) -> Result<(), ssz::SszDecodeError> {
+            pub fn decompress(&mut self) -> Result<(), SszDecodeError> {
                 self.decompressed = Some(<&Self as std::convert::TryInto<$type>>::try_into(self)?);
                 Ok(())
             }
 
-            pub fn decompressed(&self) -> &Option<$type> {
+            pub const fn decompressed(&self) -> &Option<$type> {
                 &self.decompressed
             }
         }
@@ -147,17 +147,17 @@ macro_rules! bytes_struct {
         impl Eq for $name {}
 
         impl std::convert::TryInto<$type> for &$name {
-            type Error = ssz::SszDecodeError;
+            type Error = SszDecodeError;
 
             fn try_into(self) -> Result<$type, Self::Error> {
                 <$type>::from_bytes(&self.bytes[..])
             }
         }
 
-        impl std::convert::From<$type> for $name {
+        impl From<$type> for $name {
             fn from(obj: $type) -> Self {
-                // We know that obj.as_bytes() always has exactly $byte_size many bytes.
-                Self::from_bytes(obj.as_ssz_bytes().as_slice()).unwrap()
+                Self::from_bytes(obj.as_ssz_bytes().as_slice())
+                    .expect("We know that obj.as_bytes() always has exactly $byte_size many bytes")
             }
         }
 

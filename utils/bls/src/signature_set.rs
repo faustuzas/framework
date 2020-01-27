@@ -118,10 +118,10 @@ pub fn verify_signature_sets<'a>(_iter: impl Iterator<Item = SignatureSet<'a>>) 
     true
 }
 
-type VerifySet<'a> = (G2Point, Vec<G1Point>, Vec<Vec<u8>>, u64);
+type VerifySet = (G2Point, Vec<G1Point>, Vec<Vec<u8>>, u64);
 
-impl<'a> Into<VerifySet<'a>> for SignatureSet<'a> {
-    fn into(self) -> VerifySet<'a> {
+impl<'a> Into<VerifySet> for SignatureSet<'a> {
+    fn into(self) -> VerifySet {
         let signature = self.signature.clone();
 
         let (pubkeys, messages): (Vec<G1Point>, Vec<Message>) = self
@@ -148,7 +148,7 @@ fn aggregate_public_keys<'a>(public_keys: &'a [Cow<'a, G1Point>]) -> G1Point {
         public_keys
             .iter()
             .fold(AggregatePublicKey::new(), |mut aggregate, pubkey| {
-                aggregate.add_point(&pubkey);
+                aggregate.add_point(pubkey);
                 aggregate
             });
 

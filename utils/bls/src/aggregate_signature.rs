@@ -38,7 +38,7 @@ impl AggregateSignature {
     }
 
     /// Add (aggregate) another `AggregateSignature`.
-    pub fn add_aggregate(&mut self, agg_signature: &AggregateSignature) {
+    pub fn add_aggregate(&mut self, agg_signature: &Self) {
         self.aggregate_signature
             .add_aggregate(&agg_signature.aggregate_signature)
     }
@@ -98,7 +98,7 @@ impl AggregateSignature {
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, SszDecodeError> {
         for byte in bytes {
             if *byte != 0 {
-                let sig = RawAggregateSignature::from_bytes(&bytes).map_err(|_| {
+                let sig = RawAggregateSignature::from_bytes(bytes).map_err(|_| {
                     SszDecodeError::BytesInvalid(format!(
                         "Invalid AggregateSignature bytes: {:?}",
                         bytes
@@ -115,12 +115,12 @@ impl AggregateSignature {
     }
 
     /// Returns the underlying signature.
-    pub fn as_raw(&self) -> &RawAggregateSignature {
+    pub const fn as_raw(&self) -> &RawAggregateSignature {
         &self.aggregate_signature
     }
 
     /// Returns the underlying signature.
-    pub fn from_point(point: G2Point) -> Self {
+    pub const fn from_point(point: G2Point) -> Self {
         Self {
             aggregate_signature: RawAggregateSignature { point },
             is_empty: false,
@@ -128,7 +128,7 @@ impl AggregateSignature {
     }
 
     /// Returns if the AggregateSignature `is_empty`
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.is_empty
     }
 
@@ -175,7 +175,7 @@ impl<'de> Deserialize<'de> for AggregateSignature {
         D: Deserializer<'de>,
     {
         let bytes = deserializer.deserialize_str(PrefixedHexVisitor)?;
-        let agg_sig = AggregateSignature::from_ssz_bytes(&bytes)
+        let agg_sig = Self::from_ssz_bytes(&bytes)
             .map_err(|e| serde::de::Error::custom(format!("invalid ssz ({:?})", e)))?;
 
         Ok(agg_sig)
@@ -196,7 +196,7 @@ mod tests {
         original.add(&Signature::new(&[42, 42], 0, &keypair.sk));
 
         let bytes = original.as_ssz_bytes();
-        let decoded = AggregateSignature::from_ssz_bytes(&bytes).unwrap();
+        let decoded = AggregateSignature::from_ssz_bytes(&bytes).expect("Test");
 
         assert_eq!(original, decoded);
     }

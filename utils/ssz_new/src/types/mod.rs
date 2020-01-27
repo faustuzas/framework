@@ -1,6 +1,6 @@
 use super::*;
-use typenum::Unsigned;
 use ssz_types::*;
+use typenum::Unsigned;
 
 mod bitfield;
 mod fixed_vector;

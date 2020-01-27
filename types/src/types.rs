@@ -12,7 +12,9 @@ use crate::config::*;
 use crate::consts;
 use crate::primitives::*;
 
-#[derive(Clone, PartialEq, Debug, Deserialize, Serialize, SszEncode, SszDecode, TreeHash, SignedRoot)]
+#[derive(
+    Clone, PartialEq, Debug, Deserialize, Serialize, SszEncode, SszDecode, TreeHash, SignedRoot,
+)]
 pub struct Attestation<C: Config> {
     pub aggregation_bits: BitList<C::MaxValidatorsPerCommittee>,
     pub data: AttestationData,
@@ -77,7 +79,9 @@ pub struct AttesterSlashing<C: Config> {
     pub attestation_2: IndexedAttestation<C>,
 }
 
-#[derive(Clone, PartialEq, Debug, Deserialize, Serialize, SszEncode, SszDecode, TreeHash, SignedRoot)]
+#[derive(
+    Clone, PartialEq, Debug, Deserialize, Serialize, SszEncode, SszDecode, TreeHash, SignedRoot,
+)]
 pub struct BeaconBlock<C: Config> {
     pub slot: Slot,
     pub parent_root: H256,
@@ -100,7 +104,9 @@ impl<C: Config> Default for BeaconBlock<C> {
     }
 }
 
-#[derive(Clone, PartialEq, Debug, Deserialize, Serialize, SszEncode, SszDecode, TreeHash, SignedRoot)]
+#[derive(
+    Clone, PartialEq, Debug, Deserialize, Serialize, SszEncode, SszDecode, TreeHash, SignedRoot,
+)]
 pub struct BeaconBlockBody<C: Config> {
     pub randao_reveal: Signature,
     pub eth1_data: Eth1Data,
@@ -179,7 +185,17 @@ pub struct Checkpoint {
 }
 
 #[derive(
-    Clone, PartialEq, Eq, Debug, Default, Hash, Deserialize, Serialize, SszEncode, SszDecode, TreeHash,
+    Clone,
+    PartialEq,
+    Eq,
+    Debug,
+    Default,
+    Hash,
+    Deserialize,
+    Serialize,
+    SszEncode,
+    SszDecode,
+    TreeHash,
 )]
 pub struct Crosslink {
     pub shard: u64,
@@ -206,7 +222,9 @@ pub struct DepositData {
     pub signature: SignatureBytes,
 }
 
-#[derive(Clone, PartialEq, Eq, Debug, Default, Deserialize, Serialize, SszEncode, SszDecode, TreeHash)]
+#[derive(
+    Clone, PartialEq, Eq, Debug, Default, Deserialize, Serialize, SszEncode, SszDecode, TreeHash,
+)]
 pub struct Eth1Data {
     pub deposit_root: H256,
     pub deposit_count: u64,
@@ -239,7 +257,16 @@ pub struct HistoricalBatch<C: Config> {
 }
 
 #[derive(
-    Clone, PartialEq, Debug, Deserialize, Serialize, SszEncode, SszDecode, TreeHash, SignedRoot, Default,
+    Clone,
+    PartialEq,
+    Debug,
+    Deserialize,
+    Serialize,
+    SszEncode,
+    SszDecode,
+    TreeHash,
+    SignedRoot,
+    Default,
 )]
 pub struct IndexedAttestation<C: Config> {
     pub attesting_indices: VariableList<u64, C::MaxValidatorsPerCommittee>,
@@ -278,7 +305,9 @@ pub struct Transfer {
     pub signature: Signature,
 }
 
-#[derive(Clone, PartialEq, Eq, Debug, Deserialize, Serialize, SszEncode, SszDecode, TreeHash, Default)]
+#[derive(
+    Clone, PartialEq, Eq, Debug, Deserialize, Serialize, SszEncode, SszDecode, TreeHash, Default,
+)]
 pub struct Validator {
     pub pubkey: PublicKey,
     pub withdrawal_credentials: H256,

@@ -18,7 +18,7 @@ pub struct Signature {
 impl Signature {
     /// Instantiate a new Signature from a message and a SecretKey.
     pub fn new(msg: &[u8], domain: u64, sk: &SecretKey) -> Self {
-        Signature {
+        Self {
             signature: RawSignature::new(msg, domain, sk.as_raw()),
             is_empty: false,
         }
@@ -27,7 +27,7 @@ impl Signature {
     /// Instantiate a new Signature from a message and a SecretKey, where the message has already
     /// been hashed.
     pub fn new_hashed(x_real_hashed: &[u8], x_imaginary_hashed: &[u8], sk: &SecretKey) -> Self {
-        Signature {
+        Self {
             signature: RawSignature::new_hashed(x_real_hashed, x_imaginary_hashed, sk.as_raw()),
             is_empty: false,
         }
@@ -53,7 +53,7 @@ impl Signature {
     }
 
     /// Returns the underlying signature.
-    pub fn as_raw(&self) -> &RawSignature {
+    pub const fn as_raw(&self) -> &RawSignature {
         &self.signature
     }
 
@@ -62,8 +62,8 @@ impl Signature {
         // Set RawSignature = infinity
         let mut empty: Vec<u8> = vec![0; BLS_SIG_BYTE_SIZE];
         empty[0] += u8::pow(2, 6) + u8::pow(2, 7);
-        Signature {
-            signature: RawSignature::from_bytes(&empty).unwrap(),
+        Self {
+            signature: RawSignature::from_bytes(&empty).expect("Test"),
             is_empty: true,
         }
     }
@@ -80,20 +80,20 @@ impl Signature {
     pub fn from_bytes(bytes: &[u8]) -> Result<Self, SszDecodeError> {
         for byte in bytes {
             if *byte != 0 {
-                let raw_signature = RawSignature::from_bytes(&bytes).map_err(|_| {
+                let raw_signature = RawSignature::from_bytes(bytes).map_err(|_| {
                     SszDecodeError::BytesInvalid(format!("Invalid Signature bytes: {:?}", bytes))
                 })?;
-                return Ok(Signature {
+                return Ok(Self {
                     signature: raw_signature,
                     is_empty: false,
                 });
             }
         }
-        Ok(Signature::empty_signature())
+        Ok(Self::empty_signature())
     }
 
     // Check for empty Signature
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.is_empty
     }
 
@@ -144,7 +144,7 @@ mod tests {
         let original = Signature::new(&[42, 42], 0, &keypair.sk);
 
         let bytes = ssz_encode(&original);
-        let decoded = Signature::from_ssz_bytes(&bytes).unwrap();
+        let decoded = Signature::from_ssz_bytes(&bytes).expect("Test");
 
         assert_eq!(original, decoded);
     }
