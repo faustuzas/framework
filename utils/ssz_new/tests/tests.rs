@@ -190,7 +190,7 @@ mod round_trips {
                 U256::from_dec_str("12345").expect("Test"),
                 U256::from_dec_str("12345").expect("Test"),
             ],
-            b: vec![U256::from_dec_str("12345").expect("Test")]
+            b: vec![U256::from_dec_str("12345").expect("Test")],
         };
 
         assert_round_trip(&item);
