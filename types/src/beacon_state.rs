@@ -1,4 +1,4 @@
-#![allow(clippy::all)]
+#![allow(clippy)]
 
 use crate::{
     config::*, consts, helper_functions_types::Error as HelperError, primitives::*, types::*,
