@@ -1,7 +1,4 @@
-use core::{
-    convert::TryFrom,
-    ops::Index,
-};
+use core::{convert::TryFrom, ops::Index};
 
 use derive_more::Display;
 use serde::{Deserialize, Serialize};
