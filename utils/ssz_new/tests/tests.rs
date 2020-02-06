@@ -1,6 +1,6 @@
+use ethereum_types::U256;
 use ssz_new::{SszDecode, SszEncode};
 use ssz_new_derive::{SszDecode, SszEncode};
-use ethereum_types::U256;
 
 #[derive(SszEncode, SszDecode, PartialEq, Debug)]
 struct Fixed {
@@ -190,13 +190,14 @@ mod round_trips {
                 U256::from_dec_str("12345").expect("Test"),
                 U256::from_dec_str("12345").expect("Test"),
             ],
-            b: vec![
-                U256::from_dec_str("12345").expect("Test"),
-            ]
+            b: vec![U256::from_dec_str("12345").expect("Test")]
         };
 
         assert_round_trip(&item);
-        assert_eq!(NestedVariable::ssz_fixed_len(), ssz_new::BYTES_PER_LENGTH_OFFSET);
+        assert_eq!(
+            NestedVariable::ssz_fixed_len(),
+            ssz_new::BYTES_PER_LENGTH_OFFSET
+        );
     }
 
     fn assert_round_trip<T: SszEncode + SszDecode + PartialEq + std::fmt::Debug>(t: &T) {
