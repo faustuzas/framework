@@ -1,4 +1,4 @@
-#![allow(clippy)]
+#![allow(clippy::pub_enum_variant_names)]
 
 use crate::{
     config::*, consts, helper_functions_types::Error as HelperError, primitives::*, types::*,
