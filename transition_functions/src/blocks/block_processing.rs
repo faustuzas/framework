@@ -348,7 +348,7 @@ mod scessing_tests {
 mod spec_tests {
     use std::panic::UnwindSafe;
 
-    use ssz::Decode;
+    use ssz_new::SszDecode;
     use test_generator::test_resources;
     use types::{beacon_state::BeaconState, config::MinimalConfig};
 
@@ -397,7 +397,7 @@ mod spec_tests {
         run_case(case_directory, "voluntary_exit", process_voluntary_exit);
     }
 
-    fn run_case<D: Decode + UnwindSafe>(
+    fn run_case<D: SszDecode + UnwindSafe>(
         case_directory: &str,
         operation_file_name: &str,
         processing_function: impl FnOnce(&mut BeaconState<MinimalConfig>, &D) + UnwindSafe,
