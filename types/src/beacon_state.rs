@@ -1,4 +1,4 @@
-#![allow(clippy::enum_variant_names)]
+#![allow(clippy::pub_enum_variant_names)]
 
 use crate::{
     config::*, consts, helper_functions_types::Error as HelperError, primitives::*, types::*,
@@ -44,8 +44,8 @@ pub enum Error {
     HelperError(HelperError),
 }
 
-impl From<SzzError> for Error {
-    fn from(error: SzzError) -> Self {
+impl From<SszError> for Error {
+    fn from(error: SszError) -> Self {
         Error::SszTypesError(error)
     }
 }
