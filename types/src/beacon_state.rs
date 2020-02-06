@@ -1,4 +1,4 @@
-#![allow(clippy::pub-enum-variant-names)]
+#![allow(clippy::enum_variant_names)]
 
 use crate::{
     config::*, consts, helper_functions_types::Error as HelperError, primitives::*, types::*,
@@ -6,7 +6,7 @@ use crate::{
 use ethereum_types::H256 as Hash256;
 use serde::{Deserialize, Serialize};
 use ssz_new_derive::{SszDecode, SszEncode};
-use ssz_types::{BitVector, Error as SzzError, FixedVector, VariableList};
+use ssz_types::{BitVector, Error as SszError, FixedVector, VariableList};
 use tree_hash::TreeHash;
 use tree_hash_derive::TreeHash;
 
