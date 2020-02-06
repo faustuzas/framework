@@ -1,3 +1,5 @@
+#![allow(clippy::pub-enum-variant-names)]
+
 use crate::{
     config::*, consts, helper_functions_types::Error as HelperError, primitives::*, types::*,
 };
@@ -38,7 +40,7 @@ pub enum Error {
     CurrentCommitteeCacheUninitialized,
     //RelativeEpochError(RelativeEpochError),
     //CommitteeCacheUninitialized(RelativeEpoch),
-    SszTypesError(ssz_types::Error),
+    SszTypesError(SszError),
     HelperError(HelperError),
 }
 

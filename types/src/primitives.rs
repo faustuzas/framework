@@ -1,5 +1,5 @@
 use core::{
-    convert::{TryFrom, TryInto},
+    convert::TryFrom,
     ops::Index,
 };
 
