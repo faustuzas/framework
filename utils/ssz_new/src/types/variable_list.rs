@@ -6,7 +6,7 @@ impl<T: SszEncode + Clone, N: Unsigned> SszEncode for VariableList<T, N> {
     }
 
     fn is_ssz_fixed_len() -> bool {
-        T::is_ssz_fixed_len()
+        false
     }
 }
 

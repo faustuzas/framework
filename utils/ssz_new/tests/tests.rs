@@ -1,5 +1,6 @@
 use ssz_new::{SszDecode, SszEncode};
 use ssz_new_derive::{SszDecode, SszEncode};
+use ethereum_types::U256;
 
 #[derive(SszEncode, SszDecode, PartialEq, Debug)]
 struct Fixed {
@@ -33,6 +34,12 @@ struct Skippable {
     skip_2: Vec<u8>,
 
     stay_2: Vec<u8>,
+}
+
+#[derive(SszEncode, SszDecode, PartialEq, Debug)]
+struct NestedVariable {
+    a: Vec<U256>,
+    b: Vec<U256>,
 }
 
 mod serialize_derive {
@@ -168,5 +175,31 @@ mod deserialize_derive {
         let skippable = Skippable::from_ssz_bytes(serialized.as_slice()).expect("Test");
         assert_eq!(skippable.skip_1, <u8>::default());
         assert_eq!(skippable.skip_2, <Vec<u8>>::default());
+    }
+}
+
+mod round_trips {
+    use crate::*;
+
+    #[test]
+    fn nested_variable() {
+        let item = NestedVariable {
+            a: vec![
+                U256::from_dec_str("12345").expect("Test"),
+                U256::from_dec_str("12345").expect("Test"),
+                U256::from_dec_str("12345").expect("Test"),
+                U256::from_dec_str("12345").expect("Test"),
+            ],
+            b: vec![
+                U256::from_dec_str("12345").expect("Test"),
+            ]
+        };
+
+        assert_round_trip(&item);
+        assert_eq!(NestedVariable::ssz_fixed_len(), ssz_new::BYTES_PER_LENGTH_OFFSET);
+    }
+
+    fn assert_round_trip<T: SszEncode + SszDecode + PartialEq + std::fmt::Debug>(t: &T) {
+        assert_eq!(&T::from_ssz_bytes(&t.as_ssz_bytes()).expect("Test"), t);
     }
 }

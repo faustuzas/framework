@@ -19,7 +19,6 @@ pub fn encode_derive(input: TokenStream) -> TokenStream {
     let mut fixed_parts_pushes = Vec::with_capacity(fields_count);
     let mut variable_parts_pushes = Vec::with_capacity(fields_count);
     let mut is_fixed_lens = Vec::with_capacity(fields_count);
-    let mut ssz_fixed_lens = Vec::with_capacity(fields_count);
     for field in fields {
         let field_type = &field.ty;
         let field_name = match &field.ident {
@@ -45,10 +44,6 @@ pub fn encode_derive(input: TokenStream) -> TokenStream {
 
         is_fixed_lens.push(quote! {
             <#field_type as ssz_new::SszEncode>::is_ssz_fixed_len()
-        });
-
-        ssz_fixed_lens.push(quote! {
-            <#field_type as ssz_new::SszEncode>::ssz_fixed_len()
         });
     }
 
@@ -150,10 +145,14 @@ pub fn decode_derive(input: TokenStream) -> TokenStream {
             }
 
             fn ssz_fixed_len() -> usize {
-                #(
-                    #fixed_lengths +
-                )*
+                if <Self as ssz_new::SszDecode>::is_ssz_fixed_len() {
+                    #(
+                        #fixed_lengths +
+                    )*
                     0
+                } else {
+                    ssz_new::BYTES_PER_LENGTH_OFFSET
+                }
             }
         }
     };
